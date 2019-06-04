@@ -48,7 +48,7 @@ export default {
 				preprocess: autoPreprocess(preprocessOptions),
 				dev,
 				hydratable: true,
-				emitCss: true
+				emitCss: !dev
 			}),
 			resolve(),
 			commonjs(),
