@@ -1,14 +1,31 @@
 {
     "version": 2,
-    "name": "experimental-trader-frontend",
+    "name": "experimental-sapper",
     "builds": [
         {
-            "src": "__sapper__/export/**",
+            "src": "__sapper__/build/index.js",
+            "use": "@now/node",
+            "config": {
+                "includeFiles": [
+                    "../build/**",
+                    "../../static/**"
+                    ]
+            }
+        },
+        {
+            "src": "static/**",
+            "use": "@now/static"
+        },
+        {
+            "src": "__sapper__/build/client/**",
             "use": "@now/static"
         }
     ],
     "routes": [
-        { "src": "^/(.*)", "dest": "/__sapper__/export/$1" }
+        { "src": "/(.*(\\.css)|(\\.json)|(\\.png))", "dest": "/static/$1" },
+        { "src": "/client/(.*)", "dest": "/__sapper__/build/client/$1" },
+        { "src": "/(.*)", "dest": "/__sapper__/build/index.js" }
+        
     ],
     "alias": "trader.bausk.dev"
 }
