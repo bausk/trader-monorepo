@@ -1,6 +1,6 @@
 {
     "version": 2,
-    "name": "experimental-sapper",
+    "name": "experimental-trader-frontend",
     "builds": [
         {
             "src": "__sapper__/build/index.js",
