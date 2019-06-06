@@ -1,3 +1,8 @@
-node_modules
-src
-cypress
+*
+!static
+!__sapper__
+!static/**
+!__sapper__/**
+!.nowignore
+!package.json
+!now.json

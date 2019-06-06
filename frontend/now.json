@@ -4,12 +4,12 @@
     "builds": [
         {
             "src": "__sapper__/build/index.js",
-            "use": "@now/node",
+            "use": "@now/node-server",
             "config": {
                 "includeFiles": [
-                    "../build/**",
-                    "../../static/**"
-                    ]
+                    "./**/*"
+                    ],
+                "maxLambdaSize": "50mb"
             }
         },
         {
@@ -22,7 +22,7 @@
         }
     ],
     "routes": [
-        { "src": "/(.*(\\.css)|(\\.json)|(\\.png))", "dest": "/static/$1" },
+        { "src": "/(.*\\.(css|json|png))", "dest": "/static/$1" },
         { "src": "/client/(.*)", "dest": "/__sapper__/build/client/$1" },
         { "src": "/(.*)", "dest": "/__sapper__/build/index.js" }
         
