@@ -1,3 +1,8 @@
+<script>
+	import Auth0 from 'auth0-js';
+	console.warn(Auth0);
+</script>
+
 <style>
 
 	@import '../css/_variables.css';

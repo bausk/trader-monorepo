@@ -11,7 +11,12 @@ if (dev) {
 	app.use(require('sirv')('static', { dev }));
 }
 
-app.use(sapper.middleware())
-	.listen(PORT, err => {
-		if (err) console.log('error', err);
-	});
+app.use(sapper.middleware());
+
+export default app.handler;
+
+if (!process.env.NOW_REGION) {
+	app.listen(PORT, err => {
+		if (err) console.log('error', err)
+	})
+}

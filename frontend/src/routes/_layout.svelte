@@ -1,6 +1,9 @@
 <script>
+	// import Auth0 from 'auth0-js';
 	import Nav from '../components/Nav.svelte';
-
+	
+	// console.log(Auth0);
+	// console.warn('Oy vey this is executed in many places');
 	export let segment;
 </script>
 

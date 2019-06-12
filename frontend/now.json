@@ -3,29 +3,25 @@
     "name": "experimental-trader-frontend",
     "builds": [
         {
-            "src": "__sapper__/build/index.js",
-            "use": "@now/node-server",
-            "config": {
-                "includeFiles": [
-                    "./**/*"
-                    ],
-                "maxLambdaSize": "50mb"
-            }
-        },
-        {
             "src": "static/**",
             "use": "@now/static"
         },
         {
-            "src": "__sapper__/build/client/**",
-            "use": "@now/static"
+            "src": "__sapper__/build/index.js",
+            "use": "now-sapper"
         }
     ],
     "routes": [
-        { "src": "/(.*\\.(css|json|png))", "dest": "/static/$1" },
-        { "src": "/client/(.*)", "dest": "/__sapper__/build/client/$1" },
-        { "src": "/(.*)", "dest": "/__sapper__/build/index.js" }
+        { "src": "/(.*\\.(css|png))", "dest": "/static/$1" },
+        { "src": "/manifest\\.json", "dest": "static/manifest.json" },
+        { "src": "/(.*)", "dest": "__sapper__/build/index.js" }
         
     ],
-    "alias": "trader.bausk.dev"
+    "alias": "trader.bausk.dev",
+    "env": {
+        "AUTH0_DOMAIN": "@auth0_domain",
+        "AUTH0_CLIENT_ID": "@auth0_client_id",
+        "API_AUDIENCE": "@api_audience",
+        "AUTH0_CALLBACK_URL": "@callback_url"
+      }
 }

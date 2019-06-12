@@ -2,7 +2,7 @@ import posts from './_posts.js';
 
 const contents = JSON.stringify(posts.map(post => {
 	return {
-		title: post.title,
+		title: Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15),
 		slug: post.slug
 	};
 }));

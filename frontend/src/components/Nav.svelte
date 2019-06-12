@@ -1,4 +1,5 @@
 <script>
+	import Login from './Login.svelte';
 	export let segment;
 </script>
 
@@ -56,5 +57,10 @@
 		<!-- for the blog link, we're using rel=prefetch so that Sapper prefetches
 		     the blog data when we hover over the link or tap it on a touchscreen -->
 		<li><a rel=prefetch class='{segment === "blog" ? "selected" : ""}' href='blog'>blog</a></li>
+		<li>
+			<Login let:onclick={onclick}>
+				<button on:click={onclick}>Log In</button>
+			</Login>
+		</li>
 	</ul>
 </nav>

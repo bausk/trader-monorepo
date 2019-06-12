@@ -5,16 +5,18 @@
   "scripts": {
     "dev": "sapper dev",
     "debug": "node --nolazy --inspect-brk=9229 __sapper__/build",
-    "build": "sapper build --legacy",
-    "deploy": "npm run build && copyfiles -E package.json __sapper__/build && now",
+    "b": "sapper build --legacy",
     "export": "sapper export --legacy",
     "start": "node __sapper__/build",
     "cy:run": "cypress run",
     "cy:open": "cypress open",
-    "test": "run-p --race dev cy:run"
+    "test": "run-p --race dev cy:run",
+    "now": "sapper build --legacy && now"
   },
   "license": "MIT",
   "dependencies": {
+    "auth0-js": "^9.10.4",
+    "auth0-lock": "^11.16.2",
     "compression": "^1.7.1",
     "express": "^4.17.1",
     "polka": "^0.5.0",
@@ -42,9 +44,10 @@
     "postcss-simple-vars": "^5.0.2",
     "postcss-utilities": "^0.8.1",
     "precss": "^4.0.0",
-    "rollup": "^1.0.0",
+    "rollup": "^1.15.1",
     "rollup-plugin-babel": "^4.0.2",
     "rollup-plugin-commonjs": "^9.1.6",
+    "rollup-plugin-json": "^3.1.0",
     "rollup-plugin-node-resolve": "^4.0.0",
     "rollup-plugin-replace": "^2.0.0",
     "rollup-plugin-svelte": "^5.0.1",
