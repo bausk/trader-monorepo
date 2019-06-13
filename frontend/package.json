@@ -18,7 +18,9 @@
     "auth0-js": "^9.10.4",
     "auth0-lock": "^11.16.2",
     "compression": "^1.7.1",
+    "dotenv": "^8.0.0",
     "express": "^4.17.1",
+    "history": "^4.9.0",
     "polka": "^0.5.0",
     "sirv": "^0.4.0"
   },

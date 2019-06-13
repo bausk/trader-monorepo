@@ -1,5 +1,5 @@
 import { AUTH_CONFIG } from './auth0-variables';
-// import createBrowserHistory from 'history/createBrowserHistory';
+import { createBrowserHistory } from 'history';
 import Auth0Lock from 'auth0-lock';
 
 class Auth {

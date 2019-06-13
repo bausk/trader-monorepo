@@ -6,8 +6,8 @@ import babel from 'rollup-plugin-babel';
 import json from 'rollup-plugin-json';
 import { terser } from 'rollup-plugin-terser';
 import config from 'sapper/config/rollup.js';
-import pkg from './package.json';
 import autoPreprocess from 'svelte-preprocess';
+//import configvars from './src/utils/auth0-variables';
 
 const preprocessOptions = {
 	postcss: {
@@ -36,6 +36,7 @@ const legacy = !!process.env.SAPPER_LEGACY_BUILD;
 
 const onwarn = (warning, onwarn) => (warning.code === 'CIRCULAR_DEPENDENCY' && warning.message.includes('/@sapper/')) || onwarn(warning);
 
+
 export default {
 	client: {
 		input: config.client.input(),
@@ -43,7 +44,11 @@ export default {
 		plugins: [
 			replace({
 				'process.browser': true,
-				'process.env.NODE_ENV': JSON.stringify(mode)
+				'process.env.NODE_ENV': JSON.stringify(mode),
+				'process.env.AUTH0_DOMAIN': JSON.stringify('onilaes.auth0.com'),
+				'process.env.AUTH0_CLIENT_ID': JSON.stringify('wewggw'),
+				'process.env.AUTH0_CALLBACK_URL' : JSON.stringify('http:localhost:3000'),
+				'process.env.API_AUDIENCE': JSON.stringify('http:localhost:3000')
 			}),
 			svelte({
 				preprocess: autoPreprocess(preprocessOptions),
@@ -95,7 +100,7 @@ export default {
 			resolve(),
 			commonjs()
 		],
-		external: Object.keys(pkg.dependencies).concat(
+		external: [].concat(
 			require('module').builtinModules || Object.keys(process.binding('natives'))
 		),
 
