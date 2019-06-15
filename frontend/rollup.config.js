@@ -7,7 +7,6 @@ import json from 'rollup-plugin-json';
 import { terser } from 'rollup-plugin-terser';
 import config from 'sapper/config/rollup.js';
 import autoPreprocess from 'svelte-preprocess';
-//import configvars from './src/utils/auth0-variables';
 
 const preprocessOptions = {
 	postcss: {
@@ -35,7 +34,6 @@ const dev = mode === 'development';
 const legacy = !!process.env.SAPPER_LEGACY_BUILD;
 
 const onwarn = (warning, onwarn) => (warning.code === 'CIRCULAR_DEPENDENCY' && warning.message.includes('/@sapper/')) || onwarn(warning);
-
 
 export default {
 	client: {
