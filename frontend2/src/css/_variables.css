@@ -1,0 +1,25 @@
+:root {
+  --fontSize: 1rem;
+  --mainColor: #88696878;
+  --secondaryColor: lab(32.5 38.5 -47.6 / 90%);
+
+}
+
+.rectangle {
+    border: 1pt solid black;
+    a {
+        color: red;
+        @util size(2em);
+    }
+}
+
+@define-mixin icon $network, $color: blue {
+    .icon.is-$(network) {
+        color: $color;
+        @mixin-content;
+    }
+    .icon.is-$(network):hover {
+        color: white;
+        background: $color;
+    }
+}

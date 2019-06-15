@@ -1,30 +1,22 @@
-import { AUTH_CONFIG } from './auth0-variables';
+import { CLIENT_VARIABLES } from './env-vars';
 
 export default async () => {
   if (!process.browser) {
     return new Promise.resolve();
   }
-  console.log('rather gay but okay 1');
-  const { createBrowserHistory } = await import('history');
-  console.log('rather gay but okay 2');
-  let Auth0Lock;
-  try {
-    Auth0Lock = await import('auth0-lock');
-  } catch(e) {
-    console.log(e);
-    throw e;
-  }
-  
-  console.log('rather gay but okay 3');
+
+  const { default: createBrowserHistory } = await import('history');
+  const { default: Auth0Lock } = await import('auth0-lock');
+
   class Auth {
     constructor() {
-      this.lock = new Auth0Lock(AUTH_CONFIG.clientId, AUTH_CONFIG.domain, {
+      this.lock = new Auth0Lock(CLIENT_VARIABLES.clientId, CLIENT_VARIABLES.domain, {
         autoclose: true,
         allowSignUp: false,
         auth: {
-          redirectUrl: AUTH_CONFIG.callbackUrl,
+          redirectUrl: CLIENT_VARIABLES.callbackUrl,
           responseType: 'token id_token',
-          audience: AUTH_CONFIG.audience,
+          audience: CLIENT_VARIABLES.audience,
           params: {
             scope: 'openid profile email'
           }
@@ -35,9 +27,9 @@ export default async () => {
       this.login = this.login.bind(this);
       this.logout = this.logout.bind(this);
       this.isAuthenticated = this.isAuthenticated.bind(this);
-      // this.history = createBrowserHistory({
-      //   forceRefresh: true
-      // });
+      this.history = createBrowserHistory({
+        forceRefresh: true
+      });
     }
 
     login() {

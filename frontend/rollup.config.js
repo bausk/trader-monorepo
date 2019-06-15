@@ -98,7 +98,7 @@ export default {
 			resolve(),
 			commonjs()
 		],
-		external: [].concat(
+		external: ['cjs'].concat(
 			require('module').builtinModules || Object.keys(process.binding('natives'))
 		),
 
