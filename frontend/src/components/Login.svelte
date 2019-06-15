@@ -1,8 +1,19 @@
 <script>
 	import getAuth from '../utils/auth';
-	const onClick = (e) => {
-		const auth = getAuth();
-		
+	// const getAuth = () => {
+	// 	return {
+	// 		lock: {
+	// 			show: () => {
+	// 				alert('hhhhnng!');
+	// 			}
+	// 		}
+	// 	}
+	// };
+	const onClick = async (e) => {
+		getAuth().then((auth) => {
+			debugger;
+			auth.lock.show();
+		})
 	}
 </script>
 
