@@ -43,7 +43,7 @@ export default {
 			replace({
 				'process.browser': true,
 				'process.env.NODE_ENV': JSON.stringify(mode),
-				'process.env.AUTH0_DOMAIN': JSON.stringify('onilaes.auth0.com'),
+				'process.env.AUTH0_DOMAIN': JSON.stringify('dummycode.auth0.com'),
 				'process.env.AUTH0_CLIENT_ID': JSON.stringify('wewggw'),
 				'process.env.AUTH0_CALLBACK_URL' : JSON.stringify('http:localhost:3000'),
 				'process.env.API_AUDIENCE': JSON.stringify('http:localhost:3000')
