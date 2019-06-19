@@ -1,31 +1,22 @@
 <script>
 import { onMount } from 'svelte';
 
-let onClick;
+let secondary = (e) => {};
+let onClick = (e) => { 
+	return secondary(e);
+};
 
 onMount(async () => {
-	const getAuth = await import(`../utils/auth`);
-	onClick = (e) => {
+	const { default: getAuth } = await import(`../utils/auth`);
+	secondary = (e) => {
 		getAuth().then((auth) => {
-			debugger;
 			auth.lock.show();
 		});
 	}
 });
-	//import getAuth from '../utils/auth';
-	// const getAuth = () => {
-	// 	return {
-	// 		lock: {
-	// 			show: () => {
-	// 				alert('hhhhnng!');
-	// 			}
-	// 		}
-	// 	}
-	// };
 </script>
 
-<div on:click={onClick}>
-	click me
-	<!-- <slot onclick={onClick}>
-	</slot> -->
+<div>
+	<slot onclick={onClick}>
+	</slot>
 </div>

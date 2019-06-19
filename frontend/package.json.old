@@ -3,22 +3,19 @@
   "description": "TODO",
   "version": "0.0.1",
   "scripts": {
-    "dev": "cross-env NODE_ENV=development sapper dev --bundler webpack",
-    "dev:r": "cross-env NODE_ENV=development sapper dev --bundler rollup",
+    "dev": "sapper dev",
     "debug": "node --nolazy --inspect-brk=9229 __sapper__/build",
-    "build": "cross-env NODE_ENV=production sapper build",
-    "build:r": "cross-env NODE_ENV=production sapper build --bundler rollup",
+    "b": "sapper build --legacy",
     "export": "sapper export --legacy",
     "start": "node __sapper__/build",
     "cy:run": "cypress run",
     "cy:open": "cypress open",
     "test": "run-p --race dev cy:run",
-    "deploy:copy": "cp package.json package-lock.json now.json __sapper__/build",
-    "now": "cross-env NODE_ENV=production sapper build && npm run deploy:copy && now",
-    "now:r": "cross-env NODE_ENV=production sapper build --bundler rollup && npm run deploy:copy && now"
+    "now": "sapper build --legacy && now"
   },
   "license": "MIT",
   "dependencies": {
+    "auth0-js": "^9.10.4",
     "compression": "^1.7.1",
     "dotenv": "^8.0.0",
     "express": "^4.17.1",
@@ -35,8 +32,7 @@
     "@babel/runtime": "^7.0.0",
     "auth0-lock": "^11.16.2",
     "chokidar": "^3.0.0",
-    "cross-env": "^5.2.0",
-    "dotenv-webpack": "^1.7.0",
+    "copyfiles": "^2.1.0",
     "npm-run-all": "^4.1.5",
     "postcss": "^7.0.16",
     "postcss-css-variables": "^0.12.0",
@@ -61,10 +57,8 @@
     "rollup-plugin-terser": "^4.0.4",
     "sapper": "^0.27.4",
     "svelte": "^3.0.0",
-    "svelte-loader": "^2.13.4",
     "svelte-preprocess": "^2.11.0",
-    "svelte-preprocess-postcss": "^1.0.0",
-    "webpack": "^4.7.0"
+    "svelte-preprocess-postcss": "^1.0.0"
   },
   "browserslist": "last 2 versions"
 }

@@ -32,7 +32,9 @@ const mainFields = ['svelte', 'module', 'browser', 'main'];
 
 const envPlugin = dev ?
 	new Dotenv({}) :
-	new webpack.EnvironmentPlugin(['AUTH0_DOMAIN', 'AUTH0_CLIENT_ID, AUTH0_CALLBACK_URL, API_AUDIENCE']);
+	new Dotenv({
+		path: './production.env'
+	});
 
 module.exports = {
 	client: {

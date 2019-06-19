@@ -12,7 +12,8 @@
         }
     ],
     "routes": [
-        { "src": "/(.*\\.(css|png))", "dest": "/static/$1" },
+        { "src": "/(.*\\.(png))", "dest": "/static/$1" },
+        { "src": "/(global\\.css)", "dest": "/static/$1" },
         { "src": "/manifest\\.json", "dest": "static/manifest.json" },
         { "src": "/(.*)", "dest": "__sapper__/build/index.js" }
         
