@@ -8,11 +8,17 @@ let onClick = (e) => {
 
 onMount(async () => {
 	const { default: getAuth } = await import(`../utils/auth`);
-	secondary = (e) => {
-		getAuth().then((auth) => {
-			auth.lock.show();
-		});
-	}
+	getAuth().then((auth) => {
+		if (auth.isAuthenticated()) {
+			secondary = (e) => {
+				auth.logout();
+			}
+		} else {
+			secondary = (e) => {
+				auth.lock.show();
+			}
+		}
+	});
 });
 </script>
 

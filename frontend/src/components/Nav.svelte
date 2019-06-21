@@ -1,6 +1,24 @@
 <script>
+	import { onMount } from 'svelte';
 	import Login from './Login.svelte';
 	export let segment;
+	let isLoggedIn;
+	let buttonName = "Wait...";
+	let unselectedClass;
+	onMount(async () => {
+		const { default: getAuth } = await import(`../utils/auth`);
+		getAuth().then((auth) => {
+			if (auth.isAuthenticated()) {
+				isLoggedIn = true;
+				unselectedClass = '';
+				buttonName = 'Log Out';
+			} else {
+				isLoggedIn = false;
+				unselectedClass = 'disabled';
+				buttonName = 'Log In';
+			}
+		})
+	});
 </script>
 
 <style>
@@ -42,6 +60,12 @@
 		bottom: -1px;
 	}
 
+	.disabled {
+		pointer-events: none;
+		color: gray;
+		cursor: default;
+	}
+
 	a {
 		text-decoration: none;
 		padding: 1em 0.5em;
@@ -51,15 +75,12 @@
 
 <nav>
 	<ul>
-		<li><a class='{segment === undefined ? "selected" : ""}' href='.'>home</a></li>
-		<li><a class='{segment === "about" ? "selected" : ""}' href='about'>about</a></li>
-
-		<!-- for the blog link, we're using rel=prefetch so that Sapper prefetches
-		     the blog data when we hover over the link or tap it on a touchscreen -->
-		<li><a rel=prefetch class='{segment === "blog" ? "selected" : ""}' href='blog'>blog</a></li>
+		<li><a class='{segment === undefined ? "selected" : ""}' href='.'>Start</a></li>
+		<li><a class='{segment === "monitor" ? "selected" : unselectedClass}' href='monitor'>Monitor</a></li>
+		<li><a class='{segment === "trade" ? "selected" : unselectedClass}' href='trade'>Trade</a></li>
 		<li>
 			<Login let:onclick={onclick}>
-				<button on:click={onclick}>Log In</button>
+				<button on:click={onclick}>{buttonName}</button>
 			</Login>
 		</li>
 	</ul>

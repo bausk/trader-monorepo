@@ -1,10 +1,11 @@
 // import { createBrowserHistory } from 'history';
 import { CLIENT_VARIABLES } from './env-vars';
 
+let auth;
+
 export default async () => {
   const { createBrowserHistory } = await import('history');
   // const { Auth0Lock } = await import('auth0-lock');
-
   class Auth {
     constructor() {
       this.lock = new Auth0Lock(CLIENT_VARIABLES.clientId, CLIENT_VARIABLES.domain, {
@@ -77,9 +78,6 @@ export default async () => {
       return new Date().getTime() < expiresAt;
     }
   }
-
-  let auth;
-
 
   if (!auth && !!window) {
     auth = new Auth();
