@@ -3,7 +3,7 @@ import { CLIENT_VARIABLES } from './env-vars';
 
 export default async () => {
   const { createBrowserHistory } = await import('history');
-  const { Auth0Lock } = await import('auth0-lock');
+  // const { Auth0Lock } = await import('auth0-lock');
 
   class Auth {
     constructor() {
