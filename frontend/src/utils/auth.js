@@ -79,7 +79,7 @@ export default async () => {
     }
   }
 
-  if (!auth && !!window) {
+  if (!auth && typeof window !== 'undefined') {
     auth = new Auth();
   }
   return auth;

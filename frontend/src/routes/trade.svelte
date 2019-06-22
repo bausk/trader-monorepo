@@ -1,17 +1,13 @@
-<script context="module">
-	export async function preload({ params, query }) {
+<script>
+	let data = {};
+	import { onMount } from 'svelte';
+	onMount(async () => {
 		const { default: getAuth } = await import(`../utils/auth`);
 		const auth = await getAuth();
 		const token = auth.getAccessToken();
 		const headers = { 'Authorization': `Bearer ${token}` };
-		return this.fetch(`trade.json`, { headers }).then(r => r.json()).then(data => {
-			return { data };
-		});
-	}
-</script>
-
-<script>
-	export let data;
+		data = await fetch(`trade.json`, { headers }).then(r => r.json());
+	});
 </script>
 
 <style>

@@ -17,7 +17,7 @@
     "test": "run-p --race dev cy:run",
     "deploy:copy": "cp package.json package-lock.json now.json __sapper__/build",
     "now": "cross-env NODE_ENV=production sapper build && npm run deploy:copy && now",
-    "now:r": "cross-env NODE_ENV=production sapper build:r && npm run deploy:copy && now"
+    "now:r": "cross-env NODE_ENV=production sapper build && npm run deploy:copy && now"
   },
   "license": "MIT",
   "dependencies": {

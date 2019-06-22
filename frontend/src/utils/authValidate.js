@@ -1,4 +1,3 @@
-// import Auth0Lock from 'auth0-lock';
 import auth0 from 'auth0-js';
 import jwt from 'jsonwebtoken';
 import { SERVER_VARIABLES } from './env-vars';
@@ -39,14 +38,24 @@ const getUnverifiedHeader = (token) => {
 }
 
 let jwks = {};
+let pem = "";
 https.get(`https://${SERVER_VARIABLES.domain}/.well-known/jwks.json`, resp => {
     let data = '';
     resp.on('data', (chunk) => {
         data += chunk;
       });
     resp.on('end', () => {
-        console.log(JSON.parse(data));
         jwks = JSON.parse(data);
+    })
+});
+
+https.get(`https://${SERVER_VARIABLES.domain}/pem`, resp => {
+    let data = '';
+    resp.on('data', (chunk) => {
+        data += chunk;
+      });
+    resp.on('end', () => {
+        pem = data;
     })
 });
 
@@ -71,16 +80,20 @@ export const verifyToken = (token, cb) => {
         }));
     }
     try {
-        const payload = jwt.verify(token, rsa_key, {
-            complete: true,
+        const data = jwt.verify(token, pem, {
             algorithms: ['RS256'],
             audience: SERVER_VARIABLES.audience,
             issuer: `https://${SERVER_VARIABLES.domain}/`
         });
-        debugger;
-        return cb(null, payload);
+        const payload = jwt.decode(
+            token,
+            pem,
+            {
+                complete: true
+            }
+            );
+        return cb(null, { payload });
     } catch(e) {
-        debugger;
         return cb(new Error({
             "code": "invalid_header",
             "description": "Unable to parse authentication token."
