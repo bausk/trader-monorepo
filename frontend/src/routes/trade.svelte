@@ -1,6 +1,10 @@
 <script context="module">
-	export function preload({ params, query }) {
-		return this.fetch(`trade.json`).then(r => r.json()).then(data => {
+	export async function preload({ params, query }) {
+		const { default: getAuth } = await import(`../utils/auth`);
+		const auth = await getAuth();
+		const token = auth.getAccessToken();
+		const headers = { 'Authorization': `Bearer ${token}` };
+		return this.fetch(`trade.json`, { headers }).then(r => r.json()).then(data => {
 			return { data };
 		});
 	}

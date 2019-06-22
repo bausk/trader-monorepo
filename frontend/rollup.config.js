@@ -34,7 +34,6 @@ const mode = process.env.NODE_ENV;
 const dev = mode === 'development';
 dotenv.config(dev ? {} : { path: 'production.env' });
 const legacy = !!process.env.SAPPER_LEGACY_BUILD;
-
 const onwarn = (warning, onwarn) => (warning.code === 'CIRCULAR_DEPENDENCY' && warning.message.includes('/@sapper/')) || onwarn(warning);
 
 export default {
@@ -91,7 +90,11 @@ export default {
 		plugins: [
 			replace({
 				'process.browser': false,
-				'process.env.NODE_ENV': JSON.stringify(mode)
+				'process.env.NODE_ENV': JSON.stringify(mode),
+				'process.env.AUTH0_DOMAIN': JSON.stringify(process.env.AUTH0_DOMAIN),
+				'process.env.AUTH0_CLIENT_ID': JSON.stringify(process.env.AUTH0_CLIENT_ID),
+				'process.env.AUTH0_CALLBACK_URL' : JSON.stringify(process.env.AUTH0_CALLBACK_URL),
+				'process.env.API_AUDIENCE': JSON.stringify(process.env.API_AUDIENCE)
 			}),
 			json(),
 			svelte({
