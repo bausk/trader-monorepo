@@ -1,0 +1,10 @@
+*
+!build
+!build/**
+!package.json
+!package-lock.json
+!now.json
+!dist
+!dist/**
+!public
+!public/**
