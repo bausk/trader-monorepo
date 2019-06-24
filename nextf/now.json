@@ -1,8 +1,0 @@
-{
-    "version": 2,
-    "name": "experimental-trader-frontend",
-    "builds": [
-        { "src": "next.config.js", "use": "@now/next" }
-    ],
-    "alias": "trader.bausk.dev"
-}

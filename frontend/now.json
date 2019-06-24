@@ -2,27 +2,7 @@
     "version": 2,
     "name": "experimental-trader-frontend",
     "builds": [
-        {
-            "src": "static/**",
-            "use": "@now/static"
-        },
-        {
-            "src": "__sapper__/build/index.js",
-            "use": "now-sapper"
-        }
+        { "src": "next.config.js", "use": "@now/next" }
     ],
-    "routes": [
-        { "src": "/(.*\\.(png))", "dest": "/static/$1" },
-        { "src": "/(global\\.css)", "dest": "/static/$1" },
-        { "src": "/manifest\\.json", "dest": "static/manifest.json" },
-        { "src": "/(.*)", "dest": "__sapper__/build/index.js" }
-        
-    ],
-    "alias": "trader.bausk.dev",
-    "env": {
-        "AUTH0_DOMAIN": "@auth0_domain",
-        "AUTH0_CLIENT_ID": "@auth0_client_id",
-        "API_AUDIENCE": "@api_audience",
-        "AUTH0_CALLBACK_URL": "@callback_url"
-      }
+    "alias": "trader.bausk.dev"
 }

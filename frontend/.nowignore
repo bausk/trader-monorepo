@@ -1,9 +1,4 @@
-*
-!__sapper__
-!__sapper__/build
-!__sapper__/build/**
-!package.json
-!package-lock.json
-!now.json
-!static
-!static/**
+node_modules
+node_modules/**
+.next
+.next/**
