@@ -1,0 +1,7 @@
+.next/
+.env
+*.env
+.DS_Store
+node_modules
+yarn-error.log
+*.pyc
