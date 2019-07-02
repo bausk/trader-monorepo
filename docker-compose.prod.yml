@@ -1,0 +1,8 @@
+version: '2'
+services:
+  python:
+    build:
+      dockerfile: ./backend/Dockerfile
+      args:
+        YOUR_ENV: development
+    restart: always

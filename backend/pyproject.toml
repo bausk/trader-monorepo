@@ -7,6 +7,9 @@ authors = ["Alex Bausk <bauskas@gmail.com>"]
 [tool.poetry.dependencies]
 python = "^3.6"
 numpy = "^1.16"
+flask = "^1.0"
+flask-cors = "^3.0"
+ptvsd = "^4.2"
 
 [tool.poetry.dev-dependencies]
 

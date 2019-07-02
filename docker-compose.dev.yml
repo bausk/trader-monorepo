@@ -1,0 +1,52 @@
+version: '2'
+services:
+  python:
+    build:
+      context: ./backend
+      args:
+        YOUR_ENV: "development"
+    image: registry.gitlab.com/mycompany/myproject/python:dev
+    volumes:
+      - ./backend/:/code
+    entrypoint: poetry run flask run --host=0.0.0.0
+    depends_on:
+      - postgres
+    links:
+      - postgres
+    environment:
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=myproject
+      - POSTGRES_HOST=postgres
+      - FLASK_APP=debug.py
+      - FLASK_ENV=development
+      - POETRY_VERSION=0.12.11
+      - FLASK_HOST=0.0.0.0
+    ports: 
+      - "3000:3000"
+      - "5000:5000"
+      - "5678:5678"
+
+  python-tests:
+    image: registry.gitlab.com/mycompany/myproject/python:dev
+    volumes:
+      - ./backend/:/code
+    entrypoint: poetry run watchmedo auto-restart --recursive --pattern="*.py" --directory="." pytest
+    depends_on:
+      - python
+
+  postgres:
+    image: postgres:9.6
+    environment:
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=myproject
+    ports:
+      - "5432:5432"
+    # volumes:
+    #   - /data/aedspy/postgres:/var/lib/postgresql/data
+
+  pgadminer:
+    image: clue/adminer
+    ports: 
+      - "99:80"
