@@ -16,4 +16,5 @@ RUN  poetry config settings.virtualenvs.create false \
 
 COPY . /code
 RUN chmod 644 ./api.py
+RUN chmod 644 ./debug.py
 ENTRYPOINT poetry run python ./api.py

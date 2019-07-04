@@ -1,14 +1,11 @@
 version: '2'
 services:
   python:
-    build:
-      context: ./backend
-      args:
-        YOUR_ENV: "development"
+    build: ./backend
     image: registry.gitlab.com/mycompany/myproject/python:dev
     volumes:
       - ./backend/:/code
-    entrypoint: poetry run flask run --host=0.0.0.0
+    entrypoint: poetry run python debug.py
     depends_on:
       - postgres
     links:
