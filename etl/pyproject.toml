@@ -10,6 +10,7 @@ sanic = "^19.6"
 
 [tool.poetry.dev-dependencies]
 ptvsd = "^4.2"
+pydevd-pycharm = "192.5587.24"
 
 [build-system]
 requires = ["poetry>=0.12"]
