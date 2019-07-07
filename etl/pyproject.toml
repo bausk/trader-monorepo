@@ -7,6 +7,8 @@ authors = ["Alex Bausk <bauskas@gmail.com>"]
 [tool.poetry.dependencies]
 python = "^3.6"
 sanic = "^19.6"
+python-dotenv = "^0.10.3"
+google-cloud-bigquery = "^1.16"
 
 [tool.poetry.dev-dependencies]
 ptvsd = "^4.2"
