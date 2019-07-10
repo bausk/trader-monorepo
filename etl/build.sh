@@ -1,1 +1,1 @@
-docker build -t trader-etl-service --build-arg env=development .
+docker build -t trader-etl-service --build-arg env=production .

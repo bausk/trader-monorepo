@@ -25,7 +25,7 @@ RUN chmod 644 ./debug.py
 
 CMD [ \
     "gunicorn", \
-    "--bind=0.0.0.0:$PORT", \
+    "--bind=0.0.0.0:5000", \
     "--worker-class=sanic.worker.GunicornWorker", \
     "--workers=1", \
     "--access-logfile=-", \
