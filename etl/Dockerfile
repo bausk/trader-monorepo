@@ -32,5 +32,3 @@ CMD [ \
     "--access-logfile=-", \
     "entrypoint:app" \
 ]
-# ENTRYPOINT ["poetry", "run", "python"]
-# CMD ["./entrypoint.py"]
