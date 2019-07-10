@@ -1,4 +1,4 @@
-ARG env=development
+ARG env=production
 FROM python:3.7-slim
 ENV ENV=$env \
   PYTHONFAULTHANDLER=1 \
@@ -9,7 +9,7 @@ ENV ENV=$env \
   PIP_DEFAULT_TIMEOUT=100 \
   POETRY_VERSION=0.12.11
 RUN pip install "poetry==$POETRY_VERSION"
-
+EXPOSE 8000
 WORKDIR /code
 COPY poetry.lock pyproject.toml /code/
 
@@ -23,5 +23,14 @@ RUN apt-get update \
 COPY . /code
 RUN chmod 644 ./entrypoint.py
 RUN chmod 644 ./debug.py
-ENTRYPOINT ["poetry", "run", "python"]
-CMD ["./entrypoint.py"]
+
+CMD [ \
+    "gunicorn", \
+    "--bind=0.0.0.0:8000", \
+    "--worker-class=sanic.worker.GunicornWorker", \
+    "--workers=1", \
+    "--access-logfile=-", \
+    "entrypoint:app" \
+]
+# ENTRYPOINT ["poetry", "run", "python"]
+# CMD ["./entrypoint.py"]

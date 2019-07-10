@@ -11,27 +11,39 @@ from tasks.datascraper import scrape_data
 app = Sanic()
 
 @app.route('/')
-async def test(request):
-    print('CONSOLE')
+async def root(request):
     return json({
-        'hello': 'world11',
-        'state': app.some_state
-        })
-
-
-@app.route('/bigquery')
-async def test(request):
-    print('CONSOLE')
-    return json({
-        'hello': 'bigquery',
+        'active': app.active,
+        'last_data': app.last_scraped,
         'state': app.results
         })
 
+
+@app.route('/start')
+async def start(request):
+    app.active = True
+    return json({
+        'active': app.active,
+        'last_data': app.last_scraped,
+        'state': 'working'
+        })
+
+@app.route('/stop')
+async def stop(request):
+    app.active = False
+    return json({
+        'active': app.active,
+        'last_data': app.last_scraped,
+        'state': 'stopped'
+        })
+
+
 @app.listener('before_server_start')
 async def setup(app, loop):    
-    app.processor_queue = Queue(loop=loop)
-    app.some_state = {}
+    app.commands_queue = Queue(loop=loop)
+    app.active = True
     app.results = ""
+    app.last_scraped = None
     app.add_task(scrape_data(app))
 
 

@@ -1,0 +1,3 @@
+
+BTC = "BTC"
+ETH = "ETH"
