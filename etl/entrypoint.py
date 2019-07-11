@@ -1,3 +1,4 @@
+#!/usr/bin/python
 from sanic import Sanic
 from sanic.response import json
 from asyncio import Queue

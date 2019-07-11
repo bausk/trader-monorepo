@@ -1,11 +1,3 @@
-# import multiprocessing
-# multiprocessing.set_start_method('spawn', True)
-# import socket
-
-# sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-# sock.close()
-
-
 from entrypoint import app
 # flag = 0
 if __name__ == '__main__':
