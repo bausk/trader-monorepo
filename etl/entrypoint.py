@@ -46,6 +46,7 @@ async def setup(app, loop):
     app.last_scraped = None
     app.add_task(scrape_data(app))
 
+app.debug = True
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
