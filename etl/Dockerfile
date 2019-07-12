@@ -20,13 +20,7 @@ RUN apt-get update \
   && apt-get purge -y --auto-remove gcc libc-dev
 
 COPY . /code
+EXPOSE 5000
 RUN chmod 644 ./entrypoint.py
 RUN chmod 644 ./debug.py
-CMD [ \
-    "gunicorn", \
-    "--bind=0.0.0.0:5000", \
-    "--worker-class=sanic.worker.GunicornWorker", \
-    "--workers=1", \
-    "--access-logfile=-", \
-    "entrypoint:app" \
-]
+CMD gunicorn --bind 0.0.0.0:5000 --worker-class sanic.worker.GunicornWorker --workers 1 --access-logfile - --capture-output entrypoint:app 

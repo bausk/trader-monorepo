@@ -1,16 +1,16 @@
 from asyncio import sleep
 from datetime import datetime
 from google.cloud import bigquery
-
 from tasks.collect import collect_data
 
-bigquery_client = bigquery.Client()
+# bigquery_client = bigquery.Client()
 
 async def scrape_data(app):
     counter = 0
+    print(f"app 1 id is {id(app)}")
     while True:
-
         await sleep(30)
+        print(f"app 2 id is {id(app)}")
         if app.active:
             dat = datetime.now()
             counter += 1
