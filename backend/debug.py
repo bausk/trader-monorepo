@@ -1,7 +1,9 @@
+from aiohttp import web
 import ptvsd
 ptvsd.enable_attach()
 
 from api import *
 
+
 if __name__ == '__main__':
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    web.run_app(app, host='0.0.0.0', port=5000)
