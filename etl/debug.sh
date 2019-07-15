@@ -1,1 +1,1 @@
-docker run -p 127.0.0.1:5000:5000/tcp -p 127.0.0.1:5678:5678/tcp -v /$(pwd):/code trader-etl gunicorn --reload --bind 0.0.0.0:5000 --worker-class aiohttp.GunicornWebWorker --workers 1 --access-logfile - --capture-output debug:app 
+docker run -p 127.0.0.1:5000:5000/tcp -p 127.0.0.1:5678:5678/tcp -v /$(pwd):/code trader-etl-dev gunicorn --reload --bind 0.0.0.0:5000 --worker-class aiohttp.GunicornWebWorker --timeout 3600 --workers 1 --access-logfile - --capture-output debug:app 

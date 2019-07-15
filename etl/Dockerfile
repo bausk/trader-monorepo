@@ -1,5 +1,5 @@
-ARG env=production
 FROM python:3.7-slim
+ARG env=production
 ENV ENV=$env \
   PYTHONFAULTHANDLER=1 \
   PYTHONUNBUFFERED=1 \
@@ -12,6 +12,7 @@ RUN pip install "poetry==$POETRY_VERSION"
 WORKDIR /code
 COPY poetry.lock pyproject.toml /code/
 
+RUN echo ${ENV}
 RUN apt-get update \
   && apt-get install -y --no-install-recommends gcc libc-dev \
   && rm -rf /var/lib/apt/lists/* \

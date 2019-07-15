@@ -1,0 +1,1 @@
+docker build -t trader-etl-dev --build-arg env=development .
