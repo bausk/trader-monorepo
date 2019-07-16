@@ -2,14 +2,17 @@ from asyncio import sleep
 from datetime import datetime
 from google.cloud import bigquery
 from tasks.collect import collect_data
+from stores.bigquery import BigQueryStore
+from stores.bigquery.schemas import KUNAIO_SNAPSHOT_SCHEMA
 
 # bigquery_client = bigquery.Client()
 
 async def scrape_data(app):
     counter = 0
     print(f"app 1 id is {id(app)}")
+    store = BigQueryStore('kunaBTCUAH', KUNAIO_SNAPSHOT_SCHEMA)
     while True:
-        await sleep(30)
+        await sleep(13)
         print(f"app 2 id is {id(app)}")
         if app.active:
             dat = datetime.now()
@@ -29,3 +32,5 @@ async def scrape_data(app):
             # results = query_job.result()  # Waits for job to complete.
             app.last_scraped = dat.strftime("%d-%m-%Y %H:%M:%S")
             app.results = collect_data()
+            store.write(app.results)
+
