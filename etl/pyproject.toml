@@ -5,7 +5,7 @@ description = "Permanently running ETL service for experimental trader project"
 authors = ["Alex Bausk <bauskas@gmail.com>"]
 
 [tool.poetry.dependencies]
-python = "^3.6"
+python = "^3.7"
 python-dotenv = "^0.10.3"
 google-cloud-bigquery = "^1.16"
 requests = "^2.22"
