@@ -1,22 +1,25 @@
 import asyncio
+from time import sleep
 from google.cloud import bigquery
 from google.cloud import client
+from google.api_core.exceptions import Conflict
 
 
-async def create_table(client, table_name, schema):
-    if schema is None:
-        schema = [
-            bigquery.SchemaField("full_name", "STRING", mode="REQUIRED"),
-            bigquery.SchemaField("age", "INTEGER", mode="REQUIRED"),
-        ]
-    table = bigquery.Table(table_name, schema=schema)
+async def create_table(client: bigquery.Client, table_name_tuple, schema):
+    table = bigquery.Table('.'.join(table_name_tuple), schema=schema)
     result = None
+    loop = asyncio.get_event_loop()
     try:
-        result = await asyncio.get_event_loop().run_in_executor(None, client.create_table, table)
+        await loop.run_in_executor(None, client.create_dataset, table_name_tuple[1])
     except BaseException as e:
-        print("an exception occurred")
-        print(e)
-    print(
-        "Created table {}.{}.{}".format(table.project, table.dataset_id, table.table_id)
-    )
-    return result
+        if type(e) is not Conflict:
+            raise
+    try:
+        result = await loop.run_in_executor(None, client.create_table, table)
+        print(
+            "Created table {}.{}.{}".format(table.project, table.dataset_id, table.table_id)
+        )
+    except BaseException as e:
+        if type(e) is not Conflict:
+            raise
+    return table

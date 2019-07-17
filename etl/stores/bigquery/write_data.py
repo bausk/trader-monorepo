@@ -1,3 +1,4 @@
 
-def write_data(client, data):
+def write_data(client, table, data):
+    
     pass

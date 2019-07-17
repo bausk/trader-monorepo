@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 from pathlib import Path
 env_path = Path('.') / '.env'
 load_dotenv(dotenv_path=env_path)
-from tasks.datascraper import scrape_data
+from tasks.datascraper import scrape_data, scrape_data_process
 
 
 app = web.Application(debug=(__name__ != '__main__'))
@@ -36,16 +36,23 @@ async def stop(request):
         'state': 'stopped'
         })
 
+async def once(request):
+    await scrape_data(app)
+    return web.json_response({
+        'active': app.active,
+        'last_data': app.last_scraped
+        })
 
 async def setup(app):
     app.commands_queue = Queue()
-    app.active = True
+    app.active = False
     app.results = ""
     app.last_scraped = None
     create_task(scrape_data(app))
 
 app.add_routes([web.get('/', root),
                 web.get('/start', start),
+                web.get('/once', once),
                 web.get('/stop', stop)])
 app.on_startup.append(setup)
 

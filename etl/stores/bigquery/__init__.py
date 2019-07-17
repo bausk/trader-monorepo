@@ -1,7 +1,8 @@
 from google.cloud import bigquery
+from secrets_management import get_environment
+
 from .table_operations import create_table
 from .write_data import write_data
-from secrets_management import get_environment
 
 
 class BigQueryStore():
@@ -13,11 +14,11 @@ class BigQueryStore():
 
     def get_table_name(self):
         env = get_environment()
-        return f"{self.client.project}.{env}.{self.name}"
+        return (self.client.project, env, self.name)
     
     async def write(self, data):
         if not self.is_table_created:
-            await create_table(self.client, self.get_table_name(), self.table_schema)
+            self.table = await create_table(self.client, self.get_table_name(), self.table_schema)
             self.is_table_created = True
-        write_data(self.client, data)
+        write_data(self.client, self.table, data)
         return True
