@@ -31,5 +31,5 @@ async def append_to_table(client: bigquery.Client, table, data):
 
 
 async def append_rows_to_table(client: bigquery.Client, table, data):
-    async for record in data:
-        await append_to_table(client, table, record)
+    loop = asyncio.get_event_loop()
+    return await loop.run_in_executor(None, client.insert_rows, table, data)

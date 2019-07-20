@@ -1,7 +1,7 @@
 from google.cloud import bigquery
 from secrets_management import get_environment
 
-from .table_operations import create_table, append_to_table
+from .table_operations import create_table, append_to_table, append_rows_to_table
 
 
 class BigQueryStore():
@@ -23,5 +23,5 @@ class BigQueryStore():
             self.is_table_created = True
         adapted_data = data if self._adapter is None else self._adapter(data)
         if self._write_many:
-            return await append_to_table(self.client, self.table, adapted_data)
+            return await append_rows_to_table(self.client, self.table, adapted_data)
         return await append_to_table(self.client, self.table, adapted_data)

@@ -1,4 +1,4 @@
-from formats.time import get_utcnow_sql_timestamp, get_unixtime_sql_timestamp
+from formats.time import get_utcnow_sql_timestamp, get_unixtime_sql_timestamp, get_stringtime_sql_timestamp
 
 
 def adapt_trades_to_bigquery(trades):
@@ -22,7 +22,7 @@ def adapt_orderbook_to_bigquery(orderbook):
         None,
         [(
             x['id'],
-            get_unixtime_sql_timestamp(x['created_at']),
+            get_stringtime_sql_timestamp(x['created_at']),
             x["avg_price"],
             x["executed_volume"],
             x["market"],
@@ -37,7 +37,7 @@ def adapt_orderbook_to_bigquery(orderbook):
          ],
         [(
             x['id'],
-            get_unixtime_sql_timestamp(x['created_at']),
+            get_stringtime_sql_timestamp(x['created_at']),
             x["avg_price"],
             x["executed_volume"],
             x["market"],
