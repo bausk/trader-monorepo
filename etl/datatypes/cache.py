@@ -11,7 +11,7 @@ class ForwardOnceCache():
     def get_hash(self, datapoint):
         return datapoint[self.sort_field]
 
-    def work(self, data):
+    def put(self, data):
         """
         Accepts rows of time-sortable data
         """
