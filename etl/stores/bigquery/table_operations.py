@@ -26,10 +26,14 @@ async def create_table(client: bigquery.Client, table_name_tuple, schema):
 
 
 async def append_to_table(client: bigquery.Client, table, data):
+    if not data:
+        return
     loop = asyncio.get_event_loop()
     return await loop.run_in_executor(None, client.insert_rows, table, [data])
 
 
 async def append_rows_to_table(client: bigquery.Client, table, data):
+    if not data or len(data) == 0:
+        return
     loop = asyncio.get_event_loop()
     return await loop.run_in_executor(None, client.insert_rows, table, data)
