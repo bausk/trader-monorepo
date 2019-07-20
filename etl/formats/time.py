@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from dateutil import parser
 
 
@@ -14,4 +14,4 @@ def get_unixtime_sql_timestamp(unix_timestamp):
 
 def get_stringtime_sql_timestamp(unix_timestamp):
     now = parser.parse(unix_timestamp)
-    return now.strftime(sql_timestamp_format)
+    return now.astimezone(timezone.utc).strftime(sql_timestamp_format)
