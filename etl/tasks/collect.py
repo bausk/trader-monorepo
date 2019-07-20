@@ -10,9 +10,13 @@ from datetime import timedelta
 cryptowatch_rates = CryptowatchSource(currency=currencies.BTC)
 kuna_rates = KunaIoSource(currency=currencies.BTC)
 
+def collect_cryptowatch_trades():
+    return cryptowatch_rates.fetch_latest_trades(limit=100)
 
-def collect_data():
-    rates1 = cryptowatch_rates.fetch_latest_trades(limit=100)
-    rates2 = kuna_rates.fetch_latest_trades()
-    order_book = kuna_rates.fetch_order_book()
-    return [rates1, rates2, order_book]
+
+def collect_kunaio_trades():
+    return kuna_rates.fetch_latest_trades()
+
+
+def collect_kunaio_orderbook():
+    return kuna_rates.fetch_order_book()

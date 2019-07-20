@@ -23,3 +23,7 @@ async def create_table(client: bigquery.Client, table_name_tuple, schema):
         if type(e) is not Conflict:
             raise
     return table
+
+async def append_to_table(client: bigquery.Client, table, data):
+    loop = asyncio.get_event_loop()
+    return await loop.run_in_executor(None, client.insert_rows, table, [data])

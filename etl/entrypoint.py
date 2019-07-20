@@ -14,8 +14,7 @@ app = web.Application(debug=(__name__ != '__main__'))
 async def root(request):
     return web.json_response({
         'active': app.active,
-        'last_data': app.last_scraped,
-        'state': app.results
+        'last_data': app.last_scraped
         })
 
 
@@ -48,7 +47,7 @@ async def setup(app):
     app.active = False
     app.results = ""
     app.last_scraped = None
-    create_task(scrape_data(app))
+    create_task(scrape_data_process(app))
 
 app.add_routes([web.get('/', root),
                 web.get('/start', start),

@@ -4,3 +4,4 @@
 .secrets/
 *.pyc
 *.env
+.ropeproject/

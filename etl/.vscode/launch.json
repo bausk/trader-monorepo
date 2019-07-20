@@ -12,6 +12,13 @@
             "console": "integratedTerminal"
         },
         {
+            "name": "Python entrypoint",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/entrypoint.py",
+            "console": "integratedTerminal"
+        },        
+        {
             "name": "Python: debug etl",
             "type": "python",
             "request": "attach",

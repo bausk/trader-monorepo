@@ -4,5 +4,6 @@
     "python.linting.pylintEnabled": true,
     "python.linting.mypyEnabled": false,
     "python.linting.prospectorEnabled": false,
-    "python.linting.enabled": true
+    "python.linting.enabled": true,
+    "python.formatting.provider": "autopep8"
 }
