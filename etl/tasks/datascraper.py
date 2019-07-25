@@ -27,19 +27,23 @@ kunaio_cache = ForwardOnceCache('timestamp')
 async def scrape_data(app):
     dat = datetime.now()
     app.last_scraped = dat.strftime("%d-%m-%Y %H:%M:%S")
+    try:
+        cryptowatch_trades = collect_cryptowatch_trades()
+        cryptowatch_ticks = cryptowatch_cache.put(cryptowatch_trades)
+        kunaio_trades = collect_kunaio_trades()
+        kunaio_ticks = kunaio_cache.put(kunaio_trades)
+        kunaio_orderbook = collect_kunaio_orderbook()
+        promises = []
+        promises.append(cryptowatch_trades_store.write(cryptowatch_trades))
+        promises.append(cryptowatch_ticks_store.write(cryptowatch_ticks))
+        promises.append(kunaio_trades_store.write(kunaio_trades))
+        promises.append(kunaio_ticks_store.write(kunaio_ticks))
+        promises.append(kunaio_orderbook_store.write(kunaio_orderbook))
+        await gather(*promises)
+    except Exception as e:
+        print('Error at data fetch!')
+        print(e)
 
-    cryptowatch_trades = collect_cryptowatch_trades()
-    cryptowatch_ticks = cryptowatch_cache.put(cryptowatch_trades)
-    kunaio_trades = collect_kunaio_trades()
-    kunaio_ticks = kunaio_cache.put(kunaio_trades)
-    kunaio_orderbook = collect_kunaio_orderbook()
-    promises = []
-    promises.append(cryptowatch_trades_store.write(cryptowatch_trades))
-    promises.append(cryptowatch_ticks_store.write(cryptowatch_ticks))
-    promises.append(kunaio_trades_store.write(kunaio_trades))
-    promises.append(kunaio_ticks_store.write(kunaio_ticks))
-    promises.append(kunaio_orderbook_store.write(kunaio_orderbook))
-    await gather(*promises)
 
 
 async def scrape_data_process(app):

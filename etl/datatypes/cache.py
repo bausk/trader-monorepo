@@ -44,6 +44,6 @@ class ForwardOnceCache():
                 earliest_data = next(sorted_data_iterator)
                 earliest_timestamp = self.get_hash(earliest_data)
         except StopIteration:
-            print('finished on StopIteration')
+            pass
         self.buffer = new_buffer
         return new_data

@@ -74,7 +74,7 @@ class CryptowatchSource(CurrencySource):
     def _postprocess(self, response, **kwargs):
         try:
             res = response.get('result', [])
-            print(int(response.get('allowance', dict(remaining=0))['remaining']/1000))
+            # print(int(response.get('allowance', dict(remaining=0))['remaining']/1000))
             res = [dict(timestamp=x[1], price=x[2], volume=x[3]) for x in res]
         except BaseException as e:
             res = []
