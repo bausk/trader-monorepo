@@ -1,0 +1,1 @@
+docker build -t trader-backend-dev --build-arg env=development .

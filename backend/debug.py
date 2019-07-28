@@ -2,7 +2,7 @@ from aiohttp import web
 import ptvsd
 ptvsd.enable_attach()
 
-from api import *
+from entrypoint import *
 
 
 if __name__ == '__main__':
