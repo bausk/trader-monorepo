@@ -44,7 +44,7 @@ async def once(request):
 
 async def setup(app):
     app.commands_queue = Queue()
-    app.active = False
+    app.active = True
     app.results = ""
     app.last_scraped = None
     create_task(scrape_data_process(app))
