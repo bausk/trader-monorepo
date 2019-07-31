@@ -1,21 +1,22 @@
 #!/usr/bin/python
+from aiohttp_security.abc import AbstractAuthorizationPolicy
+from aiohttp_security import check_permission, \
+    is_anonymous, remember, forget, \
+    setup as setup_security, SessionIdentityPolicy
+from aiohttp_session import setup, get_session
+from aiohttp_session.cookie_storage import EncryptedCookieStorage
+from aiohttp_session import SimpleCookieStorage, session_middleware
+import aiohttp_cors
 import time
 import base64
 import os
 from cryptography import fernet
-from aiohttp import web
+from aiohttp import web, ClientSession
 from asyncio import Queue, create_task
 from dotenv import load_dotenv
 from pathlib import Path
 env_path = Path('.') / '.env'
 load_dotenv(dotenv_path=env_path)
-from aiohttp_session import SimpleCookieStorage, session_middleware
-from aiohttp_session.cookie_storage import EncryptedCookieStorage
-from aiohttp_session import setup, get_session
-from aiohttp_security import check_permission, \
-    is_anonymous, remember, forget, \
-    setup as setup_security, SessionIdentityPolicy
-from aiohttp_security.abc import AbstractAuthorizationPolicy
 
 
 # Demo authorization policy for only one user.
@@ -36,7 +37,7 @@ class SimpleJack_AuthorizationPolicy(AbstractAuthorizationPolicy):
         Return True if the identity is allowed the permission
         in the current context, else return False.
         """
-        return identity == get_identity() and permission in ('listen',)
+        return identity == get_identity() and permission in ('read', 'write')
 
 
 def get_identity(token=None):
@@ -44,10 +45,16 @@ def get_identity(token=None):
 
 
 async def check_identity(request):
-    data = await request.post()
-    token = data['token']
+    data = None
+    if request.content_type == 'application/json':
+        data = await request.json()
+    else:
+        data = await request.post()
+    token = data.get('token', None)
     real_token = os.environ.get('USER_ACCESS_TOKEN', None)
+    print(token)
     if token == real_token:
+        print('performing auth')
         return get_identity(token)
     else:
         return None
@@ -72,10 +79,16 @@ async def handler_root(request):
 
 async def handler_login(request):
     identity = await check_identity(request)
+    print(f'identity is {identity}')
     if identity is not None:
-        redirect_response = web.HTTPFound('/')
-        await remember(request, redirect_response, identity)
-        raise redirect_response
+        if request.content_type == 'application/json':
+            response = web.json_response({ 'token': identity })
+            await remember(request, response, identity)
+            return response
+        else:
+            redirect_response = web.HTTPFound('/')
+            await remember(request, redirect_response, identity)
+            raise redirect_response
     else:
         raise web.HTTPUnauthorized()
 
@@ -87,40 +100,59 @@ async def handler_logout(request):
 
 
 async def handler_listen(request):
-    await check_permission(request, 'listen')
+    await check_permission(request, 'read')
     return web.Response(body="I can listen!")
 
 
+async def handler_profile(request):
+    if await is_anonymous(request):
+        raise web.HTTPUnauthorized()
+    url = 'https://api.github.com/users/bausk'
+    async with ClientSession() as session:
+        async with session.get(url) as resp:
+            print(resp.status)
+            data = await resp.json()
+            return web.json_response(data)
+
+
 async def handler_speak(request):
-    await check_permission(request, 'speak')
+    await check_permission(request, 'write')
     return web.Response(body="I can speak!")
 
 
 def make_app():
-    #
-    # WARNING!!!
-    # Never use SimpleCookieStorage on production!!!
-    # It’s highly insecure!!!
-    #
-
-    # make app
     app = web.Application()
     fernet_key = fernet.Fernet.generate_key()
     secret_key = base64.urlsafe_b64decode(fernet_key)
     setup(app, EncryptedCookieStorage(secret_key))
+    client_url = os.environ.get('CLIENT_URL', None)
+    cors = aiohttp_cors.setup(app, defaults={
+        "*": aiohttp_cors.ResourceOptions(
+            allow_credentials=True,
+            expose_headers="*",
+            allow_headers="*",
+        )
+    })
+
+    login = app.router.add_resource("/login")
+    cors.add(login.add_route("POST", handler_login))
+    root = app.router.add_resource("/")
+    cors.add(root.add_route("GET", handler_root))
+    cors.add(root.add_route("POST", handler_root))
+    listen = app.router.add_resource("/listen")
+    cors.add(listen.add_route("GET", handler_listen))
 
     # add the routes
     app.add_routes([
-        web.get('/', handler_root),
-        web.post('/login', handler_login),
         web.get('/logout', handler_logout),
-        web.get('/listen', handler_listen),
+        web.get('/profile', handler_profile),
         web.get('/speak', handler_speak)])
 
     # set up policies
     policy = SessionIdentityPolicy()
     setup_security(app, policy, SimpleJack_AuthorizationPolicy())
     return app
+
 
 app = make_app()
 
