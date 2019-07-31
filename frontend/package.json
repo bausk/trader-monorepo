@@ -14,8 +14,15 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@zeit/next-sass": "^1.0.1",
+    "bulma": "^0.7.5",
     "compression": "^1.7.3",
-    "express": "^4.16.4"
+    "express": "^4.16.4",
+    "isomorphic-unfetch": "^3.0.0",
+    "js-cookie": "^2.2.0",
+    "next-cookies": "^1.1.2",
+    "node-sass": "^4.12.0",
+    "nookies": "^2.0.8"
   },
   "devDependencies": {
     "@date-io/moment": "^1.1.0",

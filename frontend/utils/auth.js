@@ -1,85 +1,92 @@
-import { AUTH_CONFIG } from './auth0-variables';
-import createHistory from 'history/createBrowserHistory'
-import Auth0Lock from 'auth0-lock';
+import React from 'react';
+import Router from 'next/router';
+import nextCookie from 'next-cookies';
+import cookie from 'js-cookie';
+import { LOGIN_USER, FORGET_USER } from '../components/Login/Login.actions';
 
-class Auth {
-  constructor() {
-    this.lock = new Auth0Lock(AUTH_CONFIG.clientId, AUTH_CONFIG.domain, {
-      autoclose: true,
-      allowSignUp: false,
-      auth: {
-        redirectUrl: AUTH_CONFIG.callbackUrl,
-        responseType: 'token id_token',
-        audience: AUTH_CONFIG.audience,
-        params: {
-          scope: 'openid profile email'
-        }
+function login({ token }) {
+  cookie.set('token', token, { expires: 1 });
+  Router.push('/');
+}
+
+function logout() {
+  cookie.remove('token');
+  // to support logging out from all windows
+  window.localStorage.setItem('logout', Date.now());
+  Router.push('/login');
+}
+
+// Gets the display name of a JSX component for dev tools
+const getDisplayName = Component =>
+  Component.displayName || Component.name || 'Component';
+
+function withAuthSync(WrappedComponent) {
+  return class extends React.Component {
+    static displayName = `withAuthSync(${getDisplayName(WrappedComponent)})`;
+
+    static async getInitialProps(ctx) {
+      const store = ctx.reduxStore;
+      const token = auth(ctx);
+      const isLoggedIn = !!token;
+      if (isLoggedIn) {
+        store.dispatch(LOGIN_USER.action(token));
+      } else {
+        store.dispatch(FORGET_USER.action());
       }
-    });
-    this.handleAuthentication();
-    // binds functions to keep this context
-    this.login = this.login.bind(this);
-    this.logout = this.logout.bind(this);
-    this.isAuthenticated = this.isAuthenticated.bind(this);
-    this.history = createHistory({
-      forceRefresh: true
-    });
-  }
+      const componentProps =
+        WrappedComponent.getInitialProps &&
+        (await WrappedComponent.getInitialProps(ctx));
 
-  login() {
-    // Call the show method to display the widget.
-    this.lock.show({language: 'ru'});
-  }
-
-  getAccessToken = () => {
-    return localStorage.getItem('access_token');
-  };
-
-  handleAuthentication() {
-    // Add a callback for Lock's `authenticated` event
-    this.lock.on('authenticated', this.setSession.bind(this));
-    // Add a callback for Lock's `authorization_error` event
-    this.lock.on('authorization_error', (err) => {
-      console.log(err);
-      alert(`Error: ${err.error}. Check the console for further details.`);
-      this.history.replace('/');
-    });
-  }
-
-  setSession(authResult) {
-    if (authResult && authResult.accessToken && authResult.idToken) {
-      // Set the time that the access token will expire at
-      let expiresAt = JSON.stringify((authResult.expiresIn * 1000) + new Date().getTime());
-      localStorage.setItem('access_token', authResult.accessToken);
-      localStorage.setItem('id_token', authResult.idToken);
-      localStorage.setItem('expires_at', expiresAt);
-      // navigate to the home route
-      this.history.replace('/');
+      return { ...componentProps, token, isLoggedIn };
     }
-  }
 
-  logout() {
-    // Clear access token and ID token from local storage
-    localStorage.removeItem('access_token');
-    localStorage.removeItem('id_token');
-    localStorage.removeItem('expires_at');
-    // navigate to the home route
-    this.history.replace('/');
-  }
+    constructor(props) {
+      super(props)
+      this.syncLogout = this.syncLogout.bind(this)
+    }
 
-  isAuthenticated() {
-    // Check whether the current time is past the 
-    // access token's expiry time
-    let expiresAt = JSON.parse(localStorage.getItem('expires_at'));
-    return new Date().getTime() < expiresAt;
+    componentDidMount() {
+      window.addEventListener('storage', this.syncLogout)
+    }
+
+    componentWillUnmount() {
+      window.removeEventListener('storage', this.syncLogout)
+      window.localStorage.removeItem('logout')
+    }
+
+    syncLogout(event) {
+      if (event.key === 'logout') {
+        console.log('logged out from storage!');
+        Router.push('/login');
+      }
+    }
+
+    render() {
+      return <WrappedComponent {...this.props} />;
+    }
   }
 }
 
-let auth;
+function auth(ctx) {
+  const { token } = nextCookie(ctx);
 
-export default () => {
-  if (!auth) {
-    auth = new Auth();
+  /*
+   * If `ctx.req` is available it means we are on the server.
+   * Additionally if there's no token it means the user is not logged in.
+   */
+  if (ctx.req && !token) {
+    if (ctx.req.url !== '/login') {
+      ctx.res.writeHead(302, { Location: '/login' });
+    }
+    ctx.res.end();
   }
-  return auth;
-};
+
+  // We already checked for server. This should only happen on client.
+  if (!token) {
+    Router.push('/login');
+  }
+
+  return token;
+}
+
+export { login, logout, withAuthSync, auth }
