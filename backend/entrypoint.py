@@ -3,18 +3,16 @@ from aiohttp_security.abc import AbstractAuthorizationPolicy
 from aiohttp_security import check_permission, \
     is_anonymous, remember, forget, \
     setup as setup_security, SessionIdentityPolicy
-from aiohttp_session import setup, get_session
+from aiohttp_session import setup
 from aiohttp_session.cookie_storage import EncryptedCookieStorage
-from aiohttp_session import SimpleCookieStorage, session_middleware
 import aiohttp_cors
-import time
 import base64
 import os
 from cryptography import fernet
 from aiohttp import web, ClientSession
-from asyncio import Queue, create_task
 from dotenv import load_dotenv
 from pathlib import Path
+
 env_path = Path('.') / '.env'
 load_dotenv(dotenv_path=env_path)
 
@@ -82,7 +80,7 @@ async def handler_login(request):
     print(f'identity is {identity}')
     if identity is not None:
         if request.content_type == 'application/json':
-            response = web.json_response({ 'token': identity })
+            response = web.json_response({'token': identity})
             await remember(request, response, identity)
             return response
         else:

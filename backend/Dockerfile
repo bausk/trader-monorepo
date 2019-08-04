@@ -11,6 +11,7 @@ ENV ENV=$env \
 RUN pip install "poetry==$POETRY_VERSION"
 WORKDIR /code
 COPY poetry.lock pyproject.toml /code/
+COPY ./traderutils /code/traderutils
 
 RUN echo ${ENV}
 RUN apt-get update \
