@@ -10,6 +10,8 @@ from dotenv import load_dotenv
 from pathlib import Path
 from auth.apiAuth import SimpleAuthorizationPolicy
 from handlers import handler_root, handler_login, handler_logout, handler_listen, handler_profile
+from handlers.api import Api
+from models.terminal import ArbitrageTerminal
 
 env_path = Path('.') / '.env'
 load_dotenv(dotenv_path=env_path)
@@ -38,6 +40,9 @@ def make_app():
         web.get('/logout', handler_logout),
         web.get('/profile', handler_profile)])
 
+    terminal = ArbitrageTerminal()
+    terminal_api = Api(terminal)
+    terminal_api.bind(app)
     # set up policies
     policy = SessionIdentityPolicy()
     setup_security(app, policy, SimpleAuthorizationPolicy())

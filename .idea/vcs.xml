@@ -3,6 +3,7 @@
   <component name="VcsDirectoryMappings">
     <mapping directory="$PROJECT_DIR$" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/backend/.venv/src/traderutils" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/backend/traderutils" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/traderutils" vcs="Git" />
   </component>
 </project>
