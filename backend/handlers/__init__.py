@@ -14,6 +14,13 @@ async def handler_root(request):
             </form>
             
             <a href="/logout">Log me out</a><br /><br />
+            
+            Send status POST<br /><br />
+            <form action="/status" method="post">
+            <input type="text" id="data1" name="data1" type="text" value="" autofocus /><br />
+            <input type="submit" />
+            </form>
+            
             Check my permissions,
             when i'm logged in and logged out.<br />
             <a href="/listen">Can I listen?</a><br />
