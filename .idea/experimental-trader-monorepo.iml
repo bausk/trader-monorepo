@@ -4,7 +4,7 @@
     <content url="file://$MODULE_DIR$/backend" />
     <content url="file://$MODULE_DIR$/etl" />
     <content url="file://$MODULE_DIR$/frontend" />
-    <orderEntry type="jdk" jdkName="Python 3.7 ETL" jdkType="Python SDK" />
+    <orderEntry type="jdk" jdkName="Python 3.7 (experimental-trader-monorepo)" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
   </component>
   <component name="TestRunnerService">

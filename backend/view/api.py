@@ -8,7 +8,7 @@ from taskmanager import DataManager
 
 class TerminalApi:
     def __init__(self):
-        self._manager = None
+        self._manager: DataManager
 
     async def _check_permission(self, request):
         return await check_permission(request, 'read')
@@ -23,7 +23,7 @@ class TerminalApi:
         return web.json_response({'status': 'ok'})
 
     async def get_markets_data(self, request):
-        data = self.manager.
+        data = self._manager.get_data()
         return web.json_response(data)
 
     async def post_status(self, request):
