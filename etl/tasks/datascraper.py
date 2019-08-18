@@ -1,11 +1,10 @@
 from asyncio import sleep, gather
 from datetime import datetime
-from google.cloud import bigquery
 from tasks.collect import collect_cryptowatch_trades, collect_kunaio_orderbook, collect_kunaio_trades
-from stores.bigquery import BigQueryStore
-from stores.bigquery.adapters import adapt_orderbook_to_bigquery, adapt_ticks_to_bigquery, adapt_trades_to_bigquery
-from datatypes.cache import ForwardOnceCache
-from stores.bigquery.schemas import KUNAIO_SNAPSHOT_SCHEMA, CRYPTOWATCH_SNAPSHOT_SCHEMA, KUNAIO_ORDERBOOK_SCHEMA, \
+from traderutils.stores.bigquery import BigQueryStore
+from traderutils.stores.bigquery.adapters import adapt_orderbook_to_bigquery, adapt_ticks_to_bigquery, adapt_trades_to_bigquery
+from traderutils.datatypes.cache import ForwardOnceCache
+from traderutils.stores.bigquery.schemas import KUNAIO_SNAPSHOT_SCHEMA, CRYPTOWATCH_SNAPSHOT_SCHEMA, KUNAIO_ORDERBOOK_SCHEMA, \
     CRYPTOWATCH_TICKS_SCHEMA, KUNAIO_TICKS_SCHEMA
 
 

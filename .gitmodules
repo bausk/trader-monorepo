@@ -1,3 +1,6 @@
 [submodule "backend/traderutils"]
 	path = backend/traderutils
 	url = https://github.com/bausk/traderutils.git
+[submodule "etl/traderutils"]
+	path = etl/traderutils
+	url = https://github.com/bausk/traderutils.git

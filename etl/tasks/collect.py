@@ -1,7 +1,6 @@
-from constants import currencies
-from sources.historical import CryptowatchSource, KunaIoSource
-from constants import formats
-from datetime import timedelta
+from traderutils.constants import currencies
+from traderutils.sources.historical import CryptowatchSource, KunaIoSource
+
 
 # 1. Pick up where we left off, if any
 # source_store = TimeSeriesStore(name="bitfinex_btcusd", columns=formats.history_format, time_unit="s", time_field="timestamp", update_period=timedelta(seconds=30))
