@@ -15,6 +15,7 @@ aiohttp = "^3.5"
 cchardet = "^2.1"
 aiodns = "^2.0"
 traderutils = { path = "./traderutils" }
+cryptography = "^2.8"
 
 [tool.poetry.dev-dependencies]
 ptvsd = "^4.2"

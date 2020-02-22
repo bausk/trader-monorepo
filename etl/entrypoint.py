@@ -1,11 +1,14 @@
 #!/usr/bin/python
-from aiohttp import web
-from asyncio import Queue, create_task
 from dotenv import load_dotenv
 from pathlib import Path
 env_path = Path('.') / '.env'
 load_dotenv(dotenv_path=env_path)
+
 from tasks.datascraper import scrape_data, scrape_data_process
+from secrets_management import get_environment
+from aiohttp import web
+from asyncio import Queue, create_task
+
 
 
 app = web.Application(debug=(__name__ != '__main__'))
@@ -35,6 +38,7 @@ async def stop(request):
         'state': 'stopped'
         })
 
+
 async def once(request):
     await scrape_data(app)
     return web.json_response({
@@ -42,12 +46,17 @@ async def once(request):
         'last_data': app.last_scraped
         })
 
+
 async def setup(app):
     app.commands_queue = Queue()
-    app.active = True
+    if get_environment() == 'production':
+        app.active = True
+    else:
+        app.active = False
     app.results = ""
     app.last_scraped = None
     create_task(scrape_data_process(app))
+
 
 app.add_routes([web.get('/', root),
                 web.get('/start', start),
