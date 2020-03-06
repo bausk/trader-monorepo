@@ -1,0 +1,35 @@
+version: '3'
+services:
+  trader:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        env: ${ENV}
+        POETRY_VERSION: ${POETRY_VERSION}
+    volumes:
+      - .:/code
+    entrypoint: bash -c "scripts/migrate.sh && echo ${ENV} ${POETRY_VERSION} && tail -f /dev/null"
+    environment:
+      - ENV=${ENV}
+      - POETRY_VERSION=${POETRY_VERSION}
+      - DB_URL=postgres://postgres:postgres@postgres/postgres
+    ports: 
+      - "5000:5000"
+      - "5678:5678"
+    depends_on:
+      - postgres
+    restart: on-failure
+  postgres:
+      image: postgres:12
+      environment:
+          - POSTGRES_USER=postgres
+          - POSTGRES_PASSWORD=postgres
+          - POSTGRES_DB=postgres
+      ports:
+          - 5432:5432
+      healthcheck:
+        test: ["CMD", "curl", "-f", "http://localhost:5432"]
+        interval: 30s
+        timeout: 10s
+        retries: 5

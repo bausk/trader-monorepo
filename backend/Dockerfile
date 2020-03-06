@@ -1,5 +1,6 @@
 FROM python:3.7-slim
 ARG env=production
+ARG POETRY_VERSION
 ENV ENV=$env \
   PYTHONFAULTHANDLER=1 \
   PYTHONUNBUFFERED=1 \
@@ -7,21 +8,23 @@ ENV ENV=$env \
   PIP_NO_CACHE_DIR=off \
   PIP_DISABLE_PIP_VERSION_CHECK=on \
   PIP_DEFAULT_TIMEOUT=100 \
-  POETRY_VERSION=0.12.11
+  POETRY_VERSION=$POETRY_VERSION
 RUN pip install "poetry==$POETRY_VERSION"
 WORKDIR /code
 COPY poetry.lock pyproject.toml /code/
 COPY ./traderutils /code/traderutils
 
-RUN echo ${ENV}
 RUN apt-get update \
   && apt-get install -y --no-install-recommends gcc libc-dev \
   && rm -rf /var/lib/apt/lists/* \
-  && poetry config settings.virtualenvs.create false \
+  && poetry config virtualenvs.create false \
   && poetry install $(test "$ENV" = "production" && echo "--no-dev") --no-interaction --no-ansi \
   && apt-get purge -y --auto-remove gcc libc-dev
 
 COPY . /code
 EXPOSE 5000
-RUN chmod 644 ./entrypoint.py
-CMD gunicorn --bind 0.0.0.0:5000 --worker-class aiohttp.GunicornWebWorker --workers 1 --access-logfile - --capture-output entrypoint:app 
+RUN chmod 644 ./*.py
+
+
+RUN echo $POETRY_VERSION && echo $env # at build
+CMD echo $POETRY_VERSION && echo $ENV # at runtime
