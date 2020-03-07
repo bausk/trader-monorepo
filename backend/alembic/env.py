@@ -1,4 +1,3 @@
-import os
 from logging.config import fileConfig
 
 from sqlalchemy import create_engine
@@ -18,17 +17,13 @@ fileConfig(config.config_file_name)
 # for 'autogenerate' support
 # from myapp import mymodel
 # target_metadata = mymodel.Base.metadata
-from dbmodels.db import db
+from dbmodels.db import db, get_url
 target_metadata = db
 # other values from the config, defined by the needs of env.py,
 # can be acquired:
 # my_important_option = config.get_main_option("my_important_option")
 # ... etc.
 
-def get_url():
-    url = os.environ.get('DB_URL')
-    assert url, "Database URL must be specified in DB_URL environment variable"
-    return url
 
 def run_migrations_offline():
     """Run migrations in 'offline' mode.

@@ -5,8 +5,6 @@ from pathlib import Path
 env_path = Path('.') / '.env'
 load_dotenv(dotenv_path=env_path)
 
-import ptvsd
-ptvsd.enable_attach()
 
 import asyncio
 from dbmodels.db import db, User, get_url
@@ -18,6 +16,7 @@ async def main():
     await init()
 
     # Create tables
+    print('Creating tables or something')
     await db.gino.create_all()
 
     # Create object, `id` is assigned by database
@@ -46,25 +45,9 @@ async def main():
             print(u.id, u.nickname)
 
 
-asyncio.get_event_loop().run_until_complete(init())
-routes = web.RouteTableDef()
 
-@routes.get('/')
-async def index(request):
-    users = []
-    async with db.transaction():
-        async for u in User.query.order_by(User.id).gino.iterate():
-            users.append((u.id, u.nickname))
-    return web.json_response({
-        'users': users
-        })
-
-app = web.Application(middlewares=[db])
-app.add_routes([web.get('/', index),
-    ])
-db.init_app(app, config={
-    'dsn': get_url()
-})
 
 if __name__ == '__main__':
-    web.run_app(app, host='0.0.0.0', port=5000)
+    print('Performing DB task')
+    asyncio.get_event_loop().run_until_complete(main())
+    print('Done!')

@@ -9,7 +9,8 @@ services:
         POETRY_VERSION: ${POETRY_VERSION}
     volumes:
       - .:/code
-    entrypoint: bash -c "scripts/migrate.sh && echo ${ENV} ${POETRY_VERSION} && tail -f /dev/null"
+    entrypoint: bash -c "scripts/migrate.sh && gunicorn --reload --bind 0.0.0.0:5000 --worker-class aiohttp.GunicornWebWorker --timeout 3600 --workers 1 --access-logfile - --capture-output test_migrations:app"
+    #entrypoint: bash -c "scripts/migrate.sh && python test_migrations.py"
     environment:
       - ENV=${ENV}
       - POETRY_VERSION=${POETRY_VERSION}
@@ -28,8 +29,3 @@ services:
           - POSTGRES_DB=postgres
       ports:
           - 5432:5432
-      healthcheck:
-        test: ["CMD", "curl", "-f", "http://localhost:5432"]
-        interval: 30s
-        timeout: 10s
-        retries: 5

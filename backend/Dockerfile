@@ -25,6 +25,4 @@ COPY . /code
 EXPOSE 5000
 RUN chmod 644 ./*.py
 
-
-RUN echo $POETRY_VERSION && echo $env # at build
-CMD echo $POETRY_VERSION && echo $ENV # at runtime
+CMD gunicorn --bind 0.0.0.0:5000 --worker-class aiohttp.GunicornWebWorker --workers 1 --access-logfile - --capture-output entrypoint:app 

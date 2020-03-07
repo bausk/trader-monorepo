@@ -1,7 +1,14 @@
-from gino import Gino
+from gino.ext.aiohttp import Gino
+import os
 
 
 db = Gino()
+
+
+def get_url():
+    url = os.environ.get('DB_URL')
+    assert url, "Database URL must be specified in DB_URL environment variable"
+    return url
 
 
 class User(db.Model):
