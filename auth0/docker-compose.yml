@@ -1,0 +1,13 @@
+version: '3'
+services:
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        env: ${ENV}
+    volumes:
+      - .:/app
+    ports:
+      - "3000:3000"
+    restart: on-failure
