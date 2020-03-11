@@ -1,0 +1,41 @@
+version: '3'
+services:
+  trader:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      args:
+        env: ${ENV}
+        POETRY_VERSION: ${POETRY_VERSION}
+    volumes:
+      - ./backend:/code
+    entrypoint: bash -c "scripts/migrate.sh && gunicorn --reload --bind 0.0.0.0:5000 --worker-class aiohttp.GunicornWebWorker --timeout 3600 --workers 1 --access-logfile - --capture-output test_migrations:app"
+    #entrypoint: bash -c "scripts/migrate.sh && python test_migrations.py"
+    environment:
+      - ENV=${ENV}
+      - POETRY_VERSION=${POETRY_VERSION}
+      - DB_URL=postgres://postgres:postgres@postgres/postgres
+    ports: 
+      - "5000:5000"
+      - "5678:5678"
+    depends_on:
+      - postgres
+    restart: on-failure
+  postgres:
+      image: postgres:12
+      environment:
+          - POSTGRES_USER=postgres
+          - POSTGRES_PASSWORD=postgres
+          - POSTGRES_DB=postgres
+      ports:
+          - 5432:5432
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        env: ${ENV}
+    volumes:
+      - ./nextjs-react-hooks-example:/code
+    ports: "5000:5000"
+    restart: on-failure

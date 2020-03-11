@@ -1,1 +1,1 @@
-PYTHONPATH=$PYTHONPATH:. alembic upgrade head
+PYTHONPATH=$PYTHONPATH:.. alembic upgrade head

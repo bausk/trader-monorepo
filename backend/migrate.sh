@@ -1,1 +1,1 @@
- docker-compose exec trader bash -c ./migrate.sh
+docker-compose run --rm console bash -c ./scripts/migrate.sh

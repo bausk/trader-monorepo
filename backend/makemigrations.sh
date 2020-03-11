@@ -1,1 +1,1 @@
-docker-compose exec trader bash -c "PYTHONPATH=. alembic revision -m '$@' --autogenerate"
+docker-compose run --rm console bash -c "PYTHONPATH=. alembic revision -m '$@' --autogenerate"
