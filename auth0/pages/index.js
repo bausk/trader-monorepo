@@ -7,7 +7,7 @@ function Home() {
   const { user, loading } = useFetchUser()
 
   return (
-    <Layout user={user} loading={loading}>
+    <>
       <h1>Next.js and Auth0 Example</h1>
 
       {loading && <p>Loading login info...</p>}
@@ -32,7 +32,7 @@ function Home() {
           <p>name: {user.name}</p>
         </>
       )}
-    </Layout>
+    </>
   )
 }
 

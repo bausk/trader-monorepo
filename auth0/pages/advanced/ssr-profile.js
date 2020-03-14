@@ -3,11 +3,10 @@ import React from 'react'
 // This import is only needed when checking authentication status directly from getInitialProps
 import auth0 from '../../lib/auth0'
 import { fetchUser } from '../../lib/user'
-import Layout from '../../components/layout'
 
 function Profile({ user }) {
   return (
-    <Layout user={user}>
+    <>
       <h1>Profile</h1>
 
       <div>
@@ -16,7 +15,7 @@ function Profile({ user }) {
         <p>nickname: {user.nickname}</p>
         <p>name: {user.name}</p>
       </div>
-    </Layout>
+    </>
   )
 }
 

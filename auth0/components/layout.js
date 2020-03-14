@@ -1,8 +1,10 @@
 import Container from '@material-ui/core/Container';
 import Head from 'next/head'
 import Header from './header'
+import { useFetchUser } from '../lib/user'
 
-function Layout({ user, loading = false, children }) {
+function Layout({ children }) {
+  const { user, loading } = useFetchUser()
   return (
     <>
       <Head>
