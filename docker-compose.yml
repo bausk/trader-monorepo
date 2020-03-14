@@ -22,20 +22,45 @@ services:
       - postgres
     restart: on-failure
   postgres:
-      image: postgres:12
-      environment:
-          - POSTGRES_USER=postgres
-          - POSTGRES_PASSWORD=postgres
-          - POSTGRES_DB=postgres
-      ports:
-          - 5432:5432
-  frontend:
+    image: postgres:12
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=postgres
+    ports:
+      - 5432:5432
+  oldend:
     build:
-      context: .
+      context: ./nextjs-react-hooks-example
       dockerfile: Dockerfile
       args:
         env: ${ENV}
     volumes:
       - ./nextjs-react-hooks-example:/code
-    ports: "5000:5000"
+    ports:
+      - "3030:5000"
     restart: on-failure
+  frontend:
+    build:
+      context: ./auth0
+      dockerfile: Dockerfile
+      args:
+        env: ${ENV}
+    volumes:
+      - ./auth0:/app
+    ports:
+      - "3000:3000"
+    restart: on-failure
+  pgadmin:
+    image: dpage/pgadmin4
+    links:
+      - postgres
+    depends_on:
+      - postgres
+    environment:
+      PGADMIN_DEFAULT_EMAIL: bausk@bausk.dev
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "5050:80"
+    logging:
+      driver: none
