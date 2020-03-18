@@ -1,6 +1,7 @@
 const path = {
     HOME: '/',
     LOGIN: '/api/login',
+    GETTOKEN: '/api/gettoken',
     LOGOUT: '/api/logout',
     ABOUT: '/about',
     PROFILE: '/profile',

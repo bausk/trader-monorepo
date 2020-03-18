@@ -5,11 +5,14 @@ export default initAuth0({
   clientId: config.AUTH0_CLIENT_ID,
   clientSecret: config.AUTH0_CLIENT_SECRET,
   scope: config.AUTH0_SCOPE,
+  audience: config.API_AUDIENCE,
   domain: config.AUTH0_DOMAIN,
   redirectUri: config.REDIRECT_URI,
   postLogoutRedirectUri: config.POST_LOGOUT_REDIRECT_URI,
   session: {
     cookieSecret: config.SESSION_COOKIE_SECRET,
     cookieLifetime: config.SESSION_COOKIE_LIFETIME,
+    storeAccessToken: true,
+    storeRefreshToken: true,
   },
 })
