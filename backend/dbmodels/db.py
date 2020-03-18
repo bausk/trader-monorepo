@@ -11,6 +11,13 @@ def get_url():
     return url
 
 
+def init_middleware(app):
+    db.init_app(app, config={
+        'dsn': get_url()
+    })
+    return db
+
+
 class User(db.Model):
     __tablename__ = 'users'
 

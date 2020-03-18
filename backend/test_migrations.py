@@ -1,4 +1,4 @@
-from aiohttp import web
+from aiohttp import web, ClientSession
 from dotenv import load_dotenv
 from pathlib import Path
 
@@ -8,14 +8,15 @@ load_dotenv(dotenv_path=env_path)
 import ptvsd
 ptvsd.enable_attach()
 
+import aiohttp_cors
 import asyncio
-from dbmodels.db import db, User, get_url
-
-async def init():
-    await db.set_bind(get_url())
+from dbmodels.db import db, User, init_middleware
+from server.init import setup_aiohttp_security, setup_scheduler
+from server.security import get_middleware
+from server.errors_middleware import create_error_middleware
+from server.routes import routes
 
 async def main():
-    await init()
 
     # Create tables
     await db.gino.create_all()
@@ -46,25 +47,23 @@ async def main():
             print(u.id, u.nickname)
 
 
-asyncio.get_event_loop().run_until_complete(init())
-routes = web.RouteTableDef()
+auth_middleware = asyncio.get_event_loop().run_until_complete(get_middleware())
 
-@routes.get('/')
-async def index(request):
-    users = []
-    async with db.transaction():
-        async for u in User.query.order_by(User.id).gino.iterate():
-            users.append((u.id, u.nickname))
-    return web.json_response({
-        'users': users
-        })
+app = web.Application(middlewares=[auth_middleware])
+db_middleware = init_middleware(app)
+app.middlewares.append(db_middleware)
+app.add_routes(routes)
 
-app = web.Application(middlewares=[db])
-app.add_routes([web.get('/', index),
-    ])
-db.init_app(app, config={
-    'dsn': get_url()
+cors = aiohttp_cors.setup(app, defaults={
+    "*": aiohttp_cors.ResourceOptions(
+        allow_credentials=True,
+        expose_headers="*",
+        allow_headers="*",
+    )
 })
+for route in list(app.router.routes()):
+    cors.add(route)
+
 
 if __name__ == '__main__':
     web.run_app(app, host='0.0.0.0', port=5000)
