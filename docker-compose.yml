@@ -1,18 +1,17 @@
 version: '3'
 services:
-  backend:
+  api:
     env_file:
-      - ./backend/.env
+      - ./api/.env
     build:
-      context: ./backend
+      context: ./api
       dockerfile: Dockerfile
       args:
         env: ${ENV}
         POETRY_VERSION: ${POETRY_VERSION}
     volumes:
-      - ./backend:/code
+      - ./api:/code
     entrypoint: bash -c "scripts/migrate.sh && gunicorn --reload --bind 0.0.0.0:5000 --worker-class aiohttp.GunicornWebWorker --timeout 3600 --workers 1 --access-logfile - --capture-output test_migrations:app"
-    #entrypoint: bash -c "scripts/migrate.sh && python test_migrations.py"
     environment:
       - ENV=${ENV}
       - POETRY_VERSION=${POETRY_VERSION}
@@ -44,12 +43,12 @@ services:
     restart: on-failure
   frontend:
     build:
-      context: ./auth0
+      context: ./frontend
       dockerfile: Dockerfile
       args:
         env: ${ENV}
     volumes:
-      - ./auth0:/app
+      - ./frontend:/app
     ports:
       - "3000:3000"
       - "9229:9229"

@@ -7,14 +7,28 @@
         {
             "type": "node",
             "request": "attach",
-            "name": "Attach",
-            "port": 9229
+            "name": "Docker: Attach to Node",
+            "remoteRoot": "/app",
+            "port": 9229,
         },
         {
+            "trace": true,
             "type": "node",
-            "request": "launch",
-            "name": "Launch Program",
-            "program": "${workspaceFolder}\\handler.js"
-        }
+            "request": "attach",
+            "restart": true,
+            "sourceMaps": true,
+            "smartStep": true,
+            "webRoot": "${workspaceRoot}",
+            "sourceMapPathOverrides": {
+                "webpack:///*": "${workspaceFolder}/*"
+            },
+            "outFiles": [
+                "${workspaceFolder}/.next/static/development/pages"
+            ],
+            "name": "Attach to Node",
+            "port": 9229,
+            "address": "localhost",
+            "protocol": "inspector",
+        },
     ]
 }
