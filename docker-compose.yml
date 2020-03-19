@@ -11,7 +11,7 @@ services:
         POETRY_VERSION: ${POETRY_VERSION}
     volumes:
       - ./api:/code
-    entrypoint: bash -c "scripts/migrate.sh && gunicorn --reload --bind 0.0.0.0:5000 --worker-class aiohttp.GunicornWebWorker --timeout 3600 --workers 1 --access-logfile - --capture-output test_migrations:app"
+    entrypoint: bash -c "ls -la scripts && gunicorn --reload --bind 0.0.0.0:5000 --worker-class aiohttp.GunicornWebWorker --timeout 3600 --workers 1 --access-logfile - --capture-output test_migrations:app"
     environment:
       - ENV=${ENV}
       - POETRY_VERSION=${POETRY_VERSION}
@@ -30,17 +30,17 @@ services:
       - POSTGRES_DB=postgres
     ports:
       - 5432:5432
-  oldend:
-    build:
-      context: ./nextjs-react-hooks-example
-      dockerfile: Dockerfile
-      args:
-        env: ${ENV}
-    volumes:
-      - ./nextjs-react-hooks-example:/code
-    ports:
-      - "3030:5000"
-    restart: on-failure
+  # oldend:
+  #   build:
+  #     context: ./nextjs-react-hooks-example
+  #     dockerfile: Dockerfile
+  #     args:
+  #       env: ${ENV}
+  #   volumes:
+  #     - ./nextjs-react-hooks-example:/code
+  #   ports:
+  #     - "3030:5000"
+  #   restart: on-failure
   frontend:
     build:
       context: ./frontend

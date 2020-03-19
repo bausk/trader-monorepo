@@ -1,9 +1,5 @@
+import loadenv
 from aiohttp import web, ClientSession
-from dotenv import load_dotenv
-from pathlib import Path
-
-env_path = Path('.') / '.env'
-load_dotenv(dotenv_path=env_path)
 
 import ptvsd
 ptvsd.enable_attach()
@@ -15,6 +11,11 @@ from server.init import setup_aiohttp_security, setup_scheduler
 from server.security import get_middleware
 from server.errors_middleware import create_error_middleware
 from server.routes import routes
+
+# Load encrypted config
+from secrets_management.manage import decrypt_credentials, load_credentials
+load_credentials(decrypt_credentials())
+
 
 async def main():
 

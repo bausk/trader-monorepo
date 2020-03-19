@@ -1,6 +1,6 @@
 FROM python:3.7-slim
 ARG env=production
-ARG POETRY_VERSION
+ARG POETRY_VERSION=1.0.5
 ENV ENV=$env \
   PYTHONFAULTHANDLER=1 \
   PYTHONUNBUFFERED=1 \
@@ -24,5 +24,6 @@ RUN apt-get update \
 COPY . /code
 EXPOSE 5000
 RUN chmod 644 ./*.py
+RUN chmod 644 ./scripts/*.sh
 
 CMD gunicorn --bind 0.0.0.0:5000 --worker-class aiohttp.GunicornWebWorker --workers 1 --access-logfile - --capture-output entrypoint:app 
