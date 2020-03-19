@@ -19,6 +19,11 @@ aiohttp-security = "^0.4.0"
 cryptography = "^2.7"
 aiohttp_cors = "^0.7.0"
 traderutils = { path = "./traderutils" }
+alembic = "^1.4.1"
+gino = "^0.8.6"
+psycopg2-binary = "^2.8.4"
+aiohttp_security = "^0.4.0"
+pyjwt = "^1.7.1"
 
 [tool.poetry.dev-dependencies]
 ptvsd = "^4.2"

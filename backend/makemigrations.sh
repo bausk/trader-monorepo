@@ -1,0 +1,1 @@
+docker-compose run --rm console bash -c "PYTHONPATH=. alembic revision -m '$@' --autogenerate"

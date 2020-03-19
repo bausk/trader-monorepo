@@ -17,19 +17,6 @@
             "request": "launch",
             "program": "${workspaceFolder}/entrypoint.py",
             "console": "integratedTerminal"
-        },        
-        {
-            "name": "Python: debug etl",
-            "type": "python",
-            "request": "attach",
-            "port": 5678,
-            "host": "localhost",
-            "pathMappings": [
-                {
-                    "localRoot": "${workspaceFolder}/etl",
-                    "remoteRoot": "/code"
-                }
-            ]
         },
         {
             "name": "Python: debug backend",

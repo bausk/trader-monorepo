@@ -1,0 +1,17 @@
+version: '2'
+services:
+  python:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        env: development
+    volumes:
+      - .:/code
+    entrypoint: python -m ptvsd --host 0.0.0.0 --port 5678 --wait entrypoint.py
+    environment:
+      - ENV=development
+      - POETRY_VERSION=1.0.3
+    ports: 
+      - "5000:5000"
+      - "5678:5678"

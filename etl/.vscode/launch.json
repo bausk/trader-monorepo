@@ -26,20 +26,7 @@
             "host": "localhost",
             "pathMappings": [
                 {
-                    "localRoot": "${workspaceFolder}/etl",
-                    "remoteRoot": "/code"
-                }
-            ]
-        },
-        {
-            "name": "Python: debug backend",
-            "type": "python",
-            "request": "attach",
-            "port": 5678,
-            "host": "localhost",
-            "pathMappings": [
-                {
-                    "localRoot": "${workspaceFolder}/backend",
+                    "localRoot": "${workspaceFolder}",
                     "remoteRoot": "/code"
                 }
             ]

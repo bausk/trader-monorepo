@@ -1,0 +1,66 @@
+version: '3'
+services:
+  trader:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        env: ${ENV}
+        POETRY_VERSION: ${POETRY_VERSION}
+    volumes:
+      - .:/code
+    entrypoint: bash -c "gunicorn --reload --bind 0.0.0.0:5000 --worker-class aiohttp.GunicornWebWorker --timeout 3600 --workers 1 --access-logfile - --capture-output test_migrations:app"
+    #entrypoint: bash -c "scripts/migrate.sh && python test_migrations.py"
+    environment:
+      - ENV=${ENV}
+      - POETRY_VERSION=${POETRY_VERSION}
+      - DB_URL=postgres://postgres:postgres@postgres/postgres
+    ports: 
+      - "5000:5000"
+      - "5678:5678"
+    links:
+      - postgres
+    depends_on:
+      - postgres
+    restart: on-failure
+  console:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        env: ${ENV}
+        POETRY_VERSION: ${POETRY_VERSION}
+    volumes:
+      - .:/code
+    command: bash -c "echo console test passed"
+    environment:
+      - ENV=${ENV}
+      - POETRY_VERSION=${POETRY_VERSION}
+      - DB_URL=postgres://postgres:postgres@postgres/postgres
+    ports: 
+      - "5001:5000"
+    links:
+      - postgres
+    depends_on:
+      - postgres    
+  postgres:
+    image: postgres:12
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=postgres
+    ports:
+      - 5432:5432
+  pgadmin:
+    image: dpage/pgadmin4
+    links:
+      - postgres
+    depends_on:
+      - postgres
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: pwdpwd
+    ports:
+      - "5050:80"
+    logging:
+      driver: none

@@ -1,0 +1,34 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "node",
+            "request": "attach",
+            "name": "Docker: Attach to Node",
+            "remoteRoot": "/app",
+            "port": 9229,
+        },
+        {
+            "trace": true,
+            "type": "node",
+            "request": "attach",
+            "restart": true,
+            "sourceMaps": true,
+            "smartStep": true,
+            "webRoot": "${workspaceRoot}",
+            "sourceMapPathOverrides": {
+                "webpack:///*": "${workspaceFolder}/*"
+            },
+            "outFiles": [
+                "${workspaceFolder}/.next/static/development/pages"
+            ],
+            "name": "Attach to Node",
+            "port": 9229,
+            "address": "localhost",
+            "protocol": "inspector",
+        },
+    ]
+}
