@@ -22,15 +22,21 @@ def load_credentials(credentials: str) -> None:
 def decrypt_credentials():
     env = get_environment()
     secret_key = os.environ.get(f'APP_SECRET_{env.upper()}', None)
-    if secret_key is None:
-        return b''
+    if secret_key is None or secret_key == '':
+        print('[MANAGE] No secrets will be loaded')
+        return None
     f = Fernet(secret_key)
-    fp = open(ENCRYPTED_PATH, 'rb')
-    secret = fp.read()
-    fp.close()
-    credentials = f.decrypt(secret)
-    print('Decrypted')
-    return credentials
+    try:
+        fp = open(ENCRYPTED_PATH, 'rb')
+        secret = fp.read()
+        fp.close()
+        credentials = f.decrypt(secret)
+        print('[MANAGE] Decrypted successfully')
+        return credentials.decode("utf-8")
+    except:
+        print('[MANAGE] Decryption key was loaded but secrets were not found.')
+        print('[MANAGE] No secrets will be loaded')
+        return None
 
 
 def rotate_credentials():
@@ -39,7 +45,7 @@ def rotate_credentials():
     fp = open('./.secrets/key', 'wb')
     fp.write(secret_key)
     fp.close()
-    print("Secret key replaced in .secrets/key")
+    print("[MANAGE] Secret key replaced in .secrets/key")
 
 
 def encrypt_credentials():
@@ -59,4 +65,4 @@ def replace_credentials(secret_key):
     fp = open(ENCRYPTED_PATH, 'wb')
     fp.write(encrypted)
     fp.close()
-    print('Encrypted')
+    print('[MANAGE] Encrypted secrets')

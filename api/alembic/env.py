@@ -4,6 +4,8 @@ from sqlalchemy import create_engine
 from sqlalchemy import pool
 
 from alembic import context
+from secrets_management.manage import decrypt_credentials, load_credentials
+load_credentials(decrypt_credentials())
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -17,6 +19,7 @@ fileConfig(config.config_file_name)
 # for 'autogenerate' support
 # from myapp import mymodel
 # target_metadata = mymodel.Base.metadata
+
 from dbmodels.db import db, get_url
 
 target_metadata = db
