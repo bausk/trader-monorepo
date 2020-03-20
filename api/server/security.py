@@ -82,7 +82,6 @@ async def get_middleware():
 
             # request.user = User.objects.get(id=payload['user_id'])
             request.user = payload
-            print(payload)
         return await handler(request)
 
     return auth_middleware
@@ -98,5 +97,6 @@ async def check_permission(req: Request, permission) -> None:
         user_permissions = req.user['permissions']
         if permission in user_permissions:
             return
-    finally:
-        raise web.HTTPUnauthorized
+    except:
+        pass
+    raise web.HTTPUnauthorized
