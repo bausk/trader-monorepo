@@ -16,14 +16,12 @@ COPY ./traderutils /code/traderutils
 
 RUN apt-get update \
   && apt-get install -y --no-install-recommends gcc libc-dev \
-  && rm -rf /var/lib/apt/lists/* \
-  && poetry config virtualenvs.create false \
+  && rm -rf /var/lib/apt/lists/*
+RUN poetry config virtualenvs.create false \
   && poetry install $(test "$ENV" = "production" && echo "--no-dev") --no-interaction --no-ansi \
   && apt-get purge -y --auto-remove gcc libc-dev
 
 COPY . /code
 EXPOSE 5000
-RUN chmod 644 ./*.py
-RUN chmod 644 ./scripts/*.sh
 
 CMD gunicorn --bind 0.0.0.0:5000 --worker-class aiohttp.GunicornWebWorker --workers 1 --access-logfile - --capture-output entrypoint:app 

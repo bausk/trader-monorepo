@@ -16,7 +16,7 @@ cchardet = "^2.1"
 aiodns = "^2.0"
 aiohttp-session = "^2.7"
 aiohttp-security = "^0.4.0"
-cryptography = "^2.7"
+cryptography = "^2.8"
 aiohttp_cors = "^0.7.0"
 traderutils = { path = "./traderutils" }
 alembic = "^1.4.1"

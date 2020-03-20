@@ -11,11 +11,12 @@ services:
         POETRY_VERSION: ${POETRY_VERSION}
     volumes:
       - ./api:/code
-    entrypoint: bash -c "ls -la scripts && gunicorn --reload --bind 0.0.0.0:5000 --worker-class aiohttp.GunicornWebWorker --timeout 3600 --workers 1 --access-logfile - --capture-output test_migrations:app"
+    # entrypoint: bash -c "ls -la /code"
+    entrypoint: bash -c "scripts/migrate.sh && gunicorn --reload --bind 0.0.0.0:5000 --worker-class aiohttp.GunicornWebWorker --timeout 3600 --workers 1 --access-logfile - --capture-output test_migrations:app"
     environment:
       - ENV=${ENV}
       - POETRY_VERSION=${POETRY_VERSION}
-      - DB_URL=postgres://postgres:postgres@postgres/postgres
+      # - DB_URL=postgres://postgres:postgres@postgres/postgres
     ports: 
       - "5000:5000"
       - "5678:5678"
