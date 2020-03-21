@@ -1,2 +1,6 @@
 trader-etl=etl
 trader-etl-stage=etl
+trader-api=api
+trader-api-stage=api
+trader-frontend=frontend
+trader-frontend-stage=frontend

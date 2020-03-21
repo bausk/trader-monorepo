@@ -1,1 +1,2 @@
-release: migrate.sh
+release: scripts/migrate.sh
+web: gunicorn --worker-class aiohttp.GunicornWebWorker --workers 1 --access-logfile - --capture-output test_migrations:app 
