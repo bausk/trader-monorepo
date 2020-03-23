@@ -23,5 +23,7 @@ RUN poetry config virtualenvs.create false \
 
 COPY . /code
 EXPOSE 5000
+RUN chmod 777 ./scripts/migrate.sh
+RUN chmod 644 ./test_migrations.py
 
 CMD gunicorn --bind 0.0.0.0:5000 --worker-class aiohttp.GunicornWebWorker --workers 1 --access-logfile - --capture-output entrypoint:app 
