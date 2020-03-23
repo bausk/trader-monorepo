@@ -102,9 +102,6 @@ def replace_credentials(secret_key: str, env: str):
         raise RuntimeError('Bad parameter received when replacing credentials')
     f = Fernet(secret_key)
     path = Path(ENCRYPTED_PATH)
-    # for child in path.glob('*'):
-    #     if child.is_file():
-    #         child.unlink()
     files_to_encrypt = PLAINTEXT_SECRETS.get(env)
     for x, file_to_encrypt in enumerate(files_to_encrypt):
         filekey, digest = get_name_digest(file_to_encrypt)
