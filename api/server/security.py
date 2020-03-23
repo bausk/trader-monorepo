@@ -7,10 +7,6 @@ import json
 
 
 JWT_ALGORITHM = 'RS256'
-AUTH0_DOMAIN = os.environ.get('AUTH0_DOMAIN')
-API_AUDIENCE = os.environ.get('API_AUDIENCE')
-assert AUTH0_DOMAIN, "Auth0 server must be specified in AUTH0_DOMAIN environment variable"
-assert API_AUDIENCE, "Auth0 audience must be specified in API_AUDIENCE environment variable"
 
 
 async def get_jwks():
@@ -31,6 +27,11 @@ class PermissionDenied(Exception):
 
 async def get_middleware():
     params = {}
+    AUTH0_DOMAIN = os.environ.get('AUTH0_DOMAIN')
+    API_AUDIENCE = os.environ.get('API_AUDIENCE')
+    assert AUTH0_DOMAIN, "Auth0 server must be specified in AUTH0_DOMAIN environment variable"
+    assert API_AUDIENCE, "Auth0 audience must be specified in API_AUDIENCE environment variable"
+
     # Fetch public key on startup
     params['JWKS'] = await get_jwks()
 
