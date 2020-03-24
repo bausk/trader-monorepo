@@ -1,9 +1,6 @@
 import loadenv
 from aiohttp import web, ClientSession
 
-import ptvsd
-ptvsd.enable_attach()
-
 import aiohttp_cors
 import asyncio
 from dbmodels.db import db, User, init_middleware
@@ -13,7 +10,11 @@ from server.errors_middleware import create_error_middleware
 from server.routes import routes
 
 # Load encrypted config
-from secrets_management.manage import decrypt_credentials, load_credentials
+from secrets_management.manage import decrypt_credentials, load_credentials, get_environment
+
+if get_environment() == 'development':
+    import ptvsd
+    ptvsd.enable_attach()
 load_credentials(decrypt_credentials())
 
 
