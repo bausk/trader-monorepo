@@ -64,7 +64,7 @@ def run_migrations_online():
         )
 
         with context.begin_transaction():
-            print(f'Running migrations on url: {get_url()}...')
+            print(f'Running migrations...')
             context.run_migrations()
 
 
