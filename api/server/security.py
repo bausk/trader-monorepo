@@ -9,8 +9,7 @@ import json
 JWT_ALGORITHM = 'RS256'
 
 
-async def get_jwks():
-    global JWKS
+async def get_jwks(AUTH0_DOMAIN):
     async with aiohttp.ClientSession() as session:
         async with session.get(f"https://{AUTH0_DOMAIN}/.well-known/jwks.json") as resp:
             JWKS = await resp.json()
@@ -33,7 +32,7 @@ async def get_middleware():
     assert API_AUDIENCE, "Auth0 audience must be specified in API_AUDIENCE environment variable"
 
     # Fetch public key on startup
-    params['JWKS'] = await get_jwks()
+    params['JWKS'] = await get_jwks(AUTH0_DOMAIN)
 
     async def validate_header(unverified_header):
         JWKS = params['JWKS']
@@ -51,7 +50,7 @@ async def get_middleware():
                     else:
                         raise PublicKeyError()
             except (KeyError, PublicKeyError):
-                new_jwks = await get_jwks()
+                new_jwks = await get_jwks(AUTH0_DOMAIN)
                 if new_jwks == JWKS:
                     return None
                 JWKS = new_jwks
