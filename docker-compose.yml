@@ -17,7 +17,6 @@ services:
     environment:
       - ENV=${ENV}
       - POETRY_VERSION=${POETRY_VERSION}
-      # - DB_URL=postgres://postgres:postgres@postgres/postgres
     ports: 
       - 5000:5000
       - 5678:5678
