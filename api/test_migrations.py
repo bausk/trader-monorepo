@@ -14,7 +14,12 @@ from secrets_management.manage import decrypt_credentials, load_credentials, get
 
 if get_environment() == 'development':
     import ptvsd
-    ptvsd.enable_attach()
+    print ('running in debug mode:')
+    ptvsd.enable_attach(address=('0.0.0.0', 5678), redirect_output=True)
+    print ('Attaching debugger...')
+    ptvsd.wait_for_attach(3)
+
+
 load_credentials(decrypt_credentials())
 
 
@@ -49,6 +54,7 @@ async def main():
             print(u.id, u.nickname)
 
 
+print ('Initializing middlewares...')
 auth_middleware = asyncio.get_event_loop().run_until_complete(get_middleware())
 
 app = web.Application(middlewares=[auth_middleware])

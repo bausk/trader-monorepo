@@ -11,15 +11,18 @@ services:
         POETRY_VERSION: ${POETRY_VERSION}
     volumes:
       - ./api:/code
-    # entrypoint: bash -c "ls -la /code"
-    entrypoint: bash -c "scripts/migrate.sh && gunicorn --reload --bind 0.0.0.0:5000 --worker-class aiohttp.GunicornWebWorker --timeout 3600 --workers 1 --access-logfile - --capture-output test_migrations:app"
+    # entrypoint: bash -c "scripts/migrate.sh && gunicorn --reload --bind 0.0.0.0:5000 --worker-class aiohttp.GunicornWebWorker --timeout 3600 --workers 1 --access-logfile - --capture-output test_migrations:app"
+    # entrypoint: bash -c "scripts/migrate.sh && python test_migrations.py"
+    entrypoint: bash -c "scripts/migrate.sh && adev runserver test_migrations.py"
     environment:
       - ENV=${ENV}
       - POETRY_VERSION=${POETRY_VERSION}
       # - DB_URL=postgres://postgres:postgres@postgres/postgres
     ports: 
-      - "5000:5000"
-      - "5678:5678"
+      - 5000:5000
+      - 5678:5678
+    links:
+      - postgres
     depends_on:
       - postgres
     restart: on-failure
@@ -51,8 +54,8 @@ services:
     volumes:
       - ./frontend:/app
     ports:
-      - "3000:3000"
-      - "9229:9229"
+      - 3000:3000
+      - 9229:9229
     restart: on-failure
     # entrypoint: bash -c 'NODE_OPTIONS="--inspect=0.0.0.0:9229" node node_modules/next/dist/bin/next'
   pgadmin:
@@ -65,6 +68,6 @@ services:
       PGADMIN_DEFAULT_EMAIL: bausk@bausk.dev
       PGADMIN_DEFAULT_PASSWORD: admin
     ports:
-      - "5050:80"
+      - 5050:80
     logging:
       driver: none

@@ -1,4 +1,4 @@
-const path = {
+const routes = {
     HOME: '/',
     LOGIN: '/api/login',
     GETTOKEN: '/api/gettoken',
@@ -8,4 +8,4 @@ const path = {
     SERVERPROFILE: '/advanced/ssr-profile',
 }
 
-export default path;
+export default routes;
