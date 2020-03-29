@@ -1,7 +1,6 @@
 import React, { useContext } from 'react';
 import Button from '@material-ui/core/Button';
-import { observer } from 'mobx-react-lite'
-
+import { observer } from 'mobx-react-lite';
 import UsersContext from './Users/store';
 
 

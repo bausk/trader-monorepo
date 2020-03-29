@@ -69,7 +69,7 @@ function Header({ user, loading }) {
           onChange={handleChange}
           aria-label="nav tabs example"
         >
-          <Tab value={path.HOME} label="Home" href={path.HOME} {...a11yProps(0)} />
+          <Tab value={path.HOME} label="Dashboard" href={path.HOME} {...a11yProps(0)} />
           <Tab value={path.ABOUT} label="About" href={path.ABOUT} textColor="secondary" {...a11yProps(1)} />
           <Tab value={path.PROFILE} label="Client-rendered profile" href={path.PROFILE} {...a11yProps(2)} />
           <Tab value={path.SERVERPROFILE} label="Server-rendered profile" href={path.SERVERPROFILE} {...a11yProps(3)} />

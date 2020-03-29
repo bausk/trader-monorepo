@@ -5,13 +5,12 @@ configure({ enforceActions: "observed" });
 
 
 class Store {
-    @observable users = [];
+    @observable users = "[]";
     @observable state = "pending";
 
     fetchProjects = flow(function* () {
         console.log(this);
-        debugger;
-        this.users = [];
+        this.users = "[]";
         this.state = "pending";
         try {
             const users = yield callApi();

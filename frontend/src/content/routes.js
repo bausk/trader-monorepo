@@ -3,6 +3,8 @@ const routes = {
     LOGIN: '/api/login',
     GETTOKEN: '/api/gettoken',
     LOGOUT: '/api/logout',
+
+    
     ABOUT: '/about',
     PROFILE: '/profile',
     SERVERPROFILE: '/advanced/ssr-profile',

@@ -1,14 +1,20 @@
-import React, { useCallback, useState } from 'react'
-import Button from '../components/loadButton';
+import React, { useCallback, useState, useContext } from 'react'
+import Link from "next/link";
+import Button from '@material-ui/core/Button';
+import { observer } from 'mobx-react-lite'
+import ApiButton from '../components/loadButton';
 import auth0 from '../lib/auth0';
 import config from '../lib/config';
 import { useFetchUser } from '../lib/user';
+import path from '../src/content/routes';
+import UsersContext from '../components/Users/store';
 
 
 function Home() {
   const { user, loading } = useFetchUser()
   const [ state, setState ] = useState('None')
   const [ vars, setVars ] = useState('No token obtained so far')
+  const { users } = useContext(UsersContext);
   const callApi = useCallback(
     async () => {
       try {
@@ -30,9 +36,22 @@ function Home() {
       }
     }
     , []);
+  const label = user ? 'Logout' : (loading ? 'Pending...' : 'Login');
+  const link = user ? path.LOGOUT : path.LOGIN;
   return (
     <>
       <h1>Next.js and Auth0 Example</h1>
+
+      <Link href={link} passHref>
+        <Button
+          component="a"
+          disabled={loading}
+          color="primary"
+          variant="contained"
+        >
+          {label}
+        </Button>
+      </Link>
 
       {loading && <p>Loading login info...</p>}
 
@@ -52,11 +71,11 @@ function Home() {
         <>
           <h4>Rendered user info on the client</h4>
           <img src={user.picture} alt="user picture" />
-          <Button color="primary">
+          <ApiButton color="primary">
               Retrieve public data
-          </Button>
-          <div>{state}</div>
-          <div><pre>{vars}</pre></div>
+          </ApiButton>
+          <div>{users}</div>
+          <div><pre>{users}</pre></div>
           <p>nickname: {user.nickname}</p>
           <p>name: {user.name}</p>
         </>
@@ -65,4 +84,4 @@ function Home() {
   )
 }
 
-export default Home
+export default observer(Home);
