@@ -1,1 +1,1 @@
-docker-compose run --rm console bash -c ./scripts/migrate.sh
+docker-compose run --rm tasks bash -c ./scripts/migrate.sh

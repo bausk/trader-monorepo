@@ -26,6 +26,27 @@ services:
     depends_on:
       - postgres
     restart: on-failure
+  tasks:
+    env_file:
+      - ./api/.env
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+      args:
+        env: ${ENV}
+        POETRY_VERSION: ${POETRY_VERSION}
+    volumes:
+      - ./api:/code
+    command: ls
+    environment:
+      - ENV=${ENV}
+      - POETRY_VERSION=${POETRY_VERSION}
+    ports: 
+      - 5679:5679
+    links:
+      - postgres
+    depends_on:
+      - postgres
   postgres:
     image: postgres:12
     environment:
