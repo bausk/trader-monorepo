@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from 'react'
-import Button from '@material-ui/core/Button';
+import Button from '../components/loadButton';
 import auth0 from '../lib/auth0';
 import config from '../lib/config';
 import { useFetchUser } from '../lib/user';
@@ -52,7 +52,7 @@ function Home() {
         <>
           <h4>Rendered user info on the client</h4>
           <img src={user.picture} alt="user picture" />
-          <Button onClick={callApi} color="primary">
+          <Button color="primary">
               Retrieve public data
           </Button>
           <div>{state}</div>
