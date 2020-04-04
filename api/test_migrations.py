@@ -15,8 +15,11 @@ from secrets_management.manage import decrypt_credentials, load_credentials, get
 if get_environment() == 'development':
     import ptvsd
     print ('running in debug mode')
-    ptvsd.enable_attach(address=('0.0.0.0', 5678))
-    ptvsd.wait_for_attach(3)
+    try:
+        ptvsd.enable_attach(address=('0.0.0.0', 5678))
+        ptvsd.wait_for_attach(3)
+    except:
+        pass
 
 
 load_credentials(decrypt_credentials())

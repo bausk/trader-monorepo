@@ -11,9 +11,9 @@ services:
         POETRY_VERSION: ${POETRY_VERSION}
     volumes:
       - ./api:/code
-    # entrypoint: bash -c "scripts/migrate.sh && gunicorn --reload --bind 0.0.0.0:5000 --worker-class aiohttp.GunicornWebWorker --timeout 3600 --workers 1 --access-logfile - --capture-output test_migrations:app"
+    entrypoint: bash -c "scripts/migrate.sh && gunicorn --reload --bind 0.0.0.0:8000 --worker-class aiohttp.GunicornWebWorker --timeout 3600 --workers 1 --access-logfile - --capture-output test_migrations:app"
     # entrypoint: bash -c "scripts/migrate.sh && python test_migrations.py"
-    entrypoint: bash -c "scripts/migrate.sh && adev runserver test_migrations.py"
+    # entrypoint: bash -c "scripts/migrate.sh && adev runserver test_migrations.py"
     environment:
       - ENV=${ENV}
       - POETRY_VERSION=${POETRY_VERSION}
