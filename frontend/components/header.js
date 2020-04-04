@@ -58,8 +58,6 @@ function Header({ user, loading }) {
     router.push(newValue);
     setValue(newValue);
   };
-  const label = user ? 'Logout' : 'Login';
-  const link = user ? path.LOGOUT : path.LOGIN;
   return (
     <div className={classes.root}>
       <AppBar position="static">
@@ -70,10 +68,10 @@ function Header({ user, loading }) {
           aria-label="nav tabs example"
         >
           <Tab value={path.HOME} label="Dashboard" href={path.HOME} {...a11yProps(0)} />
-          <Tab value={path.ABOUT} label="About" href={path.ABOUT} textColor="secondary" {...a11yProps(1)} />
-          <Tab value={path.PROFILE} label="Client-rendered profile" href={path.PROFILE} {...a11yProps(2)} />
-          <Tab value={path.SERVERPROFILE} label="Server-rendered profile" href={path.SERVERPROFILE} {...a11yProps(3)} />
-          <Tab value={link} label={label} href={link} {...a11yProps(4)} />
+          <Tab value={path.EXPLORE} label="Explore" href={path.EXPLORE} {...a11yProps(1)} />
+          <Tab disabled value={path.MODEL} label="Model" href={path.MODEL} {...a11yProps(2)} />
+          <Tab disabled value={path.OPTIMIZE} label="Optimize" href={path.OPTIMIZE} {...a11yProps(3)} />
+          <Tab disabled value={path.TRADE} label="Trade" href={path.TRADE} {...a11yProps(4)} />
         </Tabs>
       </AppBar>
     </div>

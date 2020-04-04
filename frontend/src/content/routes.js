@@ -4,7 +4,10 @@ const routes = {
     GETTOKEN: '/api/gettoken',
     LOGOUT: '/api/logout',
 
-    
+    EXPLORE: '/explore',
+    MODEL: '/model',
+    OPTIMIZE: '/optimize',
+    TRADE: '/trade',
     ABOUT: '/about',
     PROFILE: '/profile',
     SERVERPROFILE: '/advanced/ssr-profile',

@@ -14,7 +14,7 @@ function Layout({ children }) {
       <Header user={user} loading={loading} />
 
       <main>
-        <Container maxWidth="sm">{children}</Container>
+        <Container maxWidth="md">{children}</Container>
       </main>
 
       <style jsx>{`
