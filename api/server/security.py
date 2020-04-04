@@ -89,7 +89,11 @@ async def get_middleware():
 
 class Permissions:
     READ = 'read:live'
-    WRITE = 'write:history'
+    READ_LIVE = 'read:live'
+    READ_HISTORY = 'read:history'
+    WRITE_OBJECTS = 'read:live'
+    WRITE_LIVE = 'write:live'
+    WRITE_HISTORY = 'write:history'
 
 
 async def check_permission(req: Request, permission) -> None:
