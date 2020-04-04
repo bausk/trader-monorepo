@@ -1,26 +1,33 @@
-import { createContext } from 'react'
-import { configure, observable, flow} from 'mobx';
+import { observable, flow} from 'mobx';
 import callApi from './UsersApi';
-configure({ enforceActions: "observed" });
 
 
-class Store {
+class UsersStore {
+    constructor(rootStore) {
+        this.rootStore = rootStore;
+    }
     @observable users = [];
-    @observable state = "pending";
+    @observable state;
 
     fetchProjects = flow(function* () {
-        console.log(this);
         this.users = [];
         this.state = "pending";
         try {
             const users = yield callApi();
-            const filteredUsers = users;
             this.state = "done";
-            this.users = filteredUsers;
+            this.users = users;
         } catch (error) {
             this.state = "error";
         }
     }).bind(this);
+
+    hydrate = (data) => {
+        Object.keys(data).forEach(k => this[k] = data[k]);
+    }
+
+    getSources = () => {
+        return this.rootStore.sourcesStore.sources;
+    }
 }
 
-export default createContext(new Store());
+export default UsersStore;

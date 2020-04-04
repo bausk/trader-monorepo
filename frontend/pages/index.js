@@ -1,19 +1,16 @@
-import React, { useCallback, useState, useContext } from 'react'
+import React from 'react'
 import Link from "next/link";
 import Button from '@material-ui/core/Button';
 import { observer } from 'mobx-react'
 import ApiButton from '../components/loadButton';
 import { useFetchUser } from '../lib/user';
 import path from '../src/content/routes';
-import UsersContext from '../components/Users/UsersStore';
 import { useStores } from '../components/rootStore';
 
 
 function Home() {
-  console.log('rendering home...')
-  const { user, loading } = useFetchUser()
-  const { users } = useContext(UsersContext);
-  const { userStore } = useStores();
+  const { user, loading } = useFetchUser();
+  const { usersStore } = useStores();
   const label = user ? 'Logout' : (loading ? 'Pending...' : 'Login');
   const link = user ? path.LOGOUT : path.LOGIN;
   return (
@@ -52,9 +49,7 @@ function Home() {
           <ApiButton color="primary" variant="outlined">
               Retrieve public data
           </ApiButton>
-          <div>{users}</div>
-          <div>{userStore.getTodos()}</div>
-          <div><pre>{users}</pre></div>
+          <div>{usersStore.getSources()}</div>
           <p>nickname: {user.nickname}</p>
           <p>name: {user.name}</p>
         </>

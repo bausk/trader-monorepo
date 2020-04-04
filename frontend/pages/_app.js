@@ -59,11 +59,14 @@ MyApp.getInitialProps = async (ctx) => {
     console.log(`GetInitialProps on ${(typeof window === 'undefined') ? 'server!' : 'browser!'}`);
     const appProps = await App.getInitialProps(ctx);
     const initialState = {
-        user: null,
-        todos: [
-            'one',
-            'two'
-        ]
+        usersStore: {
+            state: "non-fetched",
+            users: ['kek', 'shmek']
+        },
+        sourcesStore: {
+            state: "non-fetched",
+            sources: ['kek', 'shmek']
+        }
     };
     return {
         ...appProps,

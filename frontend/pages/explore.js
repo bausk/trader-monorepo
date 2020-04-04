@@ -17,7 +17,7 @@ import Typography from "@material-ui/core/Typography";
 import Link from "next/link";
 import { observer } from 'mobx-react';
 import { useFetchUser } from '../lib/user';
-import UsersContext from '../components/Users/UserStore';
+import { useStores } from '../components/rootStore';
 
 const useStyles = makeStyles({
   table: {
@@ -39,9 +39,9 @@ const rows = [
 
 function Explore() {
   const { user, loading } = useFetchUser()
-  const { users } = useContext(UsersContext);
+  const { sourcesStore } = useStores();
   const classes = useStyles();
-
+  const rows = sourcesStore.sources;
   if (!loading && !user) {
     return (
       <>
@@ -91,12 +91,12 @@ function Explore() {
               </TableHead>
               <TableBody>
                 {rows.map(row => (
-                  <TableRow key={row.name}>
+                  <TableRow key={row}>
                     <TableCell component="th" scope="row">
-                      <Button>{row.name}</Button>
+                      <Button>{row}</Button>
                     </TableCell>
                     <TableCell align="right">
-                      <Button>{row.calories}</Button>
+                      <Button>{row}</Button>
                     </TableCell>
                   </TableRow>
                 ))}
