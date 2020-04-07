@@ -10,11 +10,13 @@ class SourcesStore {
     @observable state = "pending";
 
     fetchProjects = flow(function* () {
+        console.log(this.sources);
         this.sources = [];
         this.state = "pending";
         try {
             const result = yield callApi();
             this.state = "done";
+            console.log(result);
             this.sources = result;
         } catch (error) {
             this.state = "error";

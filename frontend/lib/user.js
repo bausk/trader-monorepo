@@ -54,7 +54,7 @@ export function useFetchUser({ required } = {}) {
         if (isMounted) {
           // When the user is not logged in but login is required
           if (required && !user) {
-            window.location.href = '/api/login'
+            window.location.href = '/api/logi'
             return
           }
           setUser(user)

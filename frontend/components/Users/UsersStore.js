@@ -16,6 +16,7 @@ class UsersStore {
             const users = yield callApi();
             this.state = "done";
             this.users = users;
+            this.rootStore.sourcesStore.sources = [];
         } catch (error) {
             this.state = "error";
         }

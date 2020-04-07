@@ -9,8 +9,10 @@ import { useStores } from '../components/rootStore';
 
 
 function Home() {
-  const { user, loading } = useFetchUser();
-  const { usersStore } = useStores();
+  const { loading } = useFetchUser();
+  const { usersStore, authStore } = useStores();
+  const { user } = authStore;
+  // We need user and loading from authStore
   const label = user ? 'Logout' : (loading ? 'Pending...' : 'Login');
   const link = user ? path.LOGOUT : path.LOGIN;
   return (
