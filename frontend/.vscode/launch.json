@@ -23,7 +23,7 @@
                 "webpack:///*": "${workspaceFolder}/*"
             },
             "outFiles": [
-                "${workspaceFolder}/.next/static/development/pages"
+                "${workspaceFolder}/.next/server/static/development/pages"
             ],
             "name": "Attach to Node",
             "port": 9229,

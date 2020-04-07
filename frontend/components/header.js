@@ -54,7 +54,6 @@ function Header({ user, loading }) {
 
   const handleChange = (event, newValue) => {
     event.preventDefault();
-    console.log(newValue);
     router.push(newValue);
     setValue(newValue);
   };
@@ -72,6 +71,8 @@ function Header({ user, loading }) {
           <Tab disabled value={path.MODEL} label="Model" href={path.MODEL} {...a11yProps(2)} />
           <Tab disabled value={path.OPTIMIZE} label="Optimize" href={path.OPTIMIZE} {...a11yProps(3)} />
           <Tab disabled value={path.TRADE} label="Trade" href={path.TRADE} {...a11yProps(4)} />
+          <Tab value={path.PROFILE} label="Profile" href={path.PROFILE} {...a11yProps(5)} />
+          <Tab value={path.SERVERPROFILE} label="SSR-Profile" href={path.SERVERPROFILE} {...a11yProps(6)} />
         </Tabs>
       </AppBar>
     </div>
