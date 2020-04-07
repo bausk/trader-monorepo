@@ -11,28 +11,28 @@ const request = async (method, url, auth) => {
             method,
             ...(auth.cookie ? {
                 headers: {
-                  cookie,
+                    cookie: auth.cookie,
                 },
               }
             : (auth.token ? {
-                Authorization: `Bearer ${token}`
+                Authorization: `Bearer ${auth.token}`
             } : {}))
         }
     );
 };
 
 const requests = {
-    del: async (url, cookie = '') => await request(isServer ? `${API_ROOT}${url}` : url, 'DELETE', { cookie }),
-    get: async (url, cookie = '') => await request(API_ROOT, 'GET', { cookie }),
-    put: async (url, cookie = '') => await request(API_ROOT, 'PUT', { cookie }),
-    post: async (url, cookie = '') => await request(API_ROOT, 'POST', { cookie }),
+    del: async (url, cookie = '') => await request('DELETE', isServer ? `${API_ROOT}${url}` : url, { cookie }),
+    get: async (url, cookie = '') => await request('GET', isServer ? `${API_ROOT}${url}` : url, { cookie }),
+    put: async (url, cookie = '') => await request('PUT', isServer ? `${API_ROOT}${url}` : url, { cookie }),
+    post: async (url, cookie = '') => await request('POST', isServer ? `${API_ROOT}${url}` : url, { cookie }),
   };
 
 const service = {
-    del: async (url, token) => await request(`${SERVICE_ROOT}${url}`, 'DELETE', { token }),
-    get: async (url, token) => await request(`${SERVICE_ROOT}${url}`, 'GET', { token }),
-    put: async (url, token) => await request(`${SERVICE_ROOT}${url}`, 'PUT', { token }),
-    post: async (url, token) => await request(`${SERVICE_ROOT}${url}`, 'POST', { token }),
+    del: async (url, token) => await request('DELETE', `${SERVICE_ROOT}${url}`, { token }),
+    get: async (url, token) => await request('GET', `${SERVICE_ROOT}${url}`,{ token }),
+    put: async (url, token) => await request('PUT', `${SERVICE_ROOT}${url}`,{ token }),
+    post: async (url, token) => await request('POST', `${SERVICE_ROOT}${url}`, { token }),
   };
 
 

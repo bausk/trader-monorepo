@@ -6,11 +6,11 @@ import { ThemeProvider as StyledThemeProvider } from 'styled-components';
 import { ThemeProvider } from '@material-ui/core/styles';
 import CssBaseline from '@material-ui/core/CssBaseline';
 
-import auth0 from '../lib/auth0'
-import Layout from '../components/layout'
-import theme from '../src/theme';
-import { RootStore, StoreProvider } from '../components/rootStore';
-
+import auth0 from 'lib/auth0'
+import Layout from 'components/layout'
+import theme from 'src/theme/index';
+import { RootStore, StoreProvider } from 'components/rootStore';
+import routes from 'src/content/routes';
 
 export default function MyApp({ Component, pageProps }) {
     const store = useMemo(() => {
@@ -60,44 +60,6 @@ export default function MyApp({ Component, pageProps }) {
     );
 };
 
-
-// MyApp.getInitialProps = async ( { ctx } ) => {
-//     const isServer = (typeof window === 'undefined');
-//     console.log(`GetInitialProps on ${isServer ? 'server!' : 'browser!'}`);
-//     if (isServer) {
-//         debugger;
-//         const session = await auth0.getSession(ctx.req);
-//         debugger;
-//         console.log(session);
-//     }
-
-//     const appProps = await App.getInitialProps(ctx);
-//     let initialState;
-//     if (isServer) {
-//         initialState = {
-//             usersStore: {
-//                 state: "non-fetched",
-//                 users: ['kek', 'shmek', 'userek']
-//             },
-//             sourcesStore: {
-//                 state: "non-fetched",
-//                 sources: ['kek', 'shmek', 'sourcerek']
-//             },
-//             authStore: {
-//                 state: "fetched",
-//                 user: ctx.user
-//             }
-//         };
-//     }
-//     return {
-//         ...appProps,
-//         pageProps: {
-//             ...appProps.pageProps,
-//             initialState
-//         }
-//     };
-// };
-
 MyApp.getInitialProps = async (appContext) => {
     const isServer = (typeof window === 'undefined')
     console.log(`[_app.js] GetInitialProps on ${isServer ? 'server!' : 'browser!'}`);
@@ -106,7 +68,20 @@ MyApp.getInitialProps = async (appContext) => {
         appContext.ctx.user = session?.user;
     }
     console.log(appContext.ctx.user);
-    const appProps = await App.getInitialProps(appContext);
+    let appProps = {};
+    try {
+        appProps = await App.getInitialProps(appContext);
+    } catch (e) {
+        if (isServer) {
+            appContext.ctx.res.writeHead(302, {
+                Location: '/',
+            })
+            return appContext.ctx.res.end();
+        }
+        window.location.href = '/';
+        return;
+    }
+    
     let initialState;
     if (isServer) {
         initialState = {

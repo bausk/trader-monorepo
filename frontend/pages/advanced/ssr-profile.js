@@ -76,29 +76,32 @@ Profile.getInitialProps = async ({ req, res, user }) => {
     // keep in mind that server-side fetches need a full URL, meaning that the full url has to be provided to the application
 
     if (isServer) {
-        if (!user) {
-            res.writeHead(302, {
-                Location: '/api/login',
-            })
-            return res.end();
-        }
+        // if (!user) {
+        //     debugger;
+        //     res.writeHead(302, {
+        //         Location: '/api/login',
+        //     })
+        //     return res.end();
+        // }
         const cookie = req && req.headers.cookie
-        try {
+        // try {
             const newUser = await Auth.getprofile(cookie);
             return {
                 pageProps: {
                     initialState: {
-                        
+                        authStore: {
+                            user: newUser
+                        }
                     }
                 }
             }
-        }
-        catch (e) {
-            res.writeHead(302, {
-                Location: '/api/login',
-            })
-            return res.end();
-        }
+        // }
+        // catch (e) {
+        //     res.writeHead(302, {
+        //         Location: '/api/login',
+        //     })
+        //     return res.end();
+        // }
     }
 
     

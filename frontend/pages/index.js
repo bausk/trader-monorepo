@@ -3,17 +3,16 @@ import Link from "next/link";
 import Button from '@material-ui/core/Button';
 import { observer } from 'mobx-react'
 import ApiButton from '../components/loadButton';
-import { useFetchUser } from '../lib/user';
 import path from '../src/content/routes';
 import { useStores } from '../components/rootStore';
 
 
 function Home() {
-  const { loading } = useFetchUser();
   const { usersStore, authStore } = useStores();
-  const { user } = authStore;
+  const { loading, user } = authStore;
+  const isLoading = loading === 'loading';
   // We need user and loading from authStore
-  const label = user ? 'Logout' : (loading ? 'Pending...' : 'Login');
+  const label = user ? 'Logout' : (isLoading  ? 'Pending...' : 'Login');
   const link = user ? path.LOGOUT : path.LOGIN;
   return (
     <>
@@ -22,7 +21,7 @@ function Home() {
       <Link href={link} passHref>
         <Button
           component="a"
-          disabled={loading}
+          disabled={isLoading}
           color="primary"
           variant="contained"
         >
@@ -30,9 +29,9 @@ function Home() {
         </Button>
       </Link>
 
-      {loading && <p>Loading login info...</p>}
+      {isLoading && <p>Loading login info...</p>}
 
-      {!loading && !user && (
+      {!isLoading && !user && (
         <>
           <p>
             To test the login click in <i>Login</i>

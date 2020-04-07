@@ -8,7 +8,7 @@ class AuthStore {
     @observable user;
     @observable accessToken;
     @observable lastUpdate;
-    @observable state = 'pending';
+    @observable loading = 'pending';
     @action start = () => {
         this.timer = setInterval(flow(function* () {
             this.lastUpdate = Date.now()
@@ -23,10 +23,10 @@ class AuthStore {
     stop = () => clearInterval(this.timer);
 
     getUser = flow(function* (cookie) {
-        this.state = 'fetching';
+        this.loading = 'fetching';
         const user = yield Auth.getprofile(cookie);
         this.user = user;
-        this.state = 'done';
+        this.loading = 'done';
     });
 
     hydrate = (data) => {
