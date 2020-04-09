@@ -1,17 +1,15 @@
 import Container from '@material-ui/core/Container';
 import Head from 'next/head'
 import Header from './header'
-import { useFetchUser } from '../lib/user'
 
 function Layout({ children }) {
-  const { user, loading } = useFetchUser()
   return (
     <>
       <Head>
         <title>Next.js with Auth0 and MUI</title>
       </Head>
 
-      <Header user={user} loading={loading} />
+      <Header />
 
       <main>
         <Container maxWidth="md">{children}</Container>

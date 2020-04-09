@@ -17,7 +17,7 @@ class AuthStore {
                 const token = yield Auth.gettoken();
                 this.accessToken = token;
             }
-        }), 6000)
+        }.bind(this)), 6000)
     };
     
     stop = () => clearInterval(this.timer);

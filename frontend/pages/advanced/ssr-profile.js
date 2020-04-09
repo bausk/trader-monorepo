@@ -1,79 +1,49 @@
-import React from 'react'
-
+import React, { useEffect } from 'react';
+import { observer } from 'mobx-react';
 // This import is only needed when checking authentication status directly from getInitialProps
-import { useStores } from '../../components/rootStore';
-import { Auth } from '../../components/apiCall';
-import { fetchUser } from '../../lib/user';
+import { useStores } from 'components/rootStore';
+import { Auth } from 'components/apiCall';
 
-function Profile() {
+function Profile({ fetchedOnServer, user }) {
     const { authStore } = useStores();
-    const { user } = authStore;  
+    useEffect(() => {
+        if (!fetchedOnServer) {
+            console.log('fetching on client!');
+            // Todo: handle exception?
+            authStore.getUser();
+        }
+    }, [])
+    const userToShow = user || authStore.user;
     return (
         <>
-        <h1>Profile</h1>
+            <h1>Profile</h1>
 
-        <div>
-            <h3>Profile (server rendered)</h3>
-            <img src={user?.picture} alt="user picture" />
-            <p>nickname: {user?.nickname}</p>
-            <p>name: {user?.name}</p>
-        </div>
+            <div>
+                <h3>Profile (server rendered)</h3>
+                <img src={userToShow?.picture} alt="user picture" />
+                <p>nickname: {userToShow?.nickname}</p>
+                <p>name: {userToShow?.name}</p>
+            </div>
         </>
     )
 }
 
-// Profile.getInitialProps = async ({ req, res }) => {
-//   // On the server-side you can check authentication status directly
-//   // However in general you might want to call API Routes to fetch data
-//   // An example of directly checking authentication:
-//   if (typeof window === 'undefined') {
-//         const session = await auth0.getSession(req)
-//         if (!session?.user) {
-//             res.writeHead(302, {
-//                 Location: '/api/login',
-//             })
-//             res.end()
-//             return
-//         }
-//         return { user: session?.user }
+// export async function getServerSideProps(context) {
+//     console.log(`ururu will fetch on server ${typeof window}`);
+//     return {
+//         props: {
+//             fetchedOnServer: true,
+//             user: {
+//                 nickname: "kekmaster",
+//                 name: "blohart"
+//             }
+//         }, // will be passed to the page component as props
 //     }
-
-
-//     // To do fetches to API routes you can pass the cookie coming from the incoming request on to the fetch
-//     // so that a request to the API is done on behalf of the user
-//     // keep in mind that server-side fetches need a full URL, meaning that the full url has to be provided to the application
-//     const cookie = req && req.headers.cookie
-
-
-//     const user = await fetchUser(cookie)
-
-//     // A redirect is needed to authenticate to Auth0
-//     if (!user) {
-//         if (typeof window == 'undefined') {
-//         res.writeHead(200, {
-//             //Location: '/api/login',
-//         })
-//         return res.end()
-//         }
-
-//         window.location.href = '/api/login'
-//     }
-
-//     return { user }
-//     }
-
-
+// }
 
 Profile.getInitialProps = async ({ req, res, user }) => {
-    // On the server-side you can check authentication status directly
-    // However in general you might want to call API Routes to fetch data
-    // An example of directly checking authentication:
-  
-    //vs
+
     const isServer = typeof window === 'undefined';
-    // To do fetches to API routes you can pass the cookie coming from the incoming request on to the fetch
-    // so that a request to the API is done on behalf of the user
-    // keep in mind that server-side fetches need a full URL, meaning that the full url has to be provided to the application
 
     if (isServer) {
         // if (!user) {
@@ -86,14 +56,13 @@ Profile.getInitialProps = async ({ req, res, user }) => {
         const cookie = req && req.headers.cookie
         // try {
             const newUser = await Auth.getprofile(cookie);
+            if (!newUser) {
+                throw new Error('user not available');
+            }
+            console.warn('got user server-side!');
             return {
-                pageProps: {
-                    initialState: {
-                        authStore: {
-                            user: newUser
-                        }
-                    }
-                }
+                fetchedOnServer: true,
+                user: newUser,
             }
         // }
         // catch (e) {
@@ -103,20 +72,23 @@ Profile.getInitialProps = async ({ req, res, user }) => {
         //     return res.end();
         // }
     }
+    return {
+        fetchedOnServer: false
+    }
 
     
     
 
     // A redirect is needed to authenticate to Auth0
-    if (!newUser) {
-        if (isServer) {
-        res.writeHead(302, {
-            Location: '/api/login',
-        })
-        return res.end()
-        }
-        window.location.href = '/api/login'
-    }
+    // if (!newUser) {
+    //     if (isServer) {
+    //     res.writeHead(302, {
+    //         Location: '/api/login',
+    //     })
+    //     return res.end()
+    //     }
+    //     window.location.href = '/api/login'
+    // }
 }
 
-export default Profile
+export default observer(Profile);

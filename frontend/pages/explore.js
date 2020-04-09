@@ -16,7 +16,6 @@ import RefreshIcon from "@material-ui/icons/Refresh";
 import Typography from "@material-ui/core/Typography";
 import Link from "next/link";
 import { observer } from 'mobx-react';
-import { useFetchUser } from '../lib/user';
 import { useStores } from '../components/rootStore';
 
 const useStyles = makeStyles({
@@ -26,8 +25,8 @@ const useStyles = makeStyles({
 });
 
 function Explore() {
-  const { user, loading } = useFetchUser();
-  const { sourcesStore } = useStores();
+  const { sourcesStore, authStore } = useStores();
+  const { user, loading } = authStore;
   const classes = useStyles();
   const rows = sourcesStore.sources;
   if (!loading && !user) {

@@ -2,6 +2,7 @@ import React from 'react';
 import { useMemo, useEffect } from 'react';
 import App from 'next/app';
 import Head from 'next/head';
+import merge from 'lodash/merge';
 import { ThemeProvider as StyledThemeProvider } from 'styled-components';
 import { ThemeProvider } from '@material-ui/core/styles';
 import CssBaseline from '@material-ui/core/CssBaseline';
@@ -30,15 +31,28 @@ export default function MyApp({ Component, pageProps }) {
         // then you can hydrate it here.
         const { initialState } = pageProps;
         if (initialState) {
+            console.log('[app.js] will hydrate');
             store.hydrate(initialState);
         }
-    }, [store.sourcesStore, pageProps]);
+    }, [store.authStore, pageProps]);
 
     useEffect(() => {
+        window._store = store;
         store.authStore.start();
         return store.authStore.stop;
     }, [])
 
+    useEffect(() => {
+
+        const onbeforeunloadFn = () => {
+          localStorage.setItem('color', 'red')
+        }
+    
+        window.addEventListener('storage', onbeforeunloadFn);
+        return () => {
+          window.removeEventListener('storage', onbeforeunloadFn);
+        }
+      }, [])
     return (
         <>
             <Head>
@@ -67,18 +81,17 @@ MyApp.getInitialProps = async (appContext) => {
         const session = await auth0.getSession(appContext.ctx.req);
         appContext.ctx.user = session?.user;
     }
-    console.log(appContext.ctx.user);
     let appProps = {};
     try {
         appProps = await App.getInitialProps(appContext);
     } catch (e) {
         if (isServer) {
             appContext.ctx.res.writeHead(302, {
-                Location: '/',
+                Location: routes.HOME,
             })
             return appContext.ctx.res.end();
         }
-        window.location.href = '/';
+        window.location.href = routes.HOME;
         return;
     }
     
@@ -94,16 +107,10 @@ MyApp.getInitialProps = async (appContext) => {
                 sources: ['kek', 'shmek', 'sourcerek']
             },
             authStore: {
-                state: "fetched",
+                loading: "fetched",
                 user: appContext.ctx.user
             }
         };
     }
-    return {
-        ...appProps,
-        pageProps: {
-            ...appProps.pageProps,
-            initialState
-        }
-    };
+    return merge({}, appProps, {pageProps: { initialState }});
 };

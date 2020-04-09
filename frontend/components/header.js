@@ -47,7 +47,7 @@ const useStyles = makeStyles(theme => ({
 }));
 
 
-function Header({ user, loading }) {
+function Header() {
   const classes = useStyles();
   const router = useRouter();
   const [value, setValue] = React.useState(router.pathname);
