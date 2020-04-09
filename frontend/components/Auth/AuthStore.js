@@ -1,5 +1,8 @@
-import { observable, flow, action } from 'mobx';
-import { Auth } from '../apiCall';
+import { observable, flow, action, autorun } from 'mobx';
+import { Auth } from 'components/apiCall';
+import Router from 'next/router';
+import routes from 'src/content/routes';
+
 
 class AuthStore {
     constructor(rootStore) {
@@ -11,11 +14,17 @@ class AuthStore {
     @observable loading = 'pending';
     @action start = () => {
         this.timer = setInterval(flow(function* () {
-            this.lastUpdate = Date.now()
+            this.lastUpdate = Date.now();
             console.log(`trying to get access token... ${this.user ? 'proceeding': 'no user'}`);
             if (this.user) {
-                const token = yield Auth.gettoken();
-                this.accessToken = token;
+                try {
+                    const token = yield Auth.gettoken();
+                    this.accessToken = token;
+                } catch (e) {
+                    this.stop();
+                }
+            } else {
+                this.stop();
             }
         }.bind(this)), 6000)
     };
@@ -24,13 +33,37 @@ class AuthStore {
 
     getUser = flow(function* (cookie) {
         this.loading = 'fetching';
-        const user = yield Auth.getprofile(cookie);
-        this.user = user;
-        this.loading = 'done';
+        let user;
+        try {
+            user = yield Auth.getprofile(cookie);
+            this.user = user;
+            this.loading = 'done';
+            this.start();
+        } catch (e) {
+            return this.logout('foreign source');
+        }
+
     });
+
+    @action login = (foreignSource = false) => {
+        this.loading = 'fetching';
+        this.start();
+    };
+
+    @action logout = (foreignSource = false) => {
+        this.loading = 'fetching';
+        this.user = null;
+        if (!foreignSource) {
+            localStorage.setItem('logout', new Date())
+        }
+        Router.push(routes.LOGOUT);
+    };
 
     hydrate = (data) => {
         Object.keys(data).forEach(k => this[k] = data[k]);
+        if (data.user) {
+            localStorage.setItem('login', new Date())
+        }
     };
 }
 

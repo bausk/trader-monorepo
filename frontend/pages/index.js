@@ -10,10 +10,16 @@ import { useStores } from '../components/rootStore';
 function Home() {
   const { usersStore, authStore } = useStores();
   const { loading, user } = authStore;
-  const isLoading = loading === 'loading';
-  // We need user and loading from authStore
-  const label = user ? 'Logout' : (isLoading  ? 'Pending...' : 'Login');
+  const isLoading = loading === 'fetching';
+  const label = isLoading ? 'Pending...' : (user  ? 'Logout' : 'Login');
   const link = user ? path.LOGOUT : path.LOGIN;
+  const onLoginStateChange = React.useCallback(() => {
+    if (user) {
+      authStore.logout();
+    } else {
+      authStore.login();
+    }
+  }, [authStore, user]);
   return (
     <>
       <h1>Next.js and Auth0 Example</h1>
@@ -21,6 +27,7 @@ function Home() {
       <Link href={link} passHref>
         <Button
           component="a"
+          onClickCapture={onLoginStateChange}
           disabled={isLoading}
           color="primary"
           variant="contained"

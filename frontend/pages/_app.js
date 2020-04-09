@@ -43,16 +43,20 @@ export default function MyApp({ Component, pageProps }) {
     }, [])
 
     useEffect(() => {
-
-        const onbeforeunloadFn = () => {
-          localStorage.setItem('color', 'red')
+        const onLoginChange = (event) => {
+            if (event.key === 'login') {
+                store.authStore.getUser();
+            }
+            if (event.key === 'logout') {
+                store.authStore.logout('foreignSource');
+            }
         }
-    
-        window.addEventListener('storage', onbeforeunloadFn);
+        window.addEventListener('storage', onLoginChange);
         return () => {
-          window.removeEventListener('storage', onbeforeunloadFn);
+            window.removeEventListener('storage', onLoginChange);
         }
       }, [])
+
     return (
         <>
             <Head>
