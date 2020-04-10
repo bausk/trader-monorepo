@@ -1,4 +1,4 @@
-import { observable, flow, action, autorun } from 'mobx';
+import { observable, flow, action } from 'mobx';
 import { Auth } from 'components/apiCall';
 import Router from 'next/router';
 import routes from 'src/content/routes';
@@ -42,12 +42,11 @@ class AuthStore {
         } catch (e) {
             return this.logout('foreign source');
         }
-
     });
 
-    @action login = (foreignSource = false) => {
+    @action login = () => {
         this.loading = 'fetching';
-        this.start();
+        Router.push(routes.LOGIN);
     };
 
     @action logout = (foreignSource = false) => {

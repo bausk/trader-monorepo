@@ -1,9 +1,7 @@
 import React from 'react'
-import Link from "next/link";
 import Button from '@material-ui/core/Button';
 import { observer } from 'mobx-react'
 import ApiButton from '../components/loadButton';
-import path from '../src/content/routes';
 import { useStores } from '../components/rootStore';
 
 
@@ -12,7 +10,6 @@ function Home() {
   const { loading, user } = authStore;
   const isLoading = loading === 'fetching';
   const label = isLoading ? 'Pending...' : (user  ? 'Logout' : 'Login');
-  const link = user ? path.LOGOUT : path.LOGIN;
   const onLoginStateChange = React.useCallback(() => {
     if (user) {
       authStore.logout();
@@ -24,17 +21,15 @@ function Home() {
     <>
       <h1>Next.js and Auth0 Example</h1>
 
-      <Link href={link} passHref>
         <Button
           component="a"
-          onClickCapture={onLoginStateChange}
+          onClick={onLoginStateChange}
           disabled={isLoading}
           color="primary"
           variant="contained"
         >
           {label}
         </Button>
-      </Link>
 
       {isLoading && <p>Loading login info...</p>}
 
