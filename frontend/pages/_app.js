@@ -11,7 +11,7 @@ import auth0 from 'lib/auth0'
 import Layout from 'components/layout'
 import theme from 'src/theme/index';
 import { RootStore, StoreProvider } from 'components/rootStore';
-import routes from 'src/content/routes';
+import routes from 'api/frontendRoutes';
 
 export default function MyApp({ Component, pageProps }) {
     const store = useMemo(() => {
@@ -104,11 +104,11 @@ MyApp.getInitialProps = async (appContext) => {
         initialState = {
             usersStore: {
                 state: "non-fetched",
-                users: ['kek', 'shmek', 'userek']
+                users: [],
             },
             sourcesStore: {
                 state: "non-fetched",
-                sources: ['kek', 'shmek', 'sourcerek']
+                sources: ['arrived', 'from', 'SSR'],
             },
             authStore: {
                 loading: "fetched",

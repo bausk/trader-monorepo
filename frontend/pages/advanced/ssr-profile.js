@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { observer } from 'mobx-react';
 // This import is only needed when checking authentication status directly from getInitialProps
 import { useStores } from 'components/rootStore';
-import { Auth } from 'components/apiCall';
+import Auth from 'api/Auth';
 
 function Profile({ fetchedOnServer, user }) {
     const { authStore } = useStores();

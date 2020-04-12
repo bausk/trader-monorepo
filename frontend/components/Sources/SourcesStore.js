@@ -1,6 +1,6 @@
 import { observable, flow} from 'mobx';
-import callApi from './SourcesApi';
-
+import { fetchBackend } from 'api/fetcher';
+import r from 'api/backendRoutes';
 
 class SourcesStore {
     constructor(rootStore) {
@@ -14,7 +14,8 @@ class SourcesStore {
         this.sources = [];
         this.state = "pending";
         try {
-            const result = yield callApi();
+            const token = this.rootStore.authStore.accessToken;
+            const result = yield fetchBackend.post(r.SOURCES, token);
             this.state = "done";
             console.log(result);
             this.sources = result;

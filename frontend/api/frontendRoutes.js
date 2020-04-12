@@ -1,7 +1,10 @@
+import config from 'lib/config';
+
 const routes = {
     HOME: '/',
     LOGIN: '/api/login',
     GETTOKEN: '/api/gettoken',
+    ME: '/api/me',
     LOGOUT: '/api/logout',
 
     EXPLORE: '/explore',
@@ -14,3 +17,5 @@ const routes = {
 }
 
 export default routes;
+
+export const FRONTEND_ROOT = config.FRONTEND_ROOT;

@@ -7,7 +7,8 @@ import Tabs from '@material-ui/core/Tabs';
 import Tab from '@material-ui/core/Tab';
 import Typography from '@material-ui/core/Typography';
 import Box from '@material-ui/core/Box';
-import path from '../src/content/routes';
+
+import r from 'api/frontendRoutes';
 
 function TabPanel(props) {
   const { children, value, index, ...other } = props;
@@ -66,13 +67,13 @@ function Header() {
           onChange={handleChange}
           aria-label="nav tabs example"
         >
-          <Tab value={path.HOME} label="Dashboard" href={path.HOME} {...a11yProps(0)} />
-          <Tab value={path.EXPLORE} label="Explore" href={path.EXPLORE} {...a11yProps(1)} />
-          <Tab disabled value={path.MODEL} label="Model" href={path.MODEL} {...a11yProps(2)} />
-          <Tab disabled value={path.OPTIMIZE} label="Optimize" href={path.OPTIMIZE} {...a11yProps(3)} />
-          <Tab disabled value={path.TRADE} label="Trade" href={path.TRADE} {...a11yProps(4)} />
-          <Tab value={path.PROFILE} label="Profile" href={path.PROFILE} {...a11yProps(5)} />
-          <Tab value={path.SERVERPROFILE} label="SSR-Profile" href={path.SERVERPROFILE} {...a11yProps(6)} />
+          <Tab value={r.HOME} label="Dashboard" href={r.HOME} {...a11yProps(0)} />
+          <Tab value={r.EXPLORE} label="Explore" href={r.EXPLORE} {...a11yProps(1)} />
+          <Tab disabled value={r.MODEL} label="Model" href={r.MODEL} {...a11yProps(2)} />
+          <Tab disabled value={r.OPTIMIZE} label="Optimize" href={r.OPTIMIZE} {...a11yProps(3)} />
+          <Tab disabled value={r.TRADE} label="Trade" href={r.TRADE} {...a11yProps(4)} />
+          <Tab value={r.PROFILE} label="Profile" href={r.PROFILE} {...a11yProps(5)} />
+          <Tab value={r.SERVERPROFILE} label="SSR-Profile" href={r.SERVERPROFILE} {...a11yProps(6)} />
         </Tabs>
       </AppBar>
     </div>

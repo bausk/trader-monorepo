@@ -26,5 +26,9 @@ module.exports = {
       process.env.POST_LOGOUT_REDIRECT_URI || 'http://localhost:3000/',
     SESSION_COOKIE_SECRET: process.env.SESSION_COOKIE_SECRET,
     SESSION_COOKIE_LIFETIME: 7200, // 2 hours
+    FRONTEND_ROOT:
+      process.env.FRONTEND_ROOT || 'http://localhost:3000',
+    BACKEND_ROOT:
+      process.env.BACKEND_ROOT || 'http://localhost:5000',
   },
 }

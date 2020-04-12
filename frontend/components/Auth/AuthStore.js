@@ -1,7 +1,7 @@
 import { observable, flow, action } from 'mobx';
-import { Auth } from 'components/apiCall';
 import Router from 'next/router';
-import routes from 'src/content/routes';
+import routes from 'api/frontendRoutes';
+import Auth from 'api/Auth';
 
 
 class AuthStore {

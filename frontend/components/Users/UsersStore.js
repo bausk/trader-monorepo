@@ -25,10 +25,6 @@ class UsersStore {
     hydrate = (data) => {
         Object.keys(data).forEach(k => this[k] = data[k]);
     }
-
-    getSources = () => {
-        return this.rootStore.sourcesStore.sources;
-    }
 }
 
 export default UsersStore;

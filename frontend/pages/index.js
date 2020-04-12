@@ -6,7 +6,7 @@ import { useStores } from '../components/rootStore';
 
 
 function Home() {
-  const { usersStore, authStore } = useStores();
+  const { sourcesStore, authStore } = useStores();
   const { loading, user } = authStore;
   const isLoading = loading === 'fetching';
   const label = isLoading ? 'Pending...' : (user  ? 'Logout' : 'Login');
@@ -49,10 +49,11 @@ function Home() {
         <>
           <h4>Rendered user info on the client</h4>
           <img src={user.picture} alt="user picture" />
+          <br />
           <ApiButton color="primary" variant="outlined">
               Retrieve public data
           </ApiButton>
-          <div>{usersStore.getSources()}</div>
+          <div>{JSON.stringify(sourcesStore.sources)}</div>
           <p>nickname: {user.nickname}</p>
           <p>name: {user.name}</p>
         </>
