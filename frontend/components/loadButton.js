@@ -5,10 +5,10 @@ import { useStores } from './rootStore';
 
 
 export default observer((props) => {
-    const { usersStore } = useStores();
+    const { sourcesStore } = useStores();
     return (
-    <Button {...props} onClick={usersStore.fetchProjects}>
-        Retrieve public data: {usersStore.state}
+    <Button {...props} onClick={sourcesStore.listSources}>
+        Retrieve public data: {sourcesStore.state}
     </Button>
     );
 });

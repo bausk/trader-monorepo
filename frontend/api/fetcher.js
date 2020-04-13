@@ -5,6 +5,7 @@ import { BACKEND_ROOT } from './backendRoutes';
 const isServer = typeof window === 'undefined';
 
 const request = async (method, url, options) => {
+    console.log(options);
     try {
         const res = await fetch(
             url,
@@ -16,7 +17,9 @@ const request = async (method, url, options) => {
                     },
                   }
                 : (options.token ? {
-                    Authorization: `Bearer ${options.token}`
+                    headers: {
+                        Authorization: `Bearer ${options.token}`
+                    }
                 } : {}))
             }
         );
@@ -24,6 +27,7 @@ const request = async (method, url, options) => {
             const result = await res.json();
             return result;
         }
+        console.warn(res);
         throw new Error(`could not ${method} data from ${url}`);
     }
     catch (e) {

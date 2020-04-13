@@ -46,31 +46,15 @@ Profile.getInitialProps = async ({ req, res, user }) => {
     const isServer = typeof window === 'undefined';
 
     if (isServer) {
-        // if (!user) {
-        //     debugger;
-        //     res.writeHead(302, {
-        //         Location: '/api/login',
-        //     })
-        //     return res.end();
-        // }
         const cookie = req && req.headers.cookie
-        // try {
-            const newUser = await Auth.getprofile(cookie);
-            if (!newUser) {
-                throw new Error('user not available');
-            }
-            console.warn('got user server-side!');
-            return {
-                fetchedOnServer: true,
-                user: newUser,
-            }
-        // }
-        // catch (e) {
-        //     res.writeHead(302, {
-        //         Location: '/api/login',
-        //     })
-        //     return res.end();
-        // }
+        const newUser = await Auth.getprofile(cookie);
+        if (!newUser) {
+            throw new Error('user not available');
+        }
+        return {
+            fetchedOnServer: true,
+            user: newUser,
+        }
     }
     return {
         fetchedOnServer: false

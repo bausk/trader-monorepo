@@ -1,4 +1,5 @@
-import React, { useCallback, useState, useContext } from 'react'
+import React, { useCallback, useState, useContext } from 'react';
+import useSWR from 'swr';
 import { makeStyles } from "@material-ui/core/styles";
 import Table from "@material-ui/core/Table";
 import TableBody from "@material-ui/core/TableBody";
@@ -26,6 +27,13 @@ const useStyles = makeStyles({
 
 function Explore() {
   const { sourcesStore, authStore } = useStores();
+  const { data, error } = useSWR(
+    '/sources',
+    async query => {
+      console.log('fetching from swr');
+      return await sourcesStore.listSourcesAsync();
+    }
+  );
   const { user, loading } = authStore;
   const classes = useStyles();
   const rows = sourcesStore.sources;
@@ -47,6 +55,9 @@ function Explore() {
     <>
       <h1>Sources</h1>
       {loading && <p>Loading login info...</p>}
+      <h2>SWR results:</h2>
+      <code>{JSON.stringify(data)}</code>
+      <code>{JSON.stringify(error)}</code>
       {user && (
         <div className={classes.root}>
           <AppBar position="static">

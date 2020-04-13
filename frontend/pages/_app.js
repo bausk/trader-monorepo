@@ -84,6 +84,7 @@ MyApp.getInitialProps = async (appContext) => {
     if (isServer) {
         const session = await auth0.getSession(appContext.ctx.req);
         appContext.ctx.user = session?.user;
+        appContext.ctx.accessToken = session?.accessToken;
     }
     let appProps = {};
     try {
@@ -112,7 +113,8 @@ MyApp.getInitialProps = async (appContext) => {
             },
             authStore: {
                 loading: "fetched",
-                user: appContext.ctx.user
+                user: appContext.ctx.user,
+                accessToken: appContext.ctx.accessToken,
             }
         };
     }

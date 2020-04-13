@@ -9,8 +9,20 @@ class SourcesStore {
     @observable sources;
     @observable state = "pending";
 
-    fetchProjects = flow(function* () {
-        console.log(this.sources);
+    listSourcesAsync = async () => {
+        try {
+            const token = this.rootStore.authStore.accessToken;
+            console.log(token);
+            debugger;
+            const result = await fetchBackend.post(r.SOURCES, token);
+            console.log(result);
+            return result;
+        } catch (error) {
+            throw error;
+        }
+    }
+    
+    listSources = flow(function* () {
         this.sources = [];
         this.state = "pending";
         try {

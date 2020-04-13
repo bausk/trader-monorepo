@@ -9,7 +9,7 @@ class UsersStore {
     @observable users = [];
     @observable state;
 
-    fetchProjects = flow(function* () {
+    unused = flow(function* () {
         this.users = [];
         this.state = "pending";
         try {

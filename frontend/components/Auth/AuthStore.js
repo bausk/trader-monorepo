@@ -19,7 +19,7 @@ class AuthStore {
             if (this.user) {
                 try {
                     const token = yield Auth.gettoken();
-                    this.accessToken = token;
+                    this.accessToken = token.accessToken;
                 } catch (e) {
                     this.stop();
                 }
