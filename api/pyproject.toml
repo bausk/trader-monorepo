@@ -24,6 +24,7 @@ gino = "^0.8.6"
 psycopg2-binary = "^2.8.4"
 aiohttp_security = "^0.4.0"
 pyjwt = "^1.7.1"
+marshmallow-sqlalchemy = "^0.22.3"
 
 [tool.poetry.dev-dependencies]
 ptvsd = "^4.2"
