@@ -39,14 +39,14 @@ const request = async (method, url, options) => {
 };
 
 export const fetchFrontend = {
-    del: async (url, cookie = '') => await request('DELETE', isServer ? `${FRONTEND_ROOT}${url}` : url, { cookie }),
+    delete: async (url, cookie = '') => await request('DELETE', isServer ? `${FRONTEND_ROOT}${url}` : url, { cookie }),
     get: async (url, cookie = '') => await request('GET', isServer ? `${FRONTEND_ROOT}${url}` : url, { cookie }),
     put: async (url, cookie = '') => await request('PUT', isServer ? `${FRONTEND_ROOT}${url}` : url, { cookie }),
     post: async (url, cookie = '') => await request('POST', isServer ? `${FRONTEND_ROOT}${url}` : url, { cookie }),
   };
 
 export const fetchBackend = {
-    del: async (url, token) => await request('DELETE', `${BACKEND_ROOT}${url}`, { token }),
+    delete: async (url, token, data = null) => await request('DELETE', `${BACKEND_ROOT}${url}`, { token, data }),
     get: async (url, token) => await request('GET', `${BACKEND_ROOT}${url}`, { token }),
     put: async (url, token, data = null) => await request('PUT', `${BACKEND_ROOT}${url}`, { token, data }),
     post: async (url, token, data = null) => await request('POST', `${BACKEND_ROOT}${url}`, { token, data }),

@@ -1,8 +1,8 @@
 import React from 'react'
 import Button from '@material-ui/core/Button';
 import { observer } from 'mobx-react'
-import ApiButton from '../components/loadButton';
-import { useStores } from '../components/rootStore';
+import ApiButton, { DeleteButton } from 'components/loadButton';
+import { useStores } from 'components/rootStore';
 
 
 function Home() {
@@ -17,6 +17,14 @@ function Home() {
       authStore.login();
     }
   }, [authStore, user]);
+  const elements = sourcesStore.sources.map((source) => {
+    return(
+      <ul key={source.id}>
+        <div>{source.type}</div>
+        <DeleteButton element={source} />
+      </ul>
+    );
+  });
   return (
     <>
       <h1>Next.js and Auth0 Example</h1>
@@ -53,7 +61,7 @@ function Home() {
           <ApiButton color="primary" variant="outlined">
               Retrieve public data
           </ApiButton>
-          <div>{JSON.stringify(sourcesStore.sources)}</div>
+          <div>{elements}</div>
           <p>nickname: {user.nickname}</p>
           <p>name: {user.name}</p>
         </>
