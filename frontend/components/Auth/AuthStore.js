@@ -60,7 +60,7 @@ class AuthStore {
 
     hydrate = (data) => {
         Object.keys(data).forEach(k => this[k] = data[k]);
-        if (data.user) {
+        if (data.user && typeof window !== 'undefined') {
             localStorage.setItem('login', new Date())
         }
     };

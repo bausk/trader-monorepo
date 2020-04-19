@@ -20,7 +20,8 @@ const request = async (method, url, options) => {
                     headers: {
                         Authorization: `Bearer ${options.token}`
                     }
-                } : {}))
+                } : {})),
+                body: options.data && JSON.stringify(options.data)
             }
         );
         if (res.ok) {
@@ -28,7 +29,7 @@ const request = async (method, url, options) => {
             return result;
         }
         console.warn(res);
-        throw new Error(`could not ${method} data from ${url}`);
+        throw new Error(res.status);
     }
     catch (e) {
         console.warn(e);
@@ -46,7 +47,7 @@ export const fetchFrontend = {
 
 export const fetchBackend = {
     del: async (url, token) => await request('DELETE', `${BACKEND_ROOT}${url}`, { token }),
-    get: async (url, token) => await request('GET', `${BACKEND_ROOT}${url}`,{ token }),
-    put: async (url, token) => await request('PUT', `${BACKEND_ROOT}${url}`,{ token }),
-    post: async (url, token) => await request('POST', `${BACKEND_ROOT}${url}`, { token }),
+    get: async (url, token) => await request('GET', `${BACKEND_ROOT}${url}`, { token }),
+    put: async (url, token, data = null) => await request('PUT', `${BACKEND_ROOT}${url}`, { token, data }),
+    post: async (url, token, data = null) => await request('POST', `${BACKEND_ROOT}${url}`, { token, data }),
   };
