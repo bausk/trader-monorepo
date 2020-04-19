@@ -17,7 +17,9 @@ import RefreshIcon from "@material-ui/icons/Refresh";
 import Typography from "@material-ui/core/Typography";
 import Link from "next/link";
 import { observer } from 'mobx-react';
-import { useStores } from '../components/rootStore';
+import { useStores } from 'components/rootStore';
+import { fetchBackend } from 'api/fetcher';
+import r from 'api/backendRoutes';
 
 const useStyles = makeStyles({
   table: {
@@ -27,12 +29,22 @@ const useStyles = makeStyles({
 
 function Explore() {
   const { sourcesStore, authStore } = useStores();
+  console.log('[explore] Initial state is:');
+  console.log(sourcesStore?.sources);
   const { data, error } = useSWR(
-    '/sources',
-    async query => {
-      console.log('fetching from swr');
-      return await sourcesStore.listSourcesAsync();
-    }
+    () => {
+      console.log('[explore] RUN SWR');
+      if (typeof window === 'undefined') {
+        return
+      }
+      if(authStore.accessToken) return '/sources';
+      console.log('[explore] RUN SWR FAILED');
+      throw new Error();
+    },
+    async query => await fetchBackend.get(r.SOURCES, authStore.accessToken),
+    // {
+    //     // initialData: sourcesStore.sources
+    // }
   );
   const { user, loading } = authStore;
   const classes = useStyles();
@@ -107,4 +119,25 @@ function Explore() {
   )
 }
 
+// Profile.getInitialProps = async ({ req, res, user }) => {
+
+//     const isServer = typeof window === 'undefined';
+
+//     if (isServer) {
+//         const cookie = req && req.headers.cookie
+//         const newUser = await Auth.getprofile(cookie);
+//         if (!newUser) {
+//             throw new Error('user not available');
+//         }
+//         return {
+//             fetchedOnServer: true,
+//             user: newUser,
+//         }
+//     }
+//     return {
+//         fetchedOnServer: false
+//     }
+// }
+
+  
 export default observer(Explore);

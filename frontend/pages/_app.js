@@ -15,6 +15,10 @@ import routes from 'api/frontendRoutes';
 
 export default function MyApp({ Component, pageProps }) {
     const store = useMemo(() => {
+        const { initialState } = pageProps;
+        if (initialState) {
+            return new RootStore(initialState);
+        }
         return new RootStore();
     }, []);
 
@@ -25,16 +29,6 @@ export default function MyApp({ Component, pageProps }) {
           jssStyles.parentElement.removeChild(jssStyles);
         }
     }, []);
-
-    useEffect(() => {
-        // If your page has Next.js data fetching methods returning a state for the Mobx store,
-        // then you can hydrate it here.
-        const { initialState } = pageProps;
-        if (initialState) {
-            console.log('[app.js] will hydrate');
-            store.hydrate(initialState);
-        }
-    }, [store.authStore, pageProps]);
 
     useEffect(() => {
         window._store = store;

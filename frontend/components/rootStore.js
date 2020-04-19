@@ -12,10 +12,11 @@ const isServer = typeof window === 'undefined'
 useStaticRendering(isServer)
 
 export class RootStore {
-    constructor() {
+    constructor(initialState) {
         this.authStore = new AuthStore(this);
         this.usersStore = new UsersStore(this);
         this.sourcesStore = new SourcesStore(this);
+        this.hydrate(initialState);
     }
     hydrate = ({ authStore, usersStore, sourcesStore }) => {
         this.authStore.hydrate(authStore);
