@@ -97,10 +97,6 @@ MyApp.getInitialProps = async (appContext) => {
     let initialState;
     if (isServer) {
         initialState = {
-            usersStore: {
-                state: "non-fetched",
-                users: [],
-            },
             sourcesStore: {
                 state: "non-fetched",
                 sources: ['arrived', 'from', 'SSR'],

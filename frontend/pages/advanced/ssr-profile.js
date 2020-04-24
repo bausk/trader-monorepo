@@ -28,29 +28,9 @@ function Profile({ fetchedOnServer, user }) {
     )
 }
 
-// export async function getServerSideProps(context) {
-//     console.log(`ururu will fetch on server ${typeof window}`);
-//     return {
-//         props: {
-//             fetchedOnServer: true,
-//             user: {
-//                 nickname: "kekmaster",
-//                 name: "blohart"
-//             }
-//         }, // will be passed to the page component as props
-//     }
-// }
-
-Profile.getInitialProps = async ({ req, res, user }) => {
-
-    const isServer = typeof window === 'undefined';
-
-    if (isServer) {
-        const cookie = req && req.headers.cookie
-        const newUser = await Auth.getprofile(cookie);
-        if (!newUser) {
-            throw new Error('user not available');
-        }
+Profile.getInitialProps = async ({ req }) => {
+    const user = await Auth.checkLogin(req);
+    if (user) {
         return {
             fetchedOnServer: true,
             user: newUser,
@@ -59,20 +39,6 @@ Profile.getInitialProps = async ({ req, res, user }) => {
     return {
         fetchedOnServer: false
     }
-
-    
-    
-
-    // A redirect is needed to authenticate to Auth0
-    // if (!newUser) {
-    //     if (isServer) {
-    //     res.writeHead(302, {
-    //         Location: '/api/login',
-    //     })
-    //     return res.end()
-    //     }
-    //     window.location.href = '/api/login'
-    // }
 }
 
 export default observer(Profile);

@@ -21,12 +21,13 @@ class AuthStore {
                     const token = yield Auth.gettoken();
                     this.accessToken = token.accessToken;
                 } catch (e) {
+                    // nullify accessToken?
                     this.stop();
                 }
             } else {
                 this.stop();
             }
-        }.bind(this)), 6000)
+        }.bind(this)), 180000)
     };
     
     stop = () => clearInterval(this.timer);

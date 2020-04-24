@@ -1,4 +1,4 @@
-import React, { useCallback, useState, useContext } from 'react';
+import React, { useCallback } from 'react';
 import useSWR from 'swr';
 import { makeStyles } from "@material-ui/core/styles";
 import Table from "@material-ui/core/Table";
@@ -14,12 +14,11 @@ import Toolbar from "@material-ui/core/Toolbar";
 import IconButton from "@material-ui/core/IconButton";
 import AddIcon from "@material-ui/icons/Add";
 import RefreshIcon from "@material-ui/icons/Refresh";
-import Typography from "@material-ui/core/Typography";
-import Link from "next/link";
 import { observer } from 'mobx-react';
 import { useStores } from 'components/rootStore';
 import { fetchBackend } from 'api/fetcher';
 import r from 'api/backendRoutes';
+import Auth from 'api/Auth';
 
 const useStyles = makeStyles({
   table: {
@@ -27,28 +26,36 @@ const useStyles = makeStyles({
   }
 });
 
-function Explore() {
+function Explore({ sources }) {
   const { sourcesStore, authStore } = useStores();
-  console.log('[explore] Initial state is:');
-  console.log(sourcesStore?.sources);
-  const { data, error } = useSWR(
+  const { data, error, mutate } = useSWR(
     () => {
       console.log('[explore] RUN SWR');
       if (typeof window === 'undefined') {
-        return
+        return;
       }
-      if(authStore.accessToken) return '/sources';
+      if (authStore.accessToken) {
+        return '/sources';
+      }
       console.log('[explore] RUN SWR FAILED');
       throw new Error();
     },
     async query => await fetchBackend.get(r.SOURCES, authStore.accessToken),
-    // {
-    //     // initialData: sourcesStore.sources
-    // }
+    {
+      initialData: sources
+    }
   );
+  const onAdd = async () => {
+    const result = await sourcesStore.addSource();
+    mutate(result, false);
+  };
+  const onRefresh = useCallback(async () => {
+    mutate();
+  }, []);
   const { user, loading } = authStore;
   const classes = useStyles();
-  const rows = sourcesStore.sources;
+  console.log(data);
+  const rows = data || [];
   if (!loading && !user) {
     return (
       <>
@@ -77,6 +84,7 @@ function Explore() {
               <IconButton
                 edge="start"
                 className={classes.menuButton}
+                onClick={onAdd}
                 color="inherit"
                 aria-label="menu"
               >
@@ -84,6 +92,7 @@ function Explore() {
               </IconButton>
               <IconButton
                 className={classes.menuButton}
+                onClick={onRefresh}
                 color="inherit"
                 aria-label="menu"
               >
@@ -101,12 +110,12 @@ function Explore() {
               </TableHead>
               <TableBody>
                 {rows.map(row => (
-                  <TableRow key={row}>
+                  <TableRow key={row.id}>
                     <TableCell component="th" scope="row">
-                      <Button>{row}</Button>
+                      <Button>{row.id}</Button>
                     </TableCell>
                     <TableCell align="right">
-                      <Button>{row}</Button>
+                      <Button>{row.type}</Button>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -119,25 +128,22 @@ function Explore() {
   )
 }
 
-// Profile.getInitialProps = async ({ req, res, user }) => {
+Explore.getInitialProps = async ({ req }) => {
+    console.log('[explore.js] getting..');
+    const token = await Auth.getTokenServerSide(req);
+    console.log('[explore.js] token..');
+    console.log(token);
+    if (token) {
+        // should only execute serverside
+        const sources = await fetchBackend.get(r.SOURCES, token);
+        return {
+            fetchedOnServer: true,
+            sources: sources,
+        }
+    }
+    return {
+        fetchedOnServer: false
+    }
+};
 
-//     const isServer = typeof window === 'undefined';
-
-//     if (isServer) {
-//         const cookie = req && req.headers.cookie
-//         const newUser = await Auth.getprofile(cookie);
-//         if (!newUser) {
-//             throw new Error('user not available');
-//         }
-//         return {
-//             fetchedOnServer: true,
-//             user: newUser,
-//         }
-//     }
-//     return {
-//         fetchedOnServer: false
-//     }
-// }
-
-  
 export default observer(Explore);

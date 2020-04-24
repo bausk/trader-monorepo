@@ -39,7 +39,22 @@ class SourcesStore {
             if (error.message === '401') {
                 yield this.rootStore.authStore.logout();
             }
-            // throw error;
+        }
+    }).bind(this);
+
+    addSource = flow(function* () {
+        this.state = "pending";
+        try {
+            const token = this.rootStore.authStore.accessToken;
+            const result = yield fetchBackend.post(r.SOURCES, token, { type: 'fromfrontie' });
+            this.state = "done";
+            console.log(result);
+            return yield this.listSources();
+        } catch (error) {
+            this.state = "error";
+            if (error.message === '401') {
+                yield this.rootStore.authStore.logout();
+            }
         }
     }).bind(this);
 
