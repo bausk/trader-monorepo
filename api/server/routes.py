@@ -46,7 +46,9 @@ class SourcesView(web.View, CorsViewMixin):
         raw_data = await self.request.json()
         validated_data = self.schema.load(raw_data)
         obj = Source(**validated_data)
+        response = []
         async with db.transaction():
             res = await Source.delete.where(Source.id == obj.id).gino.status()
-        return web.json_response(res)
-
+            async for s in Source.query.order_by(Source.id).gino.iterate():
+                response.append(self.schema.dump(s))
+        return web.json_response(response)

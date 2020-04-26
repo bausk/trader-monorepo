@@ -17,7 +17,8 @@ const Auth = {
     getTokenServerSide: async (req) => {
         const cookie = req && req.headers.cookie;
         if (cookie) {
-            return await Auth.gettoken(cookie);
+            const token = await Auth.gettoken(cookie);
+            return token.accessToken;
         }
     },
     getprofile: async (cookie) => {

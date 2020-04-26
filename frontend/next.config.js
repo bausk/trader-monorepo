@@ -30,5 +30,7 @@ module.exports = {
       process.env.FRONTEND_ROOT || 'http://localhost:3000',
     BACKEND_ROOT:
       process.env.BACKEND_ROOT || 'http://localhost:5000',
+    BRIDGE_ROOT:
+      process.env.BRIDGE_ROOT || 'http://api:8000',
   },
 }

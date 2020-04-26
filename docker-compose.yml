@@ -69,6 +69,8 @@ services:
       - 3000:3000
       - 9229:9229
     restart: on-failure
+    links:
+      - api
     # entrypoint: bash -c 'NODE_OPTIONS="--inspect=0.0.0.0:9229" node node_modules/next/dist/bin/next'
   pgadmin:
     image: dpage/pgadmin4

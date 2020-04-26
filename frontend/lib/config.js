@@ -13,6 +13,7 @@ if (typeof window === 'undefined') {
         SESSION_COOKIE_SECRET: process.env.SESSION_COOKIE_SECRET,
         SESSION_COOKIE_LIFETIME: process.env.SESSION_COOKIE_LIFETIME,
         FRONTEND_ROOT: process.env.FRONTEND_ROOT,
+        BACKEND_ROOT: process.env.BRIDGE_ROOT,
     }
 } else {
     /**
