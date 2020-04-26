@@ -1,7 +1,7 @@
 import React from 'react'
 import Button from '@material-ui/core/Button';
 import { observer } from 'mobx-react'
-import ApiButton, { DeleteButton } from 'components/loadButton';
+import ApiButton, { DeleteButton } from 'components/buttons';
 import { useStores } from 'components/rootStore';
 
 

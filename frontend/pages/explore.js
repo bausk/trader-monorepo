@@ -16,6 +16,7 @@ import AddIcon from "@material-ui/icons/Add";
 import RefreshIcon from "@material-ui/icons/Refresh";
 import { observer } from 'mobx-react';
 import { useStores } from 'components/rootStore';
+import { DeleteButton } from 'components/buttons';
 import { fetchBackend } from 'api/fetcher';
 import r from 'api/backendRoutes';
 import Auth from 'api/Auth';
@@ -28,33 +29,34 @@ const useStyles = makeStyles({
 
 function Explore({ sources }) {
   const { sourcesStore, authStore } = useStores();
+  console.log(sourcesStore);
   const { data, error, mutate } = useSWR(
-    () => {
-      console.log('[explore] RUN SWR');
-      if (typeof window === 'undefined') {
-        return;
-      }
-      if (authStore.accessToken) {
-        return '/sources';
-      }
-      console.log('[explore] RUN SWR FAILED');
-      throw new Error();
+    [r.SOURCES, authStore.accessToken],
+    async (query, token) => {
+      console.log('fired by useSWR');
+      return await fetchBackend.get(query, token);
     },
-    async query => await fetchBackend.get(r.SOURCES, authStore.accessToken),
-    {
-      initialData: sources
-    }
+    // {
+    //   initialData: sources
+    // }
   );
-  const onAdd = async () => {
-    const result = await sourcesStore.addSource();
-    mutate(result, false);
-  };
+  const serverError = sources === undefined && (typeof window !== 'undefined');
+  if(serverError || error) {
+    authStore.login();
+  }
+  const onAdd = useCallback(async () => {
+    const newSource = {
+      id: undefined,
+      type: 'тож хз',
+    }
+    mutate(async (prev) => [...prev, newSource], false);
+    mutate(sourcesStore.add());
+  }, [data, mutate, sourcesStore.add]);
   const onRefresh = useCallback(async () => {
     mutate();
-  }, []);
+  }, [mutate]);
   const { user, loading } = authStore;
   const classes = useStyles();
-  console.log(data);
   const rows = data || [];
   if (!loading && !user) {
     return (
@@ -73,10 +75,7 @@ function Explore({ sources }) {
   return (
     <>
       <h1>Sources</h1>
-      {loading && <p>Loading login info...</p>}
-      <h2>SWR results:</h2>
-      <code>{JSON.stringify(data)}</code>
-      <code>{JSON.stringify(error)}</code>
+      {loading === 'done' && <p>Loading login info...</p>}
       {user && (
         <div className={classes.root}>
           <AppBar position="static">
@@ -109,13 +108,14 @@ function Explore({ sources }) {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {rows.map(row => (
-                  <TableRow key={row.id}>
+                {rows.map((row, i) => (
+                  <TableRow key={i}>
                     <TableCell component="th" scope="row">
                       <Button>{row.id}</Button>
                     </TableCell>
                     <TableCell align="right">
                       <Button>{row.type}</Button>
+                      <DeleteButton element={row} mutate={mutate} store={sourcesStore} />
                     </TableCell>
                   </TableRow>
                 ))}
@@ -129,20 +129,21 @@ function Explore({ sources }) {
 }
 
 Explore.getInitialProps = async ({ req }) => {
-    console.log('[explore.js] getting..');
+    return {
+      sources: []
+    };
     const token = await Auth.getTokenServerSide(req);
-    console.log('[explore.js] token..');
-    console.log(token);
     if (token) {
         // should only execute serverside
         const sources = await fetchBackend.get(r.SOURCES, token);
         return {
-            fetchedOnServer: true,
-            sources: sources,
+            sources
         }
     }
-    return {
-        fetchedOnServer: false
+    if (typeof window !== 'undefined') {
+      return {
+          sources: []
+      }
     }
 };
 

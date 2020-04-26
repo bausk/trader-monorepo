@@ -10,7 +10,7 @@ class SourcesStore {
     @observable sources;
     @observable state = "pending";
 
-    listSourcesAsync = async () => {
+    listAsync = async () => {
         try {
             const token = this.rootStore.authStore.accessToken;
             console.log(token);
@@ -23,12 +23,11 @@ class SourcesStore {
         }
     }
     
-    listSources = flow(function* () {
+    list = flow(function* () {
         this.sources = [];
         this.state = "pending";
         try {
             const token = this.rootStore.authStore.accessToken;
-            // const result = yield fetchBackend.post(r.SOURCES, token, { type: 'fromfrontie' });
             const result = yield fetchBackend.get(r.SOURCES, token);
             this.state = "done";
             console.log(result);
@@ -42,14 +41,13 @@ class SourcesStore {
         }
     }).bind(this);
 
-    addSource = flow(function* () {
+    add = flow(function* () {
         this.state = "pending";
         try {
             const token = this.rootStore.authStore.accessToken;
             const result = yield fetchBackend.post(r.SOURCES, token, { type: 'fromfrontie' });
             this.state = "done";
-            console.log(result);
-            return yield this.listSources();
+            return result;
         } catch (error) {
             this.state = "error";
             if (error.message === '401') {
@@ -58,22 +56,18 @@ class SourcesStore {
         }
     }).bind(this);
 
-    deleteSource = flow(function* (element) {
-        console.log(element);
-        debugger;
+    delete = flow(function* (element) {
         this.state = "pending";
         try {
             const token = this.rootStore.authStore.accessToken;
             const result = yield fetchBackend.delete(r.SOURCES, token, element);
             this.state = "done";
-            console.log(result);
-            yield this.listSources();
+            return result;
         } catch (error) {
             this.state = "error";
             if (error.message === '401') {
                 yield this.rootStore.authStore.logout();
             }
-            // throw error;
         }
     }).bind(this);
 
