@@ -1,47 +1,37 @@
 import React, { useCallback } from 'react';
 import useSWR from 'swr';
-import { makeStyles } from "@material-ui/core/styles";
+import { useRouter } from 'next/router';
+import TableContainer from "@material-ui/core/TableContainer";
+import Paper from "@material-ui/core/Paper";
 import Table from "@material-ui/core/Table";
 import TableBody from "@material-ui/core/TableBody";
 import TableCell from "@material-ui/core/TableCell";
-import TableContainer from "@material-ui/core/TableContainer";
 import TableHead from "@material-ui/core/TableHead";
 import TableRow from "@material-ui/core/TableRow";
-import Paper from "@material-ui/core/Paper";
 import Button from "@material-ui/core/Button";
-import AppBar from "@material-ui/core/AppBar";
-import Toolbar from "@material-ui/core/Toolbar";
 import IconButton from "@material-ui/core/IconButton";
 import AddIcon from "@material-ui/icons/Add";
 import RefreshIcon from "@material-ui/icons/Refresh";
 import { observer } from 'mobx-react';
+import TableLayout from 'components/layouts/TableLayout';
 import { useStores } from 'components/rootStore';
 import { DeleteButton } from 'components/buttons';
 import { fetchBackend } from 'api/fetcher';
 import r from 'api/backendRoutes';
+import f from 'api/frontendRoutes';
 import Auth from 'api/Auth';
 
-const useStyles = makeStyles({
-  table: {
-    minWidth: 350
-  }
-});
-
-function Explore({ sources }) {
+function Explore() {
   const { sourcesStore, authStore } = useStores();
-  console.log(sourcesStore);
+  const router = useRouter();
   const { data, error, mutate } = useSWR(
-    [r.SOURCES, authStore.accessToken],
-    async (query, token) => {
+    [r.SOURCES],
+    async () => {
       console.log('fired by useSWR');
-      return await fetchBackend.get(query, token);
-    },
-    // {
-    //   initialData: sources
-    // }
+      return await sourcesStore.list();
+    }
   );
-  const serverError = sources === undefined && (typeof window !== 'undefined');
-  if(serverError || error) {
+  if(error) {
     authStore.login();
   }
   const onAdd = useCallback(async () => {
@@ -56,7 +46,6 @@ function Explore({ sources }) {
     mutate();
   }, [mutate]);
   const { user, loading } = authStore;
-  const classes = useStyles();
   const rows = data || [];
   if (!loading && !user) {
     return (
@@ -73,58 +62,59 @@ function Explore({ sources }) {
   }
   
   return (
-    <>
-      <h1>Sources</h1>
-      {loading === 'done' && <p>Loading login info...</p>}
-      {user && (
-        <div className={classes.root}>
-          <AppBar position="static">
-            <Toolbar>
-              <IconButton
-                edge="start"
-                className={classes.menuButton}
-                onClick={onAdd}
-                color="inherit"
-                aria-label="menu"
-              >
-                <AddIcon />
-              </IconButton>
-              <IconButton
-                className={classes.menuButton}
-                onClick={onRefresh}
-                color="inherit"
-                aria-label="menu"
-              >
-                <RefreshIcon />
-              </IconButton>
-            </Toolbar>
-          </AppBar>
-          <TableContainer component={Paper}>
-            <Table className={classes.table} aria-label="simple table">
-              <TableHead>
-                <TableRow>
-                  <TableCell>Dessert (100g serving)</TableCell>
-                  <TableCell align="right">Calories</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {rows.map((row, i) => (
-                  <TableRow key={i}>
-                    <TableCell component="th" scope="row">
-                      <Button>{row.id}</Button>
-                    </TableCell>
-                    <TableCell align="right">
-                      <Button>{row.type}</Button>
-                      <DeleteButton element={row} mutate={mutate} store={sourcesStore} />
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        </div>
+    <TableLayout
+      title="Sources"
+      toolbar={() => (
+        <>
+          <IconButton
+            edge="start"
+            onClick={onAdd}
+            color="inherit"
+            aria-label="menu"
+          >
+            <AddIcon />
+          </IconButton>
+          <IconButton
+            onClick={onRefresh}
+            color="inherit"
+            aria-label="menu"
+          >
+            <RefreshIcon />
+          </IconButton>
+        </>
       )}
-    </>
+    >
+      <TableContainer component={Paper}>
+      <Table aria-label="simple table">
+      <TableHead>
+        <TableRow>
+          <TableCell>Source ID</TableCell>
+          <TableCell>Type</TableCell>
+          <TableCell align="right">Operations</TableCell>
+        </TableRow>
+      </TableHead>
+      <TableBody>
+        {rows.map((row, i) => (
+          <TableRow key={i}>
+            <TableCell component="th" scope="row">
+              <Button
+                onClick={() => router.push(`${f.EXPLORE}/${row.id}`)}
+              >
+                {row.id}
+              </Button>
+            </TableCell>
+            <TableCell>
+              {row.type}
+            </TableCell>
+            <TableCell align="right">
+              <DeleteButton element={row} mutate={mutate} store={sourcesStore} />
+            </TableCell>
+          </TableRow>
+        ))}
+      </TableBody>
+  </Table>
+  </TableContainer>
+  </TableLayout>
   )
 }
 
@@ -132,6 +122,7 @@ Explore.getInitialProps = async ({ req }) => {
     return {
       sources: []
     };
+    // Example SSR implementation
     const token = await Auth.getTokenServerSide(req);
     if (token) {
         // should only execute serverside

@@ -1,6 +1,6 @@
 import Container from '@material-ui/core/Container';
 import Head from 'next/head'
-import Header from './header'
+import Header from '../header'
 
 function Layout({ children }) {
   return (

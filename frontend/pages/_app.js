@@ -7,8 +7,8 @@ import { ThemeProvider as StyledThemeProvider } from 'styled-components';
 import { ThemeProvider } from '@material-ui/core/styles';
 import CssBaseline from '@material-ui/core/CssBaseline';
 
-import auth0 from 'lib/auth0'
-import Layout from 'components/layout'
+import auth0 from 'lib/auth0';
+import Layout from 'components/layouts/MainLayout';
 import theme from 'src/theme/index';
 import { RootStore, StoreProvider } from 'components/rootStore';
 import routes from 'api/frontendRoutes';
@@ -58,15 +58,15 @@ export default function MyApp({ Component, pageProps }) {
                 <meta name="viewport" content="minimum-scale=1, initial-scale=1, width=device-width" />
             </Head>
             <ThemeProvider theme={theme}>
-            <StyledThemeProvider theme={theme}>
-                {/* CssBaseline kickstart an elegant, consistent, and simple baseline to build upon. */}
-                <CssBaseline />
-                <Layout>
-                <StoreProvider store={store}>
-                    <Component {...pageProps} />
-                </StoreProvider>
-                </Layout>
-            </StyledThemeProvider>
+                <StyledThemeProvider theme={theme}>
+                    {/* CssBaseline kickstart an elegant, consistent, and simple baseline to build upon. */}
+                    <CssBaseline />
+                    <Layout>
+                        <StoreProvider store={store}>
+                            <Component {...pageProps} />
+                        </StoreProvider>
+                    </Layout>
+                </StyledThemeProvider>
             </ThemeProvider>
         </>
     );

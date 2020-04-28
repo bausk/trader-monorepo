@@ -5,7 +5,6 @@ import { BACKEND_ROOT } from './backendRoutes';
 const isServer = typeof window === 'undefined';
 
 const request = async (method, url, options) => {
-    console.log(options);
     try {
         const res = await fetch(
             url,

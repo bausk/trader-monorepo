@@ -52,7 +52,7 @@ function Header() {
   const classes = useStyles();
   const router = useRouter();
   const [value, setValue] = React.useState(router.pathname);
-
+  const activeTabValue = '/' + value.split('/')[1];
   const handleChange = (event, newValue) => {
     event.preventDefault();
     router.push(newValue);
@@ -63,7 +63,7 @@ function Header() {
       <AppBar position="static">
         <Tabs
           variant="fullWidth"
-          value={value}
+          value={activeTabValue}
           onChange={handleChange}
           aria-label="nav tabs example"
         >
