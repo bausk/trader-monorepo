@@ -50,6 +50,13 @@ class AuthStore {
         Router.push(routes.LOGIN);
     };
 
+    @action relogin = () => {
+        this.loading = 'fetching';
+        this.user = null;
+        localStorage.setItem('logout', new Date())
+        Router.push(routes.LOGIN);
+    };
+
     @action logout = (foreignSource = false) => {
         this.loading = 'fetching';
         this.user = null;
