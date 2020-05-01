@@ -17,7 +17,7 @@ import TableLayout from 'components/layouts/TableLayout';
 import { useStores } from 'components/rootStore';
 import { DeleteButton } from 'components/buttons';
 import { fetchBackend } from 'api/fetcher';
-import r from 'api/backendRoutes';
+import b from 'api/backendRoutes';
 import f from 'api/frontendRoutes';
 import Auth from 'api/Auth';
 
@@ -25,7 +25,7 @@ function Explore() {
   const { sourcesStore, authStore } = useStores();
   const router = useRouter();
   const { data, error, mutate } = useSWR(
-    [r.SOURCES],
+    b.SOURCES,
     async () => {
       console.log('fired by useSWR');
       return await sourcesStore.list();
@@ -37,7 +37,7 @@ function Explore() {
   const onAdd = useCallback(async () => {
     const newSource = {
       id: undefined,
-      type: 'тож хз',
+      type: 'fetching...',
     }
     mutate(async (prev) => [...prev, newSource], false);
     mutate(sourcesStore.add());
@@ -98,7 +98,7 @@ function Explore() {
           <TableRow key={i}>
             <TableCell component="th" scope="row">
               <Button
-                onClick={() => router.push(`${f.EXPLORE}/${row.id}`)}
+                onClick={() => router.push(`${f.EXPLORE}/[id]`, `${f.EXPLORE}/${row.id}`)}
               >
                 {row.id}
               </Button>
@@ -126,7 +126,7 @@ Explore.getInitialProps = async ({ req }) => {
     const token = await Auth.getTokenServerSide(req);
     if (token) {
         // should only execute serverside
-        const sources = await fetchBackend.get(r.SOURCES, token);
+        const sources = await fetchBackend.get(b.SOURCES, token);
         return {
             sources
         }
