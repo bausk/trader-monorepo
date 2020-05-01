@@ -1,5 +1,6 @@
 import os
 from gino.ext.aiohttp import Gino
+from marshmallow import fields
 from marshmallow_sqlalchemy import SQLAlchemyAutoSchema, auto_field
 
 
@@ -43,3 +44,9 @@ class SourceSchema(SQLAlchemyAutoSchema):
         transient = True
     # id = auto_field()
     # type = auto_field()
+
+
+class SourceSchemaWithStats(SourceSchema):
+    available_intervals = fields.List(
+        fields.Tuple([fields.DateTime(), fields.DateTime()])
+    )

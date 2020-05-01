@@ -44,6 +44,7 @@ services:
       - ENV=${ENV}
       - POETRY_VERSION=${POETRY_VERSION}
     ports: 
+      - 5001:8000
       - 5679:5679
     links:
       - postgres
