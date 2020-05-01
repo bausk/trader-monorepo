@@ -1,4 +1,5 @@
 import os
+import fnmatch
 from io import StringIO
 from dotenv import load_dotenv
 from pathlib import Path
@@ -13,7 +14,10 @@ PLAINTEXT_SECRETS = {
         ],
     'staging': [
         './staging.env',
-        ],    
+        ],
+    'development': [
+        './.secrets/keyring.json',
+        ],
     }
 
 
@@ -35,7 +39,7 @@ def load_credentials(credentials) -> None:
             load_dotenv(stream=filelike)
 
 
-def decrypt_credentials(env=None):
+def decrypt_credentials(env=None, which=None):
     if env is None:
         env = get_environment()
     secret_key = os.environ.get(f'APP_SECRET_{env.upper()}', None)
@@ -56,6 +60,9 @@ def decrypt_credentials(env=None):
         return decrypted
     
     for file_to_decrypt in files_to_decrypt:
+        if which:
+            if not any([fnmatch.fnmatch(file_to_decrypt, x) for x in which]):
+                continue
         filekey, digest = get_name_digest(file_to_decrypt)
         path = Path(ENCRYPTED_PATH, filekey)
         try:
