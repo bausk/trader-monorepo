@@ -15,14 +15,12 @@ app.prepare().then(() => {
     // This tells it to parse the query portion of the URL.
     const parsedUrl = parse(req.url, true)
     const { pathname, query } = parsedUrl
-
-    // if (pathname === '/a') {
-    //   app.render(req, res, '/b', query)
-    // } else if (pathname === '/b') {
-    //   app.render(req, res, '/a', query)
-    // } else {
+    console.log(pathname);
+    if (pathname === '/explore/new') {
+      app.render(req, res, '/explore', { ...query, newModal: true })
+    } else {
       handle(req, res, parsedUrl)
-    // }
+    }
   }).listen(3000, err => {
     if (err) throw err
     console.log('> Ready on http://localhost:3000')

@@ -8,6 +8,7 @@ const routes = {
     LOGOUT: '/api/logout',
 
     EXPLORE: '/explore',
+    EXPLORE_NEW: '/explore/new',
     MODEL: '/model',
     OPTIMIZE: '/optimize',
     TRADE: '/trade',

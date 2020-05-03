@@ -20,7 +20,7 @@ function Home() {
   const elements = sourcesStore.sources.map((source) => {
     return(
       <ul key={source.id}>
-        <div>{source.type}</div>
+        <div>{source.name}</div>
         <DeleteButton element={source} />
       </ul>
     );

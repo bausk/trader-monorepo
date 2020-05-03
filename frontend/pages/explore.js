@@ -14,6 +14,7 @@ import AddIcon from "@material-ui/icons/Add";
 import RefreshIcon from "@material-ui/icons/Refresh";
 import { observer } from 'mobx-react';
 import TableLayout from 'components/layouts/TableLayout';
+import NewSourceModal from 'components/Modals/NewSourceModal';
 import { useStores } from 'components/rootStore';
 import { DeleteButton } from 'components/buttons';
 import { fetchBackend } from 'api/fetcher';
@@ -34,18 +35,31 @@ function Explore() {
   if(error) {
     authStore.login();
   }
+  const newModal = router.asPath === f.EXPLORE_NEW;
   const onAdd = useCallback(async () => {
+    return router.push(`${f.EXPLORE}`, `${f.EXPLORE}/new`);
+  }, [router]);
+  const onSubmit = useCallback(async (result) => {
     const newSource = {
       id: undefined,
-      type: 'fetching...',
+      name: result.name,
+      typename: result.sourceType,
+      config_json: JSON.stringify({
+        table_name: result.tableName
+      }),
     }
     mutate(async (prev) => [...prev, newSource], false);
-    mutate(sourcesStore.add());
-  }, [data, mutate, sourcesStore.add]);
+    mutate(sourcesStore.add(newSource));
+  }, [mutate, sourcesStore.add]);
+  const onClose = useCallback(() => {
+    return router.push(f.EXPLORE);
+  }, [router]);
+
   const onRefresh = useCallback(async () => {
     mutate();
   }, [mutate]);
   const { user, loading } = authStore;
+  console.log(router);
   const rows = data || [];
   if (!loading && !user) {
     return (
@@ -66,6 +80,7 @@ function Explore() {
       title="Sources"
       toolbar={() => (
         <>
+          <NewSourceModal open={newModal} onClose={onClose} onSubmit={onSubmit} />
           <IconButton
             edge="start"
             onClick={onAdd}
@@ -104,7 +119,7 @@ function Explore() {
               </Button>
             </TableCell>
             <TableCell>
-              {row.type}
+              {row.name}
             </TableCell>
             <TableCell align="right">
               <DeleteButton element={row} mutate={mutate} store={sourcesStore} />

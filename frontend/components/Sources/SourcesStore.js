@@ -39,10 +39,10 @@ class SourcesStore {
         }
     }).bind(this);
 
-    add = flow(function* () {
+    add = flow(function* (newSource) {
         try {
             const token = this.rootStore.authStore.accessToken;
-            const result = yield fetchBackend.post(r.SOURCES, token, { type: 'fromfrontie' });
+            const result = yield fetchBackend.post(r.SOURCES, token, newSource);
             return result;
         } catch (error) {
             if (error.message === '401') {
