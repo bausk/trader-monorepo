@@ -80,7 +80,6 @@ async def get_middleware():
             except Exception:
                 return web.json_response({'message': 'Unable to parse authentication token.'}, status=401)
 
-            # request.user = User.objects.get(id=payload['user_id'])
             request.user = payload
         return await handler(request)
 
