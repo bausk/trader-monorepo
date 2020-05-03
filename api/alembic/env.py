@@ -5,7 +5,7 @@ from sqlalchemy import pool
 
 from alembic import context
 from secrets_management.manage import decrypt_credentials, load_credentials
-load_credentials(decrypt_credentials())
+load_credentials(decrypt_credentials(which=['*.env']))
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

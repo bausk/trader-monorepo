@@ -22,7 +22,7 @@ if get_environment() == 'development':
         pass
 
 
-load_credentials(decrypt_credentials())
+load_credentials(decrypt_credentials(which=['*.env']))
 
 
 async def main():

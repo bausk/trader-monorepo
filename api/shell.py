@@ -16,7 +16,7 @@ def cli(env):
     print(f'Encrypting env: {env}...')
     encrypt_credentials(env)
     print(f'Test loading env: {env}...')
-    load_credentials(decrypt_credentials(env))
+    load_credentials(decrypt_credentials(env, which=['*.env']))
     print('Done.')
 
 
