@@ -25,6 +25,8 @@ psycopg2-binary = "^2.8.4"
 aiohttp_security = "^0.4.0"
 pyjwt = "^1.7.1"
 marshmallow-sqlalchemy = "^0.22.3"
+pydantic = "^1.5.1"
+schematics = "^2.1.0"
 
 [tool.poetry.dev-dependencies]
 ptvsd = "^4.2"
@@ -33,6 +35,8 @@ rope = "^0.14.0"
 autopep8 = "^1.4"
 click = "^7.1.1"
 aiohttp-devtools = "^0.13.1"
+pylama = "^7.7.1"
+mypy = "^0.770"
 
 [build-system]
 requires = ["poetry>=0.12"]

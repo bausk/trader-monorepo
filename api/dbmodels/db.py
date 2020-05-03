@@ -1,7 +1,12 @@
+import enum
 import os
 from gino.ext.aiohttp import Gino
+from gino.dialects.asyncpg import AsyncEnum
 from marshmallow import fields
 from marshmallow_sqlalchemy import SQLAlchemyAutoSchema, auto_field
+from pydantic import BaseModel
+from typing import List, Optional, Tuple
+from datetime import datetime
 
 
 db = Gino()
@@ -19,7 +24,19 @@ def init_middleware(app):
     return db
 
 
-# class User(Base):
+class SourceTypesEnum(str, enum.Enum):
+    bigquery = 'bigquery'
+    kuna = 'kuna'
+    cryptowatch = 'cryptowatch'
+
+
+class Privatable(BaseModel):
+    def private_dict(self):
+        res = self.dict()
+        del res['id']
+        return res
+
+
 class User(db.Model):
     __tablename__ = 'users'
 
@@ -32,21 +49,26 @@ class Source(db.Model):
     __tablename__ = 'sources'
 
     id = db.Column(db.Integer(), primary_key=True)
-    type = db.Column(db.Unicode(), default='')
+    name = db.Column(db.Unicode(), default='Unnamed')
+    typename = db.Column(db.Enum(
+        SourceTypesEnum,
+        values_callable=lambda x: [e.value for e in x]
+    ))
+    config_json = db.Column(db.Unicode(), default='{}')
 
 
-class SourceSchema(SQLAlchemyAutoSchema):
-    class Meta:
-        table = Source.__table__
-        # model = Source
-        # include_relationships = True
-        # load_instance = True
-        transient = True
-    # id = auto_field()
-    # type = auto_field()
+class SourceSchema(Privatable):
+    class Config:
+        orm_mode = True
+    id: Optional[int]
+    name: str = 'Unnamed'
+    typename: SourceTypesEnum
+    config_json: Optional[str]
 
+    def private_dict(self):
+        res = self.dict()
+        del res['id']
+        return res
 
-class SourceSchemaWithStats(SourceSchema):
-    available_intervals = fields.List(
-        fields.Tuple([fields.DateTime(), fields.DateTime()])
-    )
+class SourceSchemaWithStats(Privatable):
+    available_intervals: List[Tuple[datetime, datetime]]
