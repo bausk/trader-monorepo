@@ -62,18 +62,21 @@ limit {limit}
 """
 
 
-def exec_query(query, **kwargs) -> bigquery.table.RowIterator:
-    job = bigquery_client.query(query, **kwargs)
+def exec_query(query, client, **kwargs) -> bigquery.table.RowIterator:
+    print(client)
+    print(query)
+    job = client.query(query, **kwargs)
     return job.result()
 
 
 class BigquerySource(AbstractSource):
-    async def list_availability_intervals(self, interval: int, table_fullname: str, limit: int=100) -> list:
+    @classmethod
+    async def list_availability_intervals(cls, interval: int, table_fullname: str, limit: int=100) -> list:
         sql_query = sql_query_get_intervals_2.format(
             interval=interval,
             table_fullname=table_fullname,
             limit=limit,
         )
         loop = asyncio.get_running_loop()
-        bigquery_result = await loop.run_in_executor(None, exec_query, sql_query)
+        bigquery_result = await loop.run_in_executor(None, exec_query, sql_query, bigquery_client)
         return bigquery_result

@@ -70,5 +70,5 @@ class SourceSchema(Privatable):
         del res['id']
         return res
 
-class SourceSchemaWithStats(Privatable):
-    available_intervals: List[Tuple[datetime, datetime]]
+class SourceSchemaWithStats(SourceSchema):
+    available_intervals: Optional[List[Tuple[datetime, datetime]]]
