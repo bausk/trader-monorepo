@@ -1,16 +1,24 @@
 import React, { useState, useCallback } from 'react';
+import dynamic from 'next/dynamic';
 import { useRouter } from 'next/router';
 import useSWR, { cache } from 'swr';
 import { observer } from 'mobx-react';
 import Chart from "react-google-charts";
+import { makeStyles } from "@material-ui/core/styles";
 import Card from '@material-ui/core/Card';
 import Container from '@material-ui/core/Container';
+import LinearProgress from '@material-ui/core/LinearProgress';
 import Typography from '@material-ui/core/Typography';
 import Box from '@material-ui/core/Box';
 import Button from '@material-ui/core/Button';
 import Paper from "@material-ui/core/Paper";
 import IconButton from "@material-ui/core/IconButton";
 import ArrowBackIcon from "@material-ui/icons/ArrowBack";
+
+const LightweightChart = dynamic(
+    () => import('components/Graphics/LightweightChart'),
+    { ssr: false }
+  )
 import { useStores } from 'components/rootStore';
 import TableLayout from 'components/layouts/TableLayout';
 import f from 'api/frontendRoutes';
@@ -23,35 +31,38 @@ const dataHeader = [
     { type: 'date', id: 'End' },
 ];
 
-const initial = [
-    dataHeader,
-    [ 'Available Data', new Date(2018, 8, 30), new Date(2018, 12, 4) ],
-    [ 'Available Data', new Date(2019, 2, 4),  new Date(2019, 4, 4) ]
-];
+const useStyles = makeStyles(theme => ({
+    container: {
+        marginTop: theme.spacing(2),
+        marginLeft: theme.spacing(0),
+        marginRight: theme.spacing(0),
+        padding: theme.spacing(1),
+    },
+}));
 
 function ExploreSource() {
     const { sourcesStore } = useStores();
+    const classes = useStyles();
     const router = useRouter();
-    const [ startFetchList, setFetchList ] = useState();
     const [ startFetchDetail, setFetchDetail ] = useState();
-    const initialData = cache.get(b.SOURCES)?.find(c => c.id === parseInt(router.query.id));
-    const { data: detailData, mutate: mutateDetail } = useSWR(
+    const cacheData = cache.get(b.SOURCES);
+    const cachedDetail = cache.get(`${b.SOURCES}/${router.query.id}/stats`);
+    const initialData = cacheData && cacheData.find(c => c.id === parseInt(router.query.id));
+    const { data: detailData, mutate: mutateDetail, isValidating: isValidatingDetail } = useSWR(
         () => startFetchDetail ? `${b.SOURCES}/${router.query.id}/stats` : null,
         async (query) => {
             const r = await sourcesStore.detail(router.query.id);
             return r;
         },
         {
-            initialData,
             revalidateOnFocus: false,
             revalidateOnReconnect: false,
         }
     );
-    const { data: listData, mutate: mutateList, isValidating } = useSWR(
-        () => startFetchList ? `${b.SOURCES}` : null,
+    const { data: listData } = useSWR(
+        () => !initialData ? `${b.SOURCES}` : null,
         async (query) => {
             const r = await sourcesStore.list();
-            console.log(`returning getlist from ${startFetchList} to false`);
             return r;
         },
         {
@@ -59,24 +70,25 @@ function ExploreSource() {
             revalidateOnReconnect: false,
         }
     );
-    const rows = detailData?.available_intervals?.map(i => ['Availability:', new Date(i[0]), new Date(i[1])]) || [[ 'Loading...', new Date(2010, 1, 1), new Date(2010, 1, 2) ]];
+    const info = listData?.find(c => c?.id === parseInt(router.query.id)) || initialData;
+    console.log(info);
+    const rows = detailData?.available_intervals?.map(i => ['Availability:', new Date(i[0]), new Date(i[1])])
+        || cachedDetail?.available_intervals?.map(i => ['Availability:', new Date(i[0]), new Date(i[1])])
+        || [];
     const chartData = [
         dataHeader,
         ...rows
     ];
-    const getList = () => {
-        console.log(`firing getlist from ${startFetchList}`);
-        mutateList();
-        setFetchList(true);
-    }
     const getDetail = () => {
-        console.log(`firing getdetail from ${startFetchDetail}`);
-        mutateDetail();
+        if (startFetchDetail) {
+            mutateDetail();
+        }
         setFetchDetail(true);
-    }
+    };
+
     return (
         <TableLayout
-            title={detailData?.id}
+            title={info?.id}
             toolbar={() => (
                 <IconButton
                     edge="start"
@@ -93,30 +105,31 @@ function ExploreSource() {
                 <Container maxWidth="sm">
                     <Box py={4}>
                         <Typography variant="h4" component="h1" gutterBottom>
-                            {detailData?.name}
+                            {info?.name}
                         </Typography>
                     </Box>
                 </Container>
-                <Card>
-                    <Button onClick={getDetail} disabled={isValidating}>
-                        Get Detail
-                    </Button>
-                    <Button onClick={getList} disabled={isValidating}>
-                        Get List
-                    </Button>
-                    <Chart
-                        chartType="Timeline"
-                        height="600px"
-                        data={chartData}
-                        options={{
-                            showRowNumber: true,
-                        }}
-                        rootProps={{ 'data-testid': '1' }}
-                    />
-                </Card>
+                <Container>
+                    <Card className={classes.container}>
+                        <Button onClick={getDetail} disabled={isValidatingDetail}>
+                            Refresh Availability
+                        </Button>
+                        {isValidatingDetail && <LinearProgress />}
+                        {Boolean(rows?.length) && (<Chart
+                            chartType="Timeline"
+                            height="150px"
+                            data={chartData}
+                            options={{
+                                showRowNumber: true,
+                            }}
+                            rootProps={{ 'data-testid': '1' }}
+                        />)}
+                        <LightweightChart />
+                    </Card>
+                </Container>
             </Paper>
         </TableLayout>
     );
 }
 
-export default observer(ExploreSource);
+export default ExploreSource;

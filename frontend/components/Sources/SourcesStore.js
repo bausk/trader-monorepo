@@ -14,11 +14,8 @@ class SourcesStore {
         try {
             const token = this.rootStore.authStore.accessToken;
             const result = yield fetchBackend.get(r.SOURCES, token);
-            console.log(result);
             return result;
         } catch (error) {
-            console.log(error);
-            debugger;
             if (error.message === '401') {
                 yield this.rootStore.authStore.relogin();
             }
@@ -30,7 +27,7 @@ class SourcesStore {
         const id = element.id || element;
         try {
             const token = this.rootStore.authStore.accessToken;
-            const result = yield fetchBackend.get(`${r.SOURCES}/${id}`, token);
+            const result = yield fetchBackend.get(`${r.SOURCES}/${id}/stats`, token);
             return result;
         } catch (error) {
             if (error.message === '401') {
