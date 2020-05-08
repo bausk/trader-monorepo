@@ -1,4 +1,5 @@
 from datetime import datetime
+from functools import partial
 import pytz
 import asyncio
 import json
@@ -7,6 +8,8 @@ from google.cloud import bigquery
 from typing import Type
 from secrets_management.manage import decrypt_credentials
 from .abstract_source import AbstractSource
+from ..schemas.timeseries_schemas import TimeseriesSchema
+
 
 credfile = decrypt_credentials(which=['./.secrets/keyring.json'])
 creds_json = json.loads(credfile[0])
@@ -61,9 +64,17 @@ order by queried_at desc
 limit {limit}
 """
 
+sql_query_get_data_from_to = r"""
+  SELECT *
+  FROM `{table_fullname}`
+  WHERE 1 = 1
+  AND timestamp BETWEEN @start AND @end
+  -- ORDER BY timestamp ASC
+  LIMIT {limit};
+"""
+
 
 def exec_query(query, client, **kwargs) -> bigquery.table.RowIterator:
-    print(client)
     print(query)
     job = client.query(query, **kwargs)
     return job.result()
@@ -80,3 +91,30 @@ class BigquerySource(AbstractSource):
         loop = asyncio.get_running_loop()
         bigquery_result = await loop.run_in_executor(None, exec_query, sql_query, bigquery_client)
         return bigquery_result
+
+    @classmethod
+    async def list_data_in_interval(cls, table_fullname: str, start: str, end: str, limit: int = 100) -> list:
+        job_config = bigquery.QueryJobConfig(
+            query_parameters=[
+                bigquery.ScalarQueryParameter("start", "TIMESTAMP", start),
+                bigquery.ScalarQueryParameter("end", "TIMESTAMP", end),
+            ]
+        )
+        sql_query = sql_query_get_data_from_to.format(
+            table_fullname=table_fullname,
+            limit=limit,
+        )
+        loop = asyncio.get_running_loop()
+        bigquery_result = await loop.run_in_executor(
+            None,
+            partial(
+                exec_query,
+                sql_query,
+                bigquery_client,
+                job_config=job_config,
+            )
+        )
+        result = []
+        for res in bigquery_result:
+            result.append(dict(res.items()))
+        return result

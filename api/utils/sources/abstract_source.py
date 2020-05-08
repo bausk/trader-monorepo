@@ -1,3 +1,6 @@
+from datetime import datetime
+from typing import Type
+
 
 class AbstractSource:
     """
@@ -15,3 +18,7 @@ class AbstractSource:
     @classmethod
     async def get_latest(cls):
         raise NotImplementedError('Implement get_availability_intervals')
+    
+    @classmethod
+    async def list_data_in_interval(cls, table_fullname: str, start: Type[datetime], end: Type[datetime]) -> list:
+        raise NotImplementedError('Implement list_data_in_interval')

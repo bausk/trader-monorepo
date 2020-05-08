@@ -16,18 +16,6 @@ from utils.sources.select import select_source
 from server.endpoints.routedef import routes
 
 
-credfile = decrypt_credentials(which=['./.secrets/keyring.json'])
-creds_json = json.loads(credfile[0])
-creds = service_account.Credentials.from_service_account_info(creds_json)
-bigquery_client = bigquery.Client(
-    credentials=creds, project=creds_json['project_id'])
-
-
-def exec_query(query, **kwargs) -> bigquery.table.RowIterator:
-    job = bigquery_client.query(query, **kwargs)
-    return job.result()
-
-
 @routes.view('/sources')
 class SourcesView(web.View, CorsViewMixin):
     cors_config = {
@@ -105,9 +93,33 @@ class SourcesStatsView(web.View, CorsViewMixin):
             source_model.available_intervals.append([res[0], res[1]])
         return web.json_response(body=source_model.json())
 
-    async def delete(self: web.View) -> Response:
-        await check_permission(self.request, Permissions.WRITE_OBJECTS)
+
+@routes.view(r'/sources/{id:\d+}/interval')
+class SourcesStatsView(web.View, CorsViewMixin):
+    cors_config = {
+        "*": ResourceOptions(
+            allow_credentials=True,
+            allow_headers="*",
+            expose_headers="*",
+        )
+    }
+    schema: Type[BaseModel] = SourceSchemaWithStats
+
+    async def get(self: web.View) -> Response:
+        await check_permission(self.request, Permissions.READ)
         source_id = int(self.request.match_info['id'])
         async with db.transaction():
-            res = await Source.delete.where(Source.id == source_id).gino.status()
-        return web.json_response(res)
+            source = await Source.get(source_id)
+        source_model = self.schema.from_orm(source)
+        source_config = json.loads(source_model.config_json)
+        table_fullname = source_config['table_name']
+        if not table_fullname:
+            raise web.HTTPConflict(text="table_name not defined in source config")
+        print(self.request.query)
+        res = await select_source(source).list_data_in_interval(
+            table_fullname=table_fullname,
+            start=self.request.query.get('start'),
+            end=self.request.query.get('end'),
+        )
+        source_model.data = res
+        return web.json_response(body=source_model.json())

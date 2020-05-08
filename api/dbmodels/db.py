@@ -5,7 +5,7 @@ from gino.dialects.asyncpg import AsyncEnum
 from marshmallow import fields
 from marshmallow_sqlalchemy import SQLAlchemyAutoSchema, auto_field
 from pydantic import BaseModel
-from typing import List, Optional, Tuple
+from typing import List, Optional, Tuple, Union
 from datetime import datetime
 
 
@@ -71,4 +71,8 @@ class SourceSchema(Privatable):
         return res
 
 class SourceSchemaWithStats(SourceSchema):
+    class Config:
+        validate_assignment = True
+        orm_mode = True
     available_intervals: Optional[List[Tuple[datetime, datetime]]]
+    data: Optional[List[Union[dict, str]]] = []
