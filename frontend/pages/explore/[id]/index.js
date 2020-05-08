@@ -14,11 +14,7 @@ import Button from '@material-ui/core/Button';
 import Paper from "@material-ui/core/Paper";
 import IconButton from "@material-ui/core/IconButton";
 import ArrowBackIcon from "@material-ui/icons/ArrowBack";
-
-const LightweightChart = dynamic(
-    () => import('components/Graphics/LightweightChart'),
-    { ssr: false }
-  )
+import IntervalChart from 'components/Graphics/IntervalChart';
 import { useStores } from 'components/rootStore';
 import TableLayout from 'components/layouts/TableLayout';
 import f from 'api/frontendRoutes';
@@ -124,7 +120,7 @@ function ExploreSource() {
                             }}
                             rootProps={{ 'data-testid': '1' }}
                         />)}
-                        <LightweightChart />
+                        <IntervalChart />
                     </Card>
                 </Container>
             </Paper>

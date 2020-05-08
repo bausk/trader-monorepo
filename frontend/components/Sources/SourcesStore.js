@@ -36,6 +36,22 @@ class SourcesStore {
         }
     }).bind(this);
 
+    interval = flow(function* (element, intervalStart, intervalEnd) {
+        const id = element.id || element;
+        try {
+            const token = this.rootStore.authStore.accessToken;
+            const result = yield fetchBackend.get(`${r.SOURCES}/${id}/interval`, token, {
+                start: intervalStart,
+                end: intervalEnd,
+            });
+            return result;
+        } catch (error) {
+            if (error.message === '401') {
+                yield this.rootStore.authStore.relogin();
+            }
+        }
+    }).bind(this);
+
     add = flow(function* (newSource) {
         try {
             const token = this.rootStore.authStore.accessToken;

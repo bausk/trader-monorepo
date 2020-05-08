@@ -6,8 +6,12 @@ const isServer = typeof window === 'undefined';
 
 const request = async (method, url, options) => {
     try {
+        const _url = new URL(url);
+        if (options.params) {
+            _url.search = new URLSearchParams(options.params).toString();
+        }
         const res = await fetch(
-            url,
+            _url,
             {
                 method,
                 ...(options.cookie ? {
@@ -46,7 +50,7 @@ export const fetchFrontend = {
 
 export const fetchBackend = {
     delete: async (url, token, data = null) => await request('DELETE', `${BACKEND_ROOT}${url}`, { token, data }),
-    get: async (url, token) => await request('GET', `${BACKEND_ROOT}${url}`, { token }),
+    get: async (url, token, params = null) => await request('GET', `${BACKEND_ROOT}${url}`, { token, params }),
     put: async (url, token, data = null) => await request('PUT', `${BACKEND_ROOT}${url}`, { token, data }),
     post: async (url, token, data = null) => await request('POST', `${BACKEND_ROOT}${url}`, { token, data }),
   };
