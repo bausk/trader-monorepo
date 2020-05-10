@@ -43,7 +43,7 @@ function IntervalChart() {
     return (
         <MuiPickersUtilsProvider utils={LuxonUtils}>
             <Container>
-                <Box>
+                <Box color="text.secondary" m={2}>
                     <DatePicker
                         value={start}
                         onChange={setStart}
@@ -58,11 +58,10 @@ function IntervalChart() {
                         label="End"
                         disableFuture
                     />
-                    {isValidating && <LinearProgress />}
                 </Box>
                 <Box>
                     <Button onClick={onFetch} disabled={isValidating}>
-                        Refresh Availability
+                        Get Chart
                     </Button>
                     {isValidating && <LinearProgress />}
                 </Box>

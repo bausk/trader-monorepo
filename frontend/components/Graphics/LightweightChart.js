@@ -70,10 +70,10 @@ const LightweightChart = ({ data }) => {
                 visible: true,
                 timeVisible: true,
                 secondsVisible: true,
-                // tickMarkFormatter: function(timePoint, tickMarkType, locale) {
-                //     console.log(timePoint, tickMarkType, locale);
-                //     return String(new Date(timePoint.timestamp * 1000).getUTCFullYear());
-                // },
+                tickMarkFormatter: function(timePoint, tickMarkType, locale) {
+                    console.log(timePoint, tickMarkType, locale);
+                    return String(new Date(timePoint.timestamp * 1000).getUTCFullYear());
+                },
             },
         });
         chr.current.timeScale().fitContent();
