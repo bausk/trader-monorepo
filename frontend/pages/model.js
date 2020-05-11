@@ -14,50 +14,43 @@ import AddIcon from "@material-ui/icons/Add";
 import RefreshIcon from "@material-ui/icons/Refresh";
 import { observer } from 'mobx-react';
 import TableLayout from 'components/layouts/TableLayout';
-import NewEntityModal from 'components/Modals/NewEntityModal';
+import NewStrategyModal from 'components/Modals/NewStrategyModal';
 import { useStores } from 'components/rootStore';
 import { DeleteButton } from 'components/buttons';
-import { fetchBackend } from 'api/fetcher';
 import b from 'api/backendRoutes';
 import f from 'api/frontendRoutes';
-import Auth from 'api/Auth';
 
-function Explore() {
+function ListStrategies() {
   const { sourcesStore, authStore } = useStores();
   const router = useRouter();
   const { data, error, mutate } = useSWR(
-    b.SOURCES,
+    b.STRATEGIES,
     async () => {
-      console.log('fired by useSWR');
-      return await sourcesStore.list();
+      return await sourcesStore.strategies.list();
     }
   );
-  if(error) {
-    authStore.login();
-  }
-  const newModal = router.asPath === f.EXPLORE_NEW;
+  const newModal = router.asPath === f.MODEL_NEW;
   const onAdd = useCallback(async () => {
-    return router.push(f.EXPLORE, f.EXPLORE_NEW);
+    return router.push(f.MODEL, f.MODEL_NEW);
   }, [router]);
   const onSubmit = useCallback(async (result) => {
-    const newSource = {
+    const newStrategy = {
       id: undefined,
       name: result.name,
-      typename: result.sourceType,
+      typename: result.typename,
       config_json: JSON.stringify({
-        table_name: result.tableName
       }),
     }
-    mutate(async (prev) => [...prev, newSource], false);
-    mutate(sourcesStore.add(newSource));
-  }, [mutate, sourcesStore.add]);
+    mutate(async (prev) => [...prev, newStrategy], false);
+    mutate(sourcesStore.strategies.add(newStrategy));
+  }, []);
   const onClose = useCallback(() => {
-    return router.push(f.EXPLORE);
+    return router.push(f.MODEL);
   }, [router]);
 
   const onRefresh = useCallback(async () => {
     mutate();
-  }, [mutate]);
+  }, []);
   const { user, loading } = authStore;
   console.log(router);
   const rows = data || [];
@@ -67,10 +60,10 @@ function Explore() {
   
   return (
     <TableLayout
-      title="Sources"
+      title="Strategies"
       toolbar={() => (
         <>
-          <NewEntityModal
+          <NewStrategyModal
             open={newModal}
             onClose={onClose}
             onSubmit={onSubmit}
@@ -97,7 +90,7 @@ function Explore() {
       <Table aria-label="simple table">
       <TableHead>
         <TableRow>
-          <TableCell>Source ID</TableCell>
+          <TableCell>Strategy ID</TableCell>
           <TableCell>Type</TableCell>
           <TableCell align="right">Operations</TableCell>
         </TableRow>
@@ -107,7 +100,7 @@ function Explore() {
           <TableRow key={i}>
             <TableCell component="th" scope="row">
               <Button
-                onClick={() => router.push(`${f.EXPLORE}/[id]`, `${f.EXPLORE}/${row.id}`)}
+                onClick={() => router.push(`${f.MODEL}/[id]`, `${f.MODEL}/${row.id}`)}
               >
                 {row.id}
               </Button>
@@ -116,7 +109,7 @@ function Explore() {
               {row.name}
             </TableCell>
             <TableCell align="right">
-              <DeleteButton element={row} mutate={mutate} store={sourcesStore} />
+              <DeleteButton element={row} mutate={mutate} store={sourcesStore.strategies} />
             </TableCell>
           </TableRow>
         ))}
@@ -127,24 +120,4 @@ function Explore() {
   )
 }
 
-Explore.getInitialProps = async ({ req }) => {
-    return {
-      sources: []
-    };
-    // Example SSR implementation
-    const token = await Auth.getTokenServerSide(req);
-    if (token) {
-        // should only execute serverside
-        const sources = await fetchBackend.get(b.SOURCES, token);
-        return {
-            sources
-        }
-    }
-    if (typeof window !== 'undefined') {
-      return {
-          sources: []
-      }
-    }
-};
-
-export default observer(Explore);
+export default observer(ListStrategies);

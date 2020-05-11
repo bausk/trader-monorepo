@@ -69,7 +69,7 @@ function Header() {
         >
           <Tab value={r.HOME} label="Dashboard" href={r.HOME} {...a11yProps(0)} />
           <Tab value={r.EXPLORE} label="Explore" href={r.EXPLORE} {...a11yProps(1)} />
-          <Tab disabled value={r.MODEL} label="Model" href={r.MODEL} {...a11yProps(2)} />
+          <Tab value={r.MODEL} label="Model" href={r.MODEL} {...a11yProps(2)} />
           <Tab disabled value={r.OPTIMIZE} label="Optimize" href={r.OPTIMIZE} {...a11yProps(3)} />
           <Tab disabled value={r.TRADE} label="Trade" href={r.TRADE} {...a11yProps(4)} />
           <Tab value={r.PROFILE} label="Profile" href={r.PROFILE} {...a11yProps(5)} />

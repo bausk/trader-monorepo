@@ -1,7 +1,8 @@
 import { observable, flow, action } from 'mobx';
 import { observer } from 'mobx-react';
-import { fetchBackend } from 'api/fetcher';
-import r from 'api/backendRoutes';
+import { fetchBackend, authenticatedFetchCreator } from 'api/fetcher';
+import f from 'api/backendRoutes';
+
 
 class SourcesStore {
     constructor(rootStore) {
@@ -10,10 +11,33 @@ class SourcesStore {
     @observable sources;
     @observable state = "pending";
 
+    strategies = {
+        list: flow(authenticatedFetchCreator(
+            this.rootStore,
+            fetchBackend.get,
+            f.STRATEGIES
+        )).bind(this),
+        detail: flow(authenticatedFetchCreator(
+            this.rootStore,
+            fetchBackend.get,
+            (id) => `${f.STRATEGIES}/${id}`,
+        )).bind(this),
+        add: flow(authenticatedFetchCreator(
+            this.rootStore,
+            fetchBackend.post,
+            f.STRATEGIES,
+        )).bind(this),
+        delete: flow(authenticatedFetchCreator(
+            this.rootStore,
+            fetchBackend.delete,
+            f.STRATEGIES,
+        )).bind(this),
+    };
+
     list = flow(function* () {
         try {
             const token = this.rootStore.authStore.accessToken;
-            const result = yield fetchBackend.get(r.SOURCES, token);
+            const result = yield fetchBackend.get(f.SOURCES, token);
             return result;
         } catch (error) {
             if (error.message === '401') {
@@ -22,12 +46,11 @@ class SourcesStore {
         }
     }).bind(this);
 
-
     detail = flow(function* (element) {
         const id = element.id || element;
         try {
             const token = this.rootStore.authStore.accessToken;
-            const result = yield fetchBackend.get(`${r.SOURCES}/${id}/stats`, token);
+            const result = yield fetchBackend.get(`${f.SOURCES}/${id}/stats`, token);
             return result;
         } catch (error) {
             if (error.message === '401') {
@@ -40,7 +63,7 @@ class SourcesStore {
         const id = element.id || element;
         try {
             const token = this.rootStore.authStore.accessToken;
-            const result = yield fetchBackend.get(`${r.SOURCES}/${id}/interval`, token, {
+            const result = yield fetchBackend.get(`${f.SOURCES}/${id}/interval`, token, {
                 start: intervalStart,
                 end: intervalEnd,
             });
@@ -55,7 +78,7 @@ class SourcesStore {
     add = flow(function* (newSource) {
         try {
             const token = this.rootStore.authStore.accessToken;
-            const result = yield fetchBackend.post(r.SOURCES, token, newSource);
+            const result = yield fetchBackend.post(f.SOURCES, token, newSource);
             return result;
         } catch (error) {
             if (error.message === '401') {
@@ -67,7 +90,7 @@ class SourcesStore {
     delete = flow(function* (element) {
         try {
             const token = this.rootStore.authStore.accessToken;
-            const result = yield fetchBackend.delete(r.SOURCES, token, element);
+            const result = yield fetchBackend.delete(f.SOURCES, token, element);
             return result;
         } catch (error) {
             if (error.message === '401') {

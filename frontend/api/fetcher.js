@@ -54,3 +54,21 @@ export const fetchBackend = {
     put: async (url, token, data = null) => await request('PUT', `${BACKEND_ROOT}${url}`, { token, data }),
     post: async (url, token, data = null) => await request('POST', `${BACKEND_ROOT}${url}`, { token, data }),
   };
+
+export const authenticatedFetchCreator = (rootStore, fetcher, endpoint) => {
+    return function* (data) {
+        let fetchAddress = endpoint;
+        if (endpoint instanceof Function) {
+            fetchAddress = endpoint(data);
+        }
+        try {
+            const token = this.rootStore.authStore.accessToken;
+            const result = yield fetcher(fetchAddress, token, data);
+            return result;
+        } catch (error) {
+            if (error.message === '401') {
+                yield this.rootStore.authStore.relogin();
+            }
+        }
+    };
+};

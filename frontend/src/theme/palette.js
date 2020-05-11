@@ -7,7 +7,7 @@ export default {
   primary: {
     contrastText: white,
     dark: colors.blue[900],
-    main: '#20A6F7',
+    main: '#5096ed',
     light: colors.blue[100],
   },
   secondary: {

@@ -2,16 +2,15 @@ import json
 from aiohttp import web
 from aiohttp.web import Response
 from aiohttp_cors import CorsViewMixin, ResourceOptions
-from dbmodels.db import db, Source, SourceSchema, SourceSchemaWithStats, BaseModel
+from dbmodels.db import db, StrategyModel, StrategySchema, BaseModel
 from server.security import check_permission, Permissions
 from typing import Type
 from utils.sources.select import select_source
-
 from server.endpoints.routedef import routes
 
 
-@routes.view('/sources')
-class SourcesView(web.View, CorsViewMixin):
+@routes.view('/strategies')
+class StrategiesView(web.View, CorsViewMixin):
     cors_config = {
         "*": ResourceOptions(
             allow_credentials=True,
@@ -19,13 +18,13 @@ class SourcesView(web.View, CorsViewMixin):
             expose_headers="*",
         )
     }
-    schema: Type[BaseModel] = SourceSchema
+    schema: Type[BaseModel] = StrategySchema
 
     async def get(self: web.View) -> Response:
         await check_permission(self.request, Permissions.READ)
         response = []
         async with db.transaction():
-            async for s in Source.query.order_by(Source.id).gino.iterate():
+            async for s in StrategyModel.query.order_by(StrategyModel.id).gino.iterate():
                 validated = self.schema.from_orm(s)
                 response.append(validated.dict())
         return web.json_response(response)
@@ -37,10 +36,10 @@ class SourcesView(web.View, CorsViewMixin):
             raw_data = await self.request.json()
             incoming = self.schema(**raw_data)
             async with db.transaction():
-                await Source.create(**incoming.private_dict())
-                async for s in Source.query.order_by(Source.id).gino.iterate():
+                await StrategyModel.create(**incoming.private_dict())
+                async for s in StrategyModel.query.order_by(StrategyModel.id).gino.iterate():
                     response.append(self.schema.from_orm(s).dict())
-        except Exception:
+        except Exception as e:
             raise web.HTTPBadRequest
         return web.json_response(response)
 
@@ -50,15 +49,15 @@ class SourcesView(web.View, CorsViewMixin):
         incoming = self.schema(**raw_data)
         response = []
         async with db.transaction():
-            await Source.delete.where(Source.id == incoming.id).gino.status()
-            async for s in Source.query.order_by(Source.id).gino.iterate():
+            await StrategyModel.delete.where(StrategyModel.id == incoming.id).gino.status()
+            async for s in StrategyModel.query.order_by(StrategyModel.id).gino.iterate():
                 validated = self.schema.from_orm(s)
                 response.append(validated.dict())
         return web.json_response(response)
 
 
-@routes.view(r'/sources/{id:\d+}/stats')
-class SourcesStatsView(web.View, CorsViewMixin):
+@routes.view(r'/strategies/{id:\d+}')
+class StrategyDetailView(web.View, CorsViewMixin):
     cors_config = {
         "*": ResourceOptions(
             allow_credentials=True,
@@ -66,13 +65,13 @@ class SourcesStatsView(web.View, CorsViewMixin):
             expose_headers="*",
         )
     }
-    schema: Type[BaseModel] = SourceSchemaWithStats
+    schema: Type[BaseModel] = StrategySchema
 
     async def get(self: web.View) -> Response:
         await check_permission(self.request, Permissions.READ)
-        source_id = int(self.request.match_info['id'])
+        strategy_id = int(self.request.match_info['id'])
         async with db.transaction():
-            source = await Source.get(source_id)
+            source = await StrategyModel.get(strategy_id)
         source_model = self.schema.from_orm(source)
         source_config = json.loads(source_model.config_json)
         table_fullname = source_config['table_name']
@@ -85,35 +84,4 @@ class SourcesStatsView(web.View, CorsViewMixin):
         source_model.available_intervals = []
         for res in availability_intervals:
             source_model.available_intervals.append([res[0], res[1]])
-        return web.json_response(body=source_model.json())
-
-
-@routes.view(r'/sources/{id:\d+}/interval')
-class SourcesIntervalView(web.View, CorsViewMixin):
-    cors_config = {
-        "*": ResourceOptions(
-            allow_credentials=True,
-            allow_headers="*",
-            expose_headers="*",
-        )
-    }
-    schema: Type[BaseModel] = SourceSchemaWithStats
-
-    async def get(self: web.View) -> Response:
-        await check_permission(self.request, Permissions.READ)
-        source_id = int(self.request.match_info['id'])
-        async with db.transaction():
-            source = await Source.get(source_id)
-        source_model = self.schema.from_orm(source)
-        source_config = json.loads(source_model.config_json)
-        table_fullname = source_config['table_name']
-        if not table_fullname:
-            raise web.HTTPConflict(text="table_name not defined in source config")
-        print(self.request.query)
-        res = await select_source(source).list_data_in_interval(
-            table_fullname=table_fullname,
-            start=self.request.query.get('start'),
-            end=self.request.query.get('end'),
-        )
-        source_model.data = res
         return web.json_response(body=source_model.json())

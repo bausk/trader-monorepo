@@ -7,7 +7,8 @@ from .db import db
 
 
 class StrategyTypesEnum(str, enum.Enum):
-    interexchange_arbitrage = "interexchange_arbitrage"
+    interexchangearbitrage = "interexchangearbitrage"
+    signalbased = "signalbased"
 
 
 # class Source(Base):
@@ -20,6 +21,7 @@ class StrategyModel(db.Model):
         StrategyTypesEnum,
         values_callable=lambda x: [e.value for e in x]
     ))
+    is_live = db.Column(db.Boolean(), default=False)
     config_json = db.Column(db.Unicode(), default='{}')
 
 
@@ -29,4 +31,5 @@ class StrategySchema(Privatable):
     id: Optional[int]
     name: str = 'Default'
     typename: StrategyTypesEnum
+    is_live: Optional[bool]
     config_json: Optional[str]

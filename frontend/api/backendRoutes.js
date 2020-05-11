@@ -2,6 +2,7 @@ import config from 'lib/config';
 
 const routes = {
     SOURCES: '/sources',
+    STRATEGIES: '/strategies',
 }
 
 export default routes;

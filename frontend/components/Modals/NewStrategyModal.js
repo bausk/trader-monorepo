@@ -22,29 +22,29 @@ const useStyles = makeStyles(theme => ({
     }
 }));
 
-export default function NewSourceModal({ open, onClose, onSubmit }) {
+const strategyTypesEnum = {
+    'interexchangearbitrage': "Inter-Exchange Arbitrage",
+    'signalbased': "Single Exchange",
+};
+
+export default function NewStrategyModal({ open, onClose, onSubmit }) {
     const classes = useStyles();
     const handleClose = () => {
         onClose(false);
     };
     
-    const [sourceType, setSourceType] = React.useState("bigquery");
+    const [typename, setTypename] = React.useState(Object.keys(strategyTypesEnum)[0]);
     const handleTypeChange = event => {
-        setSourceType(event.target.value);
+        setTypename(event.target.value);
     };
     const [name, setName] = React.useState('Unnamed');
     const handleNameChange = (event) => {
       setName(event.target.value);
     };
-    const [tableName, setTable] = React.useState('');
-    const handleTableChange = (event) => {
-        setTable(event.target.value);
-    };
     const handleSubmit = () => {
         onSubmit({
             name,
-            tableName,
-            sourceType
+            typename
         });
         onClose(true);
     };
@@ -54,10 +54,10 @@ export default function NewSourceModal({ open, onClose, onSubmit }) {
             onClose={handleClose}
             aria-labelledby="form-dialog-title"
         >
-            <DialogTitle id="form-dialog-title">Create Source</DialogTitle>
+            <DialogTitle id="form-dialog-title">Create Strategy</DialogTitle>
             <DialogContent>
                 <DialogContentText>
-                    Provide name, source type and table:
+                    Provide strategy name and type:
                 </DialogContentText>
                 <TextField
                     autoFocus
@@ -69,31 +69,22 @@ export default function NewSourceModal({ open, onClose, onSubmit }) {
                     onChange={handleNameChange}
                     fullWidth
                 />
-                <TextField
-                    margin="normal"
-                    id="tablename"
-                    label="Table Name"
-                    type="text"
-                    value={tableName}
-                    onChange={handleTableChange}
-                    fullWidth
-                />
                 <FormControl className={classes.formControl}>
                     <InputLabel id="demo-simple-select-outlined-label">Type</InputLabel>
                     <Select
                         margin="normal"
                         labelId="demo-simple-select-outlined-label"
                         id="demo-simple-select-outlined"
-                        value={sourceType}
+                        value={typename}
                         onChange={handleTypeChange}
                         label="Type"
                     >
                         {/* <MenuItem value="">
                             <em>None</em>
                         </MenuItem> */}
-                        <MenuItem value={'bigquery'}>BigQuery</MenuItem>
-                        <MenuItem value={'kuna'}>KunaIO</MenuItem>
-                        <MenuItem value={'cryptowatch'}>Cryptowatch</MenuItem>
+                        {Object.entries(strategyTypesEnum).map(value => (
+                            <MenuItem key={value[0]} value={value[0]}>{value[1]}</MenuItem>
+                        ))}
                     </Select>
                 </FormControl>
             </DialogContent>

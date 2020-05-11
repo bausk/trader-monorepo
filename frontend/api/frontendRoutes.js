@@ -10,6 +10,7 @@ const routes = {
     EXPLORE: '/explore',
     EXPLORE_NEW: '/explore/new',
     MODEL: '/model',
+    MODEL_NEW: '/model/new',
     OPTIMIZE: '/optimize',
     TRADE: '/trade',
     ABOUT: '/about',
