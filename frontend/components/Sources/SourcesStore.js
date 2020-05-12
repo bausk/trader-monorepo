@@ -13,22 +13,26 @@ class SourcesStore {
 
     strategies = {
         list: flow(authenticatedFetchCreator(
-            this.rootStore,
             fetchBackend.get,
             f.STRATEGIES
         )).bind(this),
         detail: flow(authenticatedFetchCreator(
-            this.rootStore,
             fetchBackend.get,
             (id) => `${f.STRATEGIES}/${id}`,
         )).bind(this),
+        put: flow(authenticatedFetchCreator(
+            fetchBackend.put,
+            (data) => `${f.STRATEGIES}/${data.id}`,
+        )).bind(this),
+        patch: flow(authenticatedFetchCreator(
+            fetchBackend.patch,
+            (id) => `${f.STRATEGIES}/${id}`,
+        )).bind(this),
         add: flow(authenticatedFetchCreator(
-            this.rootStore,
             fetchBackend.post,
             f.STRATEGIES,
         )).bind(this),
         delete: flow(authenticatedFetchCreator(
-            this.rootStore,
             fetchBackend.delete,
             f.STRATEGIES,
         )).bind(this),

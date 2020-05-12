@@ -52,10 +52,11 @@ export const fetchBackend = {
     delete: async (url, token, data = null) => await request('DELETE', `${BACKEND_ROOT}${url}`, { token, data }),
     get: async (url, token, params = null) => await request('GET', `${BACKEND_ROOT}${url}`, { token, params }),
     put: async (url, token, data = null) => await request('PUT', `${BACKEND_ROOT}${url}`, { token, data }),
+    patch: async (url, token, data = null) => await request('PATCH', `${BACKEND_ROOT}${url}`, { token, data }),
     post: async (url, token, data = null) => await request('POST', `${BACKEND_ROOT}${url}`, { token, data }),
   };
 
-export const authenticatedFetchCreator = (rootStore, fetcher, endpoint) => {
+export const authenticatedFetchCreator = (fetcher, endpoint) => {
     return function* (data) {
         let fetchAddress = endpoint;
         if (endpoint instanceof Function) {

@@ -14,6 +14,8 @@ import AddIcon from "@material-ui/icons/Add";
 import RefreshIcon from "@material-ui/icons/Refresh";
 import { observer } from 'mobx-react';
 import TableLayout from 'components/layouts/TableLayout';
+import FormControlLabel from '@material-ui/core/FormControlLabel';
+import Switch from '@material-ui/core/Switch';
 import NewStrategyModal from 'components/Modals/NewStrategyModal';
 import { useStores } from 'components/rootStore';
 import { DeleteButton } from 'components/buttons';
@@ -58,6 +60,19 @@ function ListStrategies() {
     return null;
   }
   
+  const handleChange = useCallback(async (row, value) => {
+    const newValue = {
+      ...row,
+      is_live: value
+    }
+    mutate(
+      prev => prev.map(p => (p.id === row.id ? newValue : p)),
+      false
+    );
+    await sourcesStore.strategies.put(newValue);
+    mutate();
+  }, [sourcesStore]);
+
   return (
     <TableLayout
       title="Strategies"
@@ -88,36 +103,59 @@ function ListStrategies() {
     >
       <TableContainer component={Paper}>
       <Table aria-label="simple table">
-      <TableHead>
-        <TableRow>
-          <TableCell>Strategy ID</TableCell>
-          <TableCell>Type</TableCell>
-          <TableCell align="right">Operations</TableCell>
-        </TableRow>
-      </TableHead>
-      <TableBody>
-        {rows.map((row, i) => (
-          <TableRow key={i}>
-            <TableCell component="th" scope="row">
-              <Button
-                onClick={() => router.push(`${f.MODEL}/[id]`, `${f.MODEL}/${row.id}`)}
-              >
-                {row.id}
-              </Button>
-            </TableCell>
-            <TableCell>
-              {row.name}
-            </TableCell>
-            <TableCell align="right">
-              <DeleteButton element={row} mutate={mutate} store={sourcesStore.strategies} />
-            </TableCell>
+        <TableHead>
+          <TableRow>
+            <TableCell>Strategy ID</TableCell>
+            <TableCell>Type</TableCell>
+            <TableCell align="right">Operations</TableCell>
           </TableRow>
-        ))}
-      </TableBody>
-  </Table>
-  </TableContainer>
+        </TableHead>
+        <TableBody>
+          {rows.map((row, i) => (
+            <TableRow key={i}>
+              <TableCell component="th" scope="row">
+                <Button
+                  onClick={() => router.push(`${f.MODEL}/[id]`, `${f.MODEL}/${row.id}`)}
+                >
+                  {row.id}
+                </Button>
+              </TableCell>
+              <TableCell>
+                {row.name}
+              </TableCell>
+              <TableCell align="right">
+                <SwitchIsLive element={row} onChange={handleChange} />
+                <DeleteButton element={row} mutate={mutate} store={sourcesStore.strategies} />
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </TableContainer>
   </TableLayout>
   )
 }
+
+const SwitchIsLive = ({ element, onChange }) => {
+  const onSwitch = useCallback(
+    (e) => {
+      console.log('switching')
+      onChange(element, !element.is_live)
+    },
+    [element]
+  );
+  return (
+    <FormControlLabel
+      value="start"
+      control={<Switch
+        color="primary"
+        checked={element.is_live}
+        onChange={onSwitch}
+      />}
+      label={element.is_live? "Active" : "Inactive"}
+      labelPlacement="start"
+    />
+  );
+};
 
 export default observer(ListStrategies);

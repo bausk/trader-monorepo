@@ -28,17 +28,17 @@ const useStyles = makeStyles(theme => ({
     },
 }));
 
-function ModelListView() {
+function ModelDetailView() {
     const { sourcesStore } = useStores();
     const classes = useStyles();
     const router = useRouter();
     const [ startFetchDetail, setFetchDetail ] = useState();
-    const cacheData = cache.get(b.SOURCES);
+    const cacheData = cache.get(b.STRATEGIES);
     const initialData = cacheData && cacheData.find(c => c.id === parseInt(router.query.id));
     const { data: detailData, mutate: mutateDetail, isValidating: isValidatingDetail } = useSWR(
-        () => startFetchDetail ? `${b.SOURCES}/${router.query.id}/stats` : null,
+        () => startFetchDetail ? `${b.STRATEGIES}/${router.query.id}` : null,
         async (query) => {
-            const r = await sourcesStore.detail(router.query.id);
+            const r = await sourcesStore.strategies.detail(router.query.id);
             return r;
         },
         {
@@ -49,7 +49,7 @@ function ModelListView() {
     const { data: listData } = useSWR(
         () => !initialData ? `${b.SOURCES}` : null,
         async (query) => {
-            const r = await sourcesStore.list();
+            const r = await sourcesStore.strategies.list();
             return r;
         },
         {
@@ -72,7 +72,7 @@ function ModelListView() {
                 <IconButton
                     edge="start"
                     component="a"
-                    onClick={() => router.push(f.EXPLORE)}
+                    onClick={() => router.push(f.MODEL)}
                     color="inherit"
                     aria-label="back to"
                 >
@@ -101,4 +101,4 @@ function ModelListView() {
     );
 }
 
-export default ModelListView;
+export default ModelDetailView;

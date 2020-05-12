@@ -85,3 +85,19 @@ class StrategyDetailView(web.View, CorsViewMixin):
         for res in availability_intervals:
             source_model.available_intervals.append([res[0], res[1]])
         return web.json_response(body=source_model.json())
+
+    async def put(self: web.View) -> Response:
+        await check_permission(self.request, Permissions.WRITE_OBJECTS)
+        strategy_id = int(self.request.match_info['id'])
+        response = None
+        try:
+            raw_data = await self.request.json()
+            incoming = self.schema(**raw_data)
+            async with db.transaction():
+                obj = await StrategyModel.get(strategy_id)
+                await obj.update(**incoming.private_dict()).apply()
+                response = self.schema.from_orm(await StrategyModel.get(strategy_id))
+        except Exception as e:
+            raise web.HTTPBadRequest
+
+        return web.json_response(response.dict())
