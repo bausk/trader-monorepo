@@ -11,9 +11,10 @@ services:
         POETRY_VERSION: ${POETRY_VERSION}
     volumes:
       - ./api:/code
-    entrypoint: bash -c "scripts/migrate.sh && gunicorn --reload --bind 0.0.0.0:8000 --worker-class aiohttp.GunicornWebWorker --timeout 3600 --workers 1 --access-logfile - --capture-output test_migrations:app"
+    entrypoint: bash -c "scripts/migrate.sh && /usr/bin/supervisord"
     # entrypoint: bash -c "scripts/migrate.sh && python test_migrations.py"
     # entrypoint: bash -c "scripts/migrate.sh && adev runserver test_migrations.py"
+    # entrypoint: bash -c "scripts/migrate.sh && gunicorn --reload --bind 0.0.0.0:8000 --worker-class aiohttp.GunicornWebWorker --timeout 3600 --workers 1 --access-logfile - --capture-output test_migrations:app"
     environment:
       - ENV=${ENV}
       - POETRY_VERSION=${POETRY_VERSION}
@@ -21,6 +22,7 @@ services:
       - 5000:8000
       # - 5000:5000
       - 5678:5678
+      - 5680:5680
     links:
       - postgres
     depends_on:

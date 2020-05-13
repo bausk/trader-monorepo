@@ -10,6 +10,7 @@ ENV ENV=$env \
   PIP_DEFAULT_TIMEOUT=100 \
   POETRY_VERSION=$POETRY_VERSION
 RUN pip install "poetry==$POETRY_VERSION"
+RUN apt-get update && apt-get install -y supervisor
 WORKDIR /code
 COPY poetry.lock pyproject.toml /code/
 COPY ./traderutils /code/traderutils
@@ -21,9 +22,12 @@ RUN poetry config virtualenvs.create false \
   && poetry install $(test "$ENV" = "production" && echo "--no-dev") --no-interaction --no-ansi \
   && apt-get purge -y --auto-remove gcc libc-dev
 
+COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 COPY . /code
 EXPOSE 5000
 RUN chmod 777 ./scripts/migrate.sh
 RUN chmod 644 ./test_migrations.py
 
-CMD gunicorn --bind 0.0.0.0:5000 --worker-class aiohttp.GunicornWebWorker --workers 1 --access-logfile - --capture-output entrypoint:app 
+CMD ["/usr/bin/supervisord"]
+
+# CMD gunicorn --bind 0.0.0.0:5000 --worker-class aiohttp.GunicornWebWorker --workers 1 --access-logfile - --capture-output entrypoint:app 

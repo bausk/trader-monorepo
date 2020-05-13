@@ -30,6 +30,19 @@
                     "remoteRoot": "/code"
                 }
             ]
+        },
+        {
+            "name": "Python: debug scheduler",
+            "type": "python",
+            "request": "attach",
+            "port": 5680,
+            "host": "localhost",
+            "pathMappings": [
+                {
+                    "localRoot": "${workspaceFolder}",
+                    "remoteRoot": "/code"
+                }
+            ]
         }
     ]
 }

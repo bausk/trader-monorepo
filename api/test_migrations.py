@@ -1,12 +1,9 @@
-import loadenv
-from aiohttp import web, ClientSession
+from aiohttp import web
 
 import aiohttp_cors
 import asyncio
-from dbmodels.db import db, User, init_middleware
-from server.init import setup_aiohttp_security, setup_scheduler
+from dbmodels.db import init_middleware
 from server.security import get_middleware
-from server.errors_middleware import create_error_middleware
 from server.routes import routes
 
 # Load encrypted config
