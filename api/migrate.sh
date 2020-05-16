@@ -1,1 +1,1 @@
-docker-compose exec api bash -c ./scripts/migrate.sh
+docker-compose exec api bash -c "PYTHONPATH=$PYTHONPATH:.. alembic upgrade head"
