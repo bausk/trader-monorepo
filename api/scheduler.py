@@ -2,7 +2,7 @@ from aiohttp import web
 
 from dbmodels.db import init_middleware
 from secrets_management.manage import decrypt_credentials, load_credentials, get_environment
-from ticker.main_loop import run_ticker
+from ticker.main_loop import Ticker
 
 
 if get_environment() == 'development':
@@ -20,5 +20,6 @@ load_credentials(decrypt_credentials(which=['*.env']))
 app = web.Application()
 db_middleware = init_middleware(app)
 app.middlewares.append(db_middleware)
-app.on_startup.append(run_ticker)
+ticker = Ticker()
+app.on_startup.append(ticker.run)
 print('[Scheduler started]')

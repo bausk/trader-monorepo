@@ -1,9 +1,12 @@
 import enum
-from typing import List, Optional, Tuple, Union
+import json
+from typing import List, Optional, Tuple, Union, Any, Type
+from pydantic import validator, ValidationError
 from datetime import datetime
 
 from .common_models import Privatable
 from .db import db
+from .strategy_params_models import StrategyParamsSchema
 
 
 class StrategyTypesEnum(str, enum.Enum):
@@ -28,8 +31,20 @@ class StrategyModel(db.Model):
 class StrategySchema(Privatable):
     class Config:
         orm_mode = True
+
     id: Optional[int]
     name: str = 'Default'
     typename: StrategyTypesEnum
     is_live: Optional[bool]
-    config_json: Optional[str]
+    config_json: StrategyParamsSchema
+
+    @validator('config_json', pre=True)
+    def deserialize_config(cls, v, values, **kwargs):
+        if v:
+            return StrategyParamsSchema(**json.loads(v))
+        return None
+
+    def dict(self, *args, **kwargs):
+        result = super().dict(*args, **kwargs)
+        result['config_json'] = json.dumps(result['config_json'])
+        return result

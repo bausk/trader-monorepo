@@ -33,11 +33,6 @@ class SourceSchema(Privatable):
     typename: SourceTypesEnum
     config_json: Optional[str]
 
-    def private_dict(self):
-        res = self.dict()
-        del res['id']
-        return res
-
 
 class SourceSchemaWithStats(SourceSchema):
     class Config:
