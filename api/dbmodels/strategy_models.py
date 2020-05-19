@@ -1,18 +1,14 @@
-import enum
 import json
 from typing import List, Optional, Tuple, Union, Any, Type
 from pydantic import validator, ValidationError
 from datetime import datetime
 
+from parameters.enums import StrategyTypesEnum
+
 from .common_models import Privatable
 from .db import db
 from .strategy_params_models import BacktestParamsSchema, LiveParamsSchema
 from .session_models import LiveSessionSchema
-
-
-class StrategyTypesEnum(str, enum.Enum):
-    interexchangearbitrage = "interexchangearbitrage"
-    signalbased = "signalbased"
 
 
 class StrategyModel(db.Model):

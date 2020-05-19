@@ -5,17 +5,30 @@ from aiojobs._job import Job
 from typing import Type, List
 
 from dbmodels.db import db, StrategyModel, StrategySchema, BaseModel
+from strategies.common import select_strategy_executor
 
 
 def acquire_executor(strategy: Type[StrategySchema]):
     DEFAULT_STRATEGY_TICK = 8
     strategy_typename = strategy.typename
+    strategy_tick_executor = select_strategy_executor(strategy)
+    if strategy_tick_executor is None:
+        return None
 
     async def executor():
         while True:
             await asyncio.sleep(DEFAULT_STRATEGY_TICK)
             print(f"[strategy tick] {strategy_typename}...")
+            await strategy_tick_executor(strategy)
     return executor
+
+
+class MockExecutorJob:
+    def __init__(self):
+        self.closed = False
+
+    async def close(self):
+        self.closed = True
 
 
 class Ticker:
@@ -68,7 +81,11 @@ class Ticker:
             del self.active_executors[strategy_id]
         if not active_executor:
             print(f'Activating executor {strategy_id}')
-            self.active_executors[strategy_id] = await self.scheduler.spawn(acquire_executor(strategy)())
+            strategy_executor = acquire_executor(strategy)
+            if strategy_executor:
+                self.active_executors[strategy_id] = await self.scheduler.spawn(acquire_executor(strategy)())
+            else:
+                self.active_executors[strategy_id] = MockExecutorJob()
 
     async def stop_executor(self, executor_id: int):
         executor = self.active_executors.get(executor_id)
