@@ -47,7 +47,7 @@ class Ticker:
         active_strategies = {}
         schema: Type[BaseModel] = StrategySchema
         async with db.transaction():
-            async for s in StrategyModel.query.where(StrategyModel.is_live == True).order_by(StrategyModel.id).gino.iterate():
+            async for s in StrategyModel.query.where(StrategyModel.live_session_id.isnot(None)).order_by(StrategyModel.id).gino.iterate():
                 validated = schema.from_orm(s)
                 active_strategies[validated.id] = validated
         # Stop removed or inactive strategies

@@ -60,16 +60,12 @@ function ListStrategies() {
     return null;
   }
   
-  const handleChange = useCallback(async (row, value) => {
-    const newValue = {
-      ...row,
-      is_live: value
-    }
+  const handleChange = useCallback(async (newValue) => {
     mutate(
-      prev => prev.map(p => (p.id === row.id ? newValue : p)),
+      prev => prev.map(p => (p.id === newValue.id ? newValue : p)),
       false
     );
-    await sourcesStore.strategies.put(newValue);
+    await sourcesStore.strategies.putIsLive(newValue);
     mutate();
   }, [sourcesStore]);
 
@@ -137,10 +133,14 @@ function ListStrategies() {
 }
 
 const SwitchIsLive = ({ element, onChange }) => {
+  const isLive = !!element.live_session_id;
   const onSwitch = useCallback(
     (e) => {
-      console.log('switching')
-      onChange(element, !element.is_live)
+      const newValue = {
+        ...element,
+        live_session_id: isLive ? null : true
+      }
+      onChange(newValue);
     },
     [element]
   );
@@ -149,10 +149,10 @@ const SwitchIsLive = ({ element, onChange }) => {
       value="start"
       control={<Switch
         color="primary"
-        checked={element.is_live}
+        checked={isLive}
         onChange={onSwitch}
       />}
-      label={element.is_live? "Active" : "Inactive"}
+      label={isLive? "Active" : "Inactive"}
       labelPlacement="start"
     />
   );

@@ -22,7 +22,12 @@ class SourcesStore {
         )).bind(this),
         put: flow(authenticatedFetchCreator(
             fetchBackend.put,
-            (data) => `${f.STRATEGIES}/${data.id}`,
+            (data) => `${f.STRATEGIES}/${data.id}`
+        )).bind(this),
+        putIsLive: flow(authenticatedFetchCreator(
+            fetchBackend.put,
+            (data) => `${f.STRATEGIES}/${data.id}/live`,
+            (data) => ({ live: !!data.live_session_id }),
         )).bind(this),
         patch: flow(authenticatedFetchCreator(
             fetchBackend.patch,
