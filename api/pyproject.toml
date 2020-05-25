@@ -27,6 +27,7 @@ pyjwt = "^1.7.1"
 pydantic = "^1.5.1"
 schematics = "^2.1.0"
 aiojobs = "^0.2.2"
+janus = "^0.5.0"
 
 [tool.poetry.dev-dependencies]
 ptvsd = "^4.2"
