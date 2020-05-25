@@ -4,26 +4,51 @@ import aiojobs
 from aiojobs._job import Job
 from typing import Type, List
 
-from dbmodels.db import db, StrategyModel, StrategySchema, BaseModel
-from strategies.common import select_strategy_executor
+from dbmodels.db import db, StrategyModel, BaseModel
+from dbmodels.strategy_models import StrategySchema
+from dbmodels.strategy_params_models import LiveParamsSchema
+from parameters.enums import StrategiesEnum, LiveSourcesEnum
+from strategies.monitor_strategy import monitor_strategy_executor
+from utils.sources.live_sources import LiveCryptowatchSource, LiveKunaSource
 
 
-def acquire_executor(strategy: Type[StrategySchema]):
+STRATEGY_EXECUTORS = {
+    StrategiesEnum.monitor: monitor_strategy_executor,
+}
+
+LIVE_SOURCES = {
+    LiveSourcesEnum.kunaio: LiveKunaSource,
+    LiveSourcesEnum.cryptowatch: LiveCryptowatchSource,
+}
+
+
+async def acquire_executor(strategy: Type[StrategySchema]):
+    config: LiveParamsSchema = strategy.config_json
     DEFAULT_STRATEGY_TICK = 8
     strategy_typename = strategy.typename
-    strategy_tick_executor = select_strategy_executor(strategy)
-    if strategy_tick_executor is None:
-        return None
+    strategy_tick_func = STRATEGY_EXECUTORS.get(config.strategy_name)
+    if strategy_tick_func is None:
+        return MockExecutor()
 
-    async def executor():
+    strategy_scheduler = await aiojobs.create_scheduler()
+    # Collect and schedule sources and their queue
+    primary_source = config.source_primary
+    secondary_source = config.source_secondary
+    # Schedule executor and output queue
+
+    # Schedule order executor
+
+    return strategy_scheduler
+
+    async def executor(app):
         while True:
-            await asyncio.sleep(DEFAULT_STRATEGY_TICK)
             print(f"[strategy tick] {strategy_typename}...")
-            await strategy_tick_executor(strategy)
+            await strategy_tick_func(strategy, app)
+            await asyncio.sleep(DEFAULT_STRATEGY_TICK)
     return executor
 
 
-class MockExecutorJob:
+class MockExecutor:
     def __init__(self):
         self.closed = False
 
@@ -50,7 +75,7 @@ class Ticker:
             tick_count += 1
             try:
                 timer = asyncio.create_task(asyncio.sleep(self.BASE_TICK_TIME))
-                job = await self.scheduler.spawn(self.check_strategies(tick_count))
+                job: Job = await self.scheduler.spawn(self.check_strategies(tick_count))
                 await asyncio.wait({timer, job.wait()})
             except Exception as e:
                 print(e)
@@ -81,11 +106,12 @@ class Ticker:
             del self.active_executors[strategy_id]
         if not active_executor:
             print(f'Activating executor {strategy_id}')
-            strategy_executor = acquire_executor(strategy)
-            if strategy_executor:
-                self.active_executors[strategy_id] = await self.scheduler.spawn(acquire_executor(strategy)())
-            else:
-                self.active_executors[strategy_id] = MockExecutorJob()
+            # strategy_executor = await acquire_executor(strategy)
+            self.active_executors[strategy_id] = await acquire_executor(strategy)
+            # if strategy_executor:
+            #     self.active_executors[strategy_id]: Job = await self.scheduler.spawn(strategy_executor(self.app))
+            # else:
+            #     self.active_executors[strategy_id] = MockExecutorJob()
 
     async def stop_executor(self, executor_id: int):
         executor = self.active_executors.get(executor_id)
