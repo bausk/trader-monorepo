@@ -49,7 +49,7 @@ async def acquire_executor(strategy: Type[StrategySchema], app):
             done, pending = await asyncio.wait({primary_result, secondary_result}, timeout=4)
             if primary_result in done and secondary_result in done:
                 result = []
-                for coro in done:
+                for coro in [primary_result, secondary_result]:
                     try:
                         result.append(coro.result())
                     except Exception:
@@ -70,7 +70,7 @@ async def acquire_executor(strategy: Type[StrategySchema], app):
         while True:
             task = await signal_queue.async_q.get()
             print(f"[result tick] executing result for {task}")
-            task.task_done()
+            signal_queue.async_q.task_done()
     await strategy_scheduler.spawn(order_executor(config, signal_queue))
 
     return strategy_scheduler

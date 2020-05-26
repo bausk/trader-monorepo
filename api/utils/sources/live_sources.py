@@ -6,7 +6,7 @@ class LiveKunaSource(AbstractSource):
 
     @classmethod
     async def get_latest(cls):
-
+        return ['kuna results']
         raise NotImplementedError('Implement get_availability_intervals')
 
 
@@ -15,4 +15,5 @@ class LiveCryptowatchSource(AbstractSource):
 
     @classmethod
     async def get_latest(cls):
+        return ['cryptowatch results']
         raise NotImplementedError('Implement get_availability_intervals')
