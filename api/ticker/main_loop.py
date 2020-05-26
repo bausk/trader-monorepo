@@ -2,6 +2,7 @@ import sys, traceback
 import asyncio
 import aiojobs
 from aiojobs._job import Job
+from janus import Queue
 from typing import Type, List
 
 from dbmodels.db import db, StrategyModel, BaseModel
@@ -22,30 +23,57 @@ LIVE_SOURCES = {
 }
 
 
-async def acquire_executor(strategy: Type[StrategySchema]):
+async def acquire_executor(strategy: Type[StrategySchema], app):
     config: LiveParamsSchema = strategy.config_json
     DEFAULT_STRATEGY_TICK = 8
     strategy_typename = strategy.typename
+    config.strategy_name = StrategiesEnum.monitor
+    config.source_primary = LiveSourcesEnum.cryptowatch
+    config.source_secondary = LiveSourcesEnum.kunaio
     strategy_tick_func = STRATEGY_EXECUTORS.get(config.strategy_name)
     if strategy_tick_func is None:
         return MockExecutor()
 
+    session = app['PERSISTENT_SESSION']
     strategy_scheduler = await aiojobs.create_scheduler()
-    # Collect and schedule sources and their queue
-    primary_source = config.source_primary
-    secondary_source = config.source_secondary
-    # Schedule executor and output queue
+    source_queue = Queue()
+    signal_queue = Queue()
 
-    # Schedule order executor
+    async def source_executor(config, source_queue, session):
+        primary_source = LIVE_SOURCES.get(config.source_primary)
+        secondary_source = LIVE_SOURCES.get(config.source_secondary)
+        while True:
+            print(f"[source tick] for {strategy.id}...")
+            primary_result = asyncio.create_task(primary_source.get_latest())
+            secondary_result = asyncio.create_task(secondary_source.get_latest())
+            done, pending = await asyncio.wait({primary_result, secondary_result}, timeout=4)
+            if primary_result in done and secondary_result in done:
+                result = []
+                for coro in done:
+                    try:
+                        result.append(coro.result())
+                    except Exception:
+                        print('Source fetch failed!')
+                if len(result) == len(done):
+                    await source_queue.async_q.put(result)
+            else:
+                for coro in done:
+                    coro.cancel()
+                for coro in pending:
+                    coro.cancel()
+            await asyncio.sleep(DEFAULT_STRATEGY_TICK)
+
+    await strategy_scheduler.spawn(source_executor(config, source_queue, session))
+    await strategy_scheduler.spawn(strategy_tick_func(strategy, source_queue, signal_queue))
+
+    async def order_executor(config, signal_queue):
+        while True:
+            task = await signal_queue.async_q.get()
+            print(f"[result tick] executing result for {task}")
+            task.task_done()
+    await strategy_scheduler.spawn(order_executor(config, signal_queue))
 
     return strategy_scheduler
-
-    async def executor(app):
-        while True:
-            print(f"[strategy tick] {strategy_typename}...")
-            await strategy_tick_func(strategy, app)
-            await asyncio.sleep(DEFAULT_STRATEGY_TICK)
-    return executor
 
 
 class MockExecutor:
@@ -107,7 +135,7 @@ class Ticker:
         if not active_executor:
             print(f'Activating executor {strategy_id}')
             # strategy_executor = await acquire_executor(strategy)
-            self.active_executors[strategy_id] = await acquire_executor(strategy)
+            self.active_executors[strategy_id] = await acquire_executor(strategy, self.app)
             # if strategy_executor:
             #     self.active_executors[strategy_id]: Job = await self.scheduler.spawn(strategy_executor(self.app))
             # else:
