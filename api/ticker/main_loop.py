@@ -3,6 +3,7 @@ import asyncio
 import aiojobs
 from aiojobs._job import Job
 from janus import Queue
+from datetime import datetime, timedelta
 from typing import Type, List
 
 from dbmodels.db import db, StrategyModel, BaseModel
@@ -40,8 +41,18 @@ async def acquire_executor(strategy: Type[StrategySchema], app):
     signal_queue = Queue()
 
     async def source_executor(config, source_queue, session):
-        primary_source = LIVE_SOURCES.get(config.source_primary)
-        secondary_source = LIVE_SOURCES.get(config.source_secondary)
+        primary_source = LIVE_SOURCES.get(config.source_primary)(
+            session=session,
+            config=dict(
+                currency="btcusd",
+                limit=100,
+                after=timedelta(minutes=2)
+            )
+        )
+        secondary_source = LIVE_SOURCES.get(config.source_secondary)(
+            session=session,
+            config=dict(currency="btcuah")
+        )
         while True:
             print(f"[source tick] for {strategy.id}...")
             primary_result = asyncio.create_task(primary_source.get_latest())

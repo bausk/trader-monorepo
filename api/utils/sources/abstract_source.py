@@ -6,6 +6,11 @@ class AbstractSource:
     """
     Interface for source of data selectable and viewable from frontend.
     """
+
+    def __init__(self, session=None, config=None):
+        self.session = session
+        self.config = config
+
     @classmethod
     async def list_availability_intervals(
         cls,

@@ -1,19 +1,50 @@
+from datetime import datetime
 from .abstract_source import AbstractSource
 
 
 class LiveKunaSource(AbstractSource):
     latest_endpoint = "https://kuna.io/api/v2/trades?market={currency}"
 
-    @classmethod
-    async def get_latest(cls):
-        return ['kuna results']
-        raise NotImplementedError('Implement get_availability_intervals')
+    def format_endpoint(self):
+        return self.latest_endpoint.format(**self.config)
+
+    def to_trades(self, in_data):
+        trades = []
+        for result in in_data:
+            trade = dict(
+                price=result['price'],
+                volume=result['volume'],
+                funds=result['funds'],
+                created_at=result['created_at'],
+            )
+            trades.append(trade)
+        return trades
+
+    async def get_latest(self):
+        async with self.session.get(self.format_endpoint()) as resp:
+            return self.to_trades(await resp.json())
 
 
 class LiveCryptowatchSource(AbstractSource):
     latest_endpoint = "https://api.cryptowat.ch/markets/gdax/{currency}/trades?limit={limit}&since={after}"
 
-    @classmethod
-    async def get_latest(cls):
-        return ['cryptowatch results']
-        raise NotImplementedError('Implement get_availability_intervals')
+    def format_endpoint(self):
+        after = int((datetime.utcnow() - self.config['after']).timestamp())
+        return self.latest_endpoint.format(**{**self.config, 'after': after})
+
+    def to_trades(self, in_data):
+        trades = []
+        data = in_data['result']
+        for result in data:
+            trade = dict(
+                price=result[2],
+                volume=result[3],
+                funds=result[2] * result[3],
+                created_at=result[1],
+            )
+            trades.append(trade)
+        return trades
+
+    async def get_latest(self):
+        async with self.session.get(self.format_endpoint()) as resp:
+            return self.to_trades(await resp.json())
