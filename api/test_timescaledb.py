@@ -12,6 +12,7 @@ import asyncpg
 from janus import Queue
 from secrets_management.manage import encrypt_credentials, decrypt_credentials, load_credentials
 from utils.test_utils import generate_data, format_int
+from utils.timeseries.timescale_utils import init_db, init_connection
 
 
 print('Loading development env...')
@@ -20,52 +21,9 @@ load_dotenv(dotenv_path=env_path)
 
 
 async def test_asyncpg():
-    CONNECTION = "postgres://postgres:postgres@timescaledb:5432/template1"
-    conn = await asyncpg.connect(CONNECTION)
-    create_db = """
-        CREATE DATABASE livewater;
-    """
-    try:
-        await conn.execute(create_db)
-        print('Database created')
-    except asyncpg.exceptions.DuplicateDatabaseError:
-        print('Database already exists')
-    await conn.close()
-    CONNECTION = "postgres://postgres:postgres@timescaledb:5432/livewater"
-    conn = await asyncpg.connect(CONNECTION)
-    query_create_sensordata_table = """CREATE TABLE IF NOT EXISTS ticks (
-                                            timestamp TIMESTAMPTZ NOT NULL,
-                                            session_id INTEGER,
-                                            data_type INTEGER,
-                                            label VARCHAR(50),
-                                            price DOUBLE PRECISION,
-                                            volume DOUBLE PRECISION,
-                                            funds DOUBLE PRECISION
-                                            );"""
+    await init_db('livewater')
 
-    try:
-        await conn.execute("DROP TABLE ticks;")
-        print('Dropped table `ticks`')
-        await conn.execute(query_create_sensordata_table)
-        print('Created table `ticks`')
-    except asyncpg.exceptions.DuplicateTableError:
-        print('table already exists')
-    query_create_hypertable = "SELECT create_hypertable('ticks', 'timestamp');"
-    try:
-        await conn.execute(query_create_hypertable)
-        print('created hypertable')
-    except Exception:
-        pass
-
-    index_command = """CREATE UNIQUE INDEX unique_ticks
-        ON ticks(timestamp, session_id, data_type, label, funds);"""
-    try:
-        await conn.execute(index_command)
-        print('Created unique index')
-    except Exception:
-        print('Index not created')
-
-    iterations = 100000
+    iterations = 1000
 
     async def feed_data(q):
         data_source = generate_data(datetime.datetime(2020, 1, 1))
@@ -80,7 +38,7 @@ async def test_asyncpg():
             await q.put(raw_data)
 
     async def write_data(q):
-        conn = await asyncpg.connect(CONNECTION)
+        conn = await init_connection('livewater')
         try:
             while True:
                 datapoint = await q.get()
@@ -146,6 +104,7 @@ async def test_asyncpg():
         ORDER BY time ASC;
     """
 
+    conn = await init_connection('livewater')
     await conn.fetch(query.format(minutes=1))
     end3 = timer()
     elapsed_1min = round(end3 - end2, 4)
