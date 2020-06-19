@@ -29,8 +29,6 @@ schematics = "^2.1.0"
 aiojobs = "^0.2.2"
 janus = "^0.5.0"
 asyncpg = "^0.20.1"
-influxdb = "^5.3.0"
-influxdb-client = "^1.7.0"
 
 [tool.poetry.dev-dependencies]
 ptvsd = "^4.2"

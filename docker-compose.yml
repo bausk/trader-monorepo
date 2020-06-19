@@ -26,11 +26,9 @@ services:
     links:
       - postgres
       - timescaledb
-      - influxdb
     depends_on:
       - postgres
       - timescaledb
-      - influxdb
     restart: on-failure
   tasks:
     env_file:
@@ -55,11 +53,9 @@ services:
     links:
       - postgres
       - timescaledb
-      - influxdb
     depends_on:
       - postgres
       - timescaledb
-      - influxdb
   postgres:
     image: postgres:12
     environment:
@@ -76,10 +72,6 @@ services:
       - 5433:5432
     volumes:
       - timescaledb-data:/var/lib/postgresql/data
-  influxdb:
-    image: quay.io/influxdb/influxdb:2.0.0-beta
-    ports:
-      - 9999:9999
   frontend:
     build:
       context: ./frontend
