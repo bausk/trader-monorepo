@@ -1,14 +1,10 @@
-from datetime import datetime
 from functools import partial
-import pytz
 import asyncio
 import json
 from google.oauth2 import service_account
 from google.cloud import bigquery
-from typing import Type
 from secrets_management.manage import decrypt_credentials
 from .abstract_source import AbstractSource
-from ..schemas.timeseries_schemas import TimeseriesSchema
 
 
 credfile = decrypt_credentials(which=['./.secrets/keyring.json'])

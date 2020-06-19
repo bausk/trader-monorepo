@@ -225,6 +225,14 @@ python-versions = "*"
 version = "3.0.4"
 
 [[package]]
+category = "main"
+description = "Fast ISO8601 date time parser for Python written in C"
+name = "ciso8601"
+optional = false
+python-versions = "*"
+version = "2.1.3"
+
+[[package]]
 category = "dev"
 description = "Composable command line interface toolkit"
 name = "click"
@@ -442,6 +450,45 @@ docs = ["sphinx", "rst.linker"]
 testing = ["packaging", "importlib-resources"]
 
 [[package]]
+category = "main"
+description = "InfluxDB client"
+name = "influxdb"
+optional = false
+python-versions = "*"
+version = "5.3.0"
+
+[package.dependencies]
+msgpack = "0.6.1"
+python-dateutil = ">=2.6.0"
+pytz = "*"
+requests = ">=2.17.0"
+six = ">=1.10.0"
+
+[package.extras]
+test = ["nose", "nose-cov", "mock", "requests-mock"]
+
+[[package]]
+category = "main"
+description = "InfluxDB 2.0 Python client library"
+name = "influxdb-client"
+optional = false
+python-versions = ">=3.6"
+version = "1.7.0"
+
+[package.dependencies]
+certifi = ">=14.05.14"
+ciso8601 = ">=2.1.1"
+python-dateutil = ">=2.5.3"
+pytz = ">=2019.1"
+rx = ">=3.0.1"
+setuptools = ">=21.0.0"
+six = ">=1.10"
+urllib3 = ">=1.15.1"
+
+[package.extras]
+extra = ["pandas (>=0.25.3)"]
+
+[[package]]
 category = "dev"
 description = "A Python utility / library to sort Python imports."
 name = "isort"
@@ -498,6 +545,14 @@ version = "1.1.1"
 category = "dev"
 description = "McCabe checker, plugin for flake8"
 name = "mccabe"
+optional = false
+python-versions = "*"
+version = "0.6.1"
+
+[[package]]
+category = "main"
+description = "MessagePack (de)serializer."
+name = "msgpack"
 optional = false
 python-versions = "*"
 version = "0.6.1"
@@ -770,6 +825,14 @@ pyasn1 = ">=0.1.3"
 
 [[package]]
 category = "main"
+description = "Reactive Extensions (Rx) for Python"
+name = "rx"
+optional = false
+python-versions = ">=3.6.0"
+version = "3.1.0"
+
+[[package]]
+category = "main"
 description = "Python Data Structures for Humans"
 name = "schematics"
 optional = false
@@ -911,7 +974,7 @@ docs = ["sphinx", "jaraco.packaging (>=3.2)", "rst.linker (>=1.9)"]
 testing = ["jaraco.itertools", "func-timeout"]
 
 [metadata]
-content-hash = "156a321e09ba662276b629907751fa233438be199cc7b694234307fd5dc48347"
+content-hash = "0409fba1ce3cc42f1251229b4dd1a6f0ec731a4929ab327e4f8e2af5741bc3ab"
 python-versions = "^3.7"
 
 [metadata.files]
@@ -1071,6 +1134,9 @@ chardet = [
     {file = "chardet-3.0.4-py2.py3-none-any.whl", hash = "sha256:fc323ffcaeaed0e0a02bf4d117757b98aed530d9ed4531e3e15460124c106691"},
     {file = "chardet-3.0.4.tar.gz", hash = "sha256:84ab92ed1c4d4f16916e05906b6b75a6c0fb5db821cc65e70cbd64a3e2a5eaae"},
 ]
+ciso8601 = [
+    {file = "ciso8601-2.1.3.tar.gz", hash = "sha256:bdbb5b366058b1c87735603b23060962c439ac9be66f1ae91e8c7dbd7d59e262"},
+]
 click = [
     {file = "click-7.1.2-py2.py3-none-any.whl", hash = "sha256:dacca89f4bfadd5de3d7489b7c8a566eee0d3676333fbb50030263894c38c0dc"},
     {file = "click-7.1.2.tar.gz", hash = "sha256:d2b5255c7c6349bc1bd1e59e08cd12acbbd63ce649f2588755783aa94dfb6b1a"},
@@ -1147,6 +1213,14 @@ importlib-metadata = [
     {file = "importlib_metadata-1.6.0-py2.py3-none-any.whl", hash = "sha256:2a688cbaa90e0cc587f1df48bdc97a6eadccdcd9c35fb3f976a09e3b5016d90f"},
     {file = "importlib_metadata-1.6.0.tar.gz", hash = "sha256:34513a8a0c4962bc66d35b359558fd8a5e10cd472d37aec5f66858addef32c1e"},
 ]
+influxdb = [
+    {file = "influxdb-5.3.0-py2.py3-none-any.whl", hash = "sha256:b4c034ee9c9ee888d43de547cf40c616bba35f0aa8f11e5a6f056bf5855970ac"},
+    {file = "influxdb-5.3.0.tar.gz", hash = "sha256:9bcaafd57ac152b9824ab12ed19f204206ef5df8af68404770554c5b55b475f6"},
+]
+influxdb-client = [
+    {file = "influxdb_client-1.7.0-py3-none-any.whl", hash = "sha256:1cae3722c15bdded21674703b9f87e7488b655cd1cc2e0d17ad1e12c8e1fcafc"},
+    {file = "influxdb_client-1.7.0.tar.gz", hash = "sha256:1767e2befaee1dc70b7e88ccc2fda7f34d57508899a49c144f57f0a1cd79a036"},
+]
 isort = [
     {file = "isort-4.3.21-py2.py3-none-any.whl", hash = "sha256:6e811fcb295968434526407adb8796944f1988c5b65e8139058f2014cbe100fd"},
     {file = "isort-4.3.21.tar.gz", hash = "sha256:54da7e92468955c4fceacd0c86bd0ec997b0e1ee80d97f67c35a78b719dccab1"},
@@ -1220,6 +1294,25 @@ markupsafe = [
 mccabe = [
     {file = "mccabe-0.6.1-py2.py3-none-any.whl", hash = "sha256:ab8a6258860da4b6677da4bd2fe5dc2c659cff31b3ee4f7f5d64e79735b80d42"},
     {file = "mccabe-0.6.1.tar.gz", hash = "sha256:dd8d182285a0fe56bace7f45b5e7d1a6ebcbf524e8f3bd87eb0f125271b8831f"},
+]
+msgpack = [
+    {file = "msgpack-0.6.1-cp27-cp27m-manylinux1_i686.whl", hash = "sha256:3129c355342853007de4a2a86e75eab966119733eb15748819b6554363d4e85c"},
+    {file = "msgpack-0.6.1-cp27-cp27m-manylinux1_x86_64.whl", hash = "sha256:31f6d645ee5a97d59d3263fab9e6be76f69fa131cddc0d94091a3c8aca30d67a"},
+    {file = "msgpack-0.6.1-cp27-cp27m-win32.whl", hash = "sha256:fd509d4aa95404ce8d86b4e32ce66d5d706fd6646c205e1c2a715d87078683a2"},
+    {file = "msgpack-0.6.1-cp27-cp27m-win_amd64.whl", hash = "sha256:70cebfe08fb32f83051971264466eadf183101e335d8107b80002e632f425511"},
+    {file = "msgpack-0.6.1-cp27-cp27mu-manylinux1_i686.whl", hash = "sha256:8e68c76c6aff4849089962d25346d6784d38e02baa23ffa513cf46be72e3a540"},
+    {file = "msgpack-0.6.1-cp27-cp27mu-manylinux1_x86_64.whl", hash = "sha256:86b963a5de11336ec26bc4f839327673c9796b398b9f1fe6bb6150c2a5d00f0f"},
+    {file = "msgpack-0.6.1-cp35-cp35m-manylinux1_i686.whl", hash = "sha256:72cb7cf85e9df5251abd7b61a1af1fb77add15f40fa7328e924a9c0b6bc7a533"},
+    {file = "msgpack-0.6.1-cp35-cp35m-manylinux1_x86_64.whl", hash = "sha256:8c73c9bcdfb526247c5e4f4f6cf581b9bb86b388df82cfcaffde0a6e7bf3b43a"},
+    {file = "msgpack-0.6.1-cp36-cp36m-manylinux1_i686.whl", hash = "sha256:26cb40116111c232bc235ce131cc3b4e76549088cb154e66a2eb8ff6fcc907ec"},
+    {file = "msgpack-0.6.1-cp36-cp36m-manylinux1_x86_64.whl", hash = "sha256:62bd8e43d204580308d477a157b78d3fee2fb4c15d32578108dc5d89866036c8"},
+    {file = "msgpack-0.6.1-cp36-cp36m-win32.whl", hash = "sha256:a28e69fe5468c9f5251c7e4e7232286d71b7dfadc74f312006ebe984433e9746"},
+    {file = "msgpack-0.6.1-cp36-cp36m-win_amd64.whl", hash = "sha256:97ac6b867a8f63debc64f44efdc695109d541ecc361ee2dce2c8884ab37360a1"},
+    {file = "msgpack-0.6.1-cp37-cp37m-manylinux1_i686.whl", hash = "sha256:3ce7ef7ee2546c3903ca8c934d09250531b80c6127e6478781ae31ed835aac4c"},
+    {file = "msgpack-0.6.1-cp37-cp37m-manylinux1_x86_64.whl", hash = "sha256:7c55649965c35eb32c499d17dadfb8f53358b961582846e1bc06f66b9bccc556"},
+    {file = "msgpack-0.6.1-cp37-cp37m-win32.whl", hash = "sha256:9d4f546af72aa001241d74a79caec278bcc007b4bcde4099994732e98012c858"},
+    {file = "msgpack-0.6.1-cp37-cp37m-win_amd64.whl", hash = "sha256:300fd3f2c664a3bf473d6a952f843b4a71454f4c592ed7e74a36b205c1782d28"},
+    {file = "msgpack-0.6.1.tar.gz", hash = "sha256:4008c72f5ef2b7936447dcb83db41d97e9791c83221be13d5e19db0796df1972"},
 ]
 multidict = [
     {file = "multidict-4.7.5-cp35-cp35m-macosx_10_13_x86_64.whl", hash = "sha256:fc3b4adc2ee8474cb3cd2a155305d5f8eda0a9c91320f83e55748e1fcb68f8e3"},
@@ -1483,6 +1576,9 @@ rope = [
 rsa = [
     {file = "rsa-4.0-py2.py3-none-any.whl", hash = "sha256:14ba45700ff1ec9eeb206a2ce76b32814958a98e372006c8fb76ba820211be66"},
     {file = "rsa-4.0.tar.gz", hash = "sha256:1a836406405730121ae9823e19c6e806c62bbad73f890574fff50efa4122c487"},
+]
+rx = [
+    {file = "Rx-3.1.0.tar.gz", hash = "sha256:aaf409848e24dd514926eb8467e2764762bfd258325717fca4628d32d8721252"},
 ]
 schematics = [
     {file = "schematics-2.1.0-py2.py3-none-any.whl", hash = "sha256:8fcc6182606fd0b24410a1dbb066d9bbddbe8da9c9509f47b743495706239283"},
