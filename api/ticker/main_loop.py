@@ -10,6 +10,7 @@ from dbmodels.strategy_models import StrategySchema
 from dbmodels.strategy_params_models import LiveParamsSchema
 from parameters.enums import StrategiesEnum, LiveSourcesEnum
 from strategies.monitor_strategy import monitor_strategy_executor
+from utils.timeseries.timescale_utils import init_db
 from .processing.default_postprocessor import default_postprocessor
 from .sourcing.default_source_loader import default_source_loader
 
@@ -66,6 +67,8 @@ class Ticker:
         await self.start_ticker()
 
     async def start_ticker(self):
+        print('init DB')
+        await init_db('livewater')
         self.scheduler = await aiojobs.create_scheduler()
         tick_count = 0
         while True:

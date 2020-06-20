@@ -1,17 +1,7 @@
-from timeit import default_timer as timer
-import math
 import os
-import asyncio
-from aiohttp import web
-from dotenv import load_dotenv
-from pathlib import Path
-import click
 import datetime
 import pytz
 import asyncpg
-from janus import Queue
-from secrets_management.manage import encrypt_credentials, decrypt_credentials, load_credentials
-from utils.test_utils import generate_data, format_int
 
 
 def get_url():
