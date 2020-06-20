@@ -1,5 +1,5 @@
 from datetime import datetime
-from utils.schemas.timeseries_schemas import TickSchema
+from utils.schemas.dataflow_schemas import TickSchema
 from .abstract_source import AbstractSource
 
 

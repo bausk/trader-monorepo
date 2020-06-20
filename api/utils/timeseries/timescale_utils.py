@@ -53,3 +53,7 @@ async def init_db(dbname):
     await conn.close()
     conn = await init_connection(dbname)
     await init_ticks_table(conn)
+
+
+async def write_ticks(dbname, ticks):
+    pass

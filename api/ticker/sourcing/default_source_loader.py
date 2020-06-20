@@ -3,6 +3,7 @@ from datetime import timedelta
 from parameters.enums import LiveSourcesEnum
 from dbmodels.strategy_params_models import LiveParamsSchema
 from utils.sources.live_sources import LiveCryptowatchSource, LiveKunaSource
+from utils.schemas.dataflow_schemas import ProcessTaskSchema
 
 
 LIVE_SOURCES = {
@@ -31,14 +32,15 @@ async def default_source_loader(config: LiveParamsSchema, strategy, source_queue
         secondary_result = asyncio.create_task(secondary_source.get_latest())
         done, pending = await asyncio.wait({primary_result, secondary_result}, timeout=4)
         if primary_result in done and secondary_result in done:
-            result = []
-            for coro in [primary_result, secondary_result]:
+            result = {}
+            for key, coro in [('primary', primary_result), ('secondary', secondary_result)]:
                 try:
-                    result.append(coro.result())
+                    result[key] = coro.result()
                 except Exception:
                     print('Source fetch failed!')
             if len(result) == len(done):
-                await source_queue.async_q.put(result)
+                task = ProcessTaskSchema(ticks=result)
+                await source_queue.async_q.put(task)
         else:
             for coro in done:
                 coro.cancel()
