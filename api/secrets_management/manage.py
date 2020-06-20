@@ -11,14 +11,15 @@ ENCRYPTED_PATH = './.encrypted'
 PLAINTEXT_SECRETS = {
     'production': [
         './production.env',
-        ],
+    ],
     'staging': [
         './staging.env',
-        ],
+    ],
     'development': [
         './.secrets/keyring.json',
-        ],
-    }
+        './.env',
+    ],
+}
 
 
 def get_name_digest(filename):
@@ -36,6 +37,7 @@ def load_credentials(credentials) -> None:
         for credential_string in credentials:
             filelike = StringIO(credential_string)
             filelike.seek(0)
+            print('loading envs')
             load_dotenv(stream=filelike)
 
 
