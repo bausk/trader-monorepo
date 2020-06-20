@@ -74,7 +74,6 @@ export default function MyApp({ Component, pageProps }) {
 
 MyApp.getInitialProps = async (appContext) => {
     const isServer = (typeof window === 'undefined')
-    console.log(`[_app.js] GetInitialProps on ${isServer ? 'server!' : 'browser!'}`);
     if (isServer) {
         const session = await auth0.getSession(appContext.ctx.req);
         appContext.ctx.user = session?.user;
@@ -93,14 +92,10 @@ MyApp.getInitialProps = async (appContext) => {
         window.location.href = routes.HOME;
         return;
     }
-    
+
     let initialState;
     if (isServer) {
         initialState = {
-            sourcesStore: {
-                state: "non-fetched",
-                sources: ['arrived', 'from', 'SSR'],
-            },
             authStore: {
                 loading: "fetched",
                 user: appContext.ctx.user,

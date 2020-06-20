@@ -47,8 +47,7 @@ function ExploreSource() {
     const { data: detailData, mutate: mutateDetail, isValidating: isValidatingDetail } = useSWR(
         () => startFetchDetail ? `${b.SOURCES}/${router.query.id}/stats` : null,
         async (query) => {
-            const r = await sourcesStore.detail(router.query.id);
-            return r;
+            return await sourcesStore.detail(router.query.id);
         },
         {
             revalidateOnFocus: false,
@@ -56,18 +55,14 @@ function ExploreSource() {
         }
     );
     const { data: listData } = useSWR(
-        () => !initialData ? `${b.SOURCES}` : null,
-        async (query) => {
-            const r = await sourcesStore.list();
-            return r;
-        },
+        () => !initialData ? b.SOURCES : null,
+        sourcesStore.list,
         {
             revalidateOnFocus: false,
             revalidateOnReconnect: false,
         }
     );
     const info = listData?.find(c => c?.id === parseInt(router.query.id)) || initialData;
-    console.log(info);
     const rows = detailData?.available_intervals?.map(i => ['Availability:', new Date(i[0]), new Date(i[1])])
         || cachedDetail?.available_intervals?.map(i => ['Availability:', new Date(i[0]), new Date(i[1])])
         || [];

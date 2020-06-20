@@ -8,8 +8,7 @@ function Profile({ fetchedOnServer, user }) {
     const { authStore } = useStores();
     useEffect(() => {
         if (!fetchedOnServer) {
-            console.log('fetching on client!');
-            // Todo: handle exception?
+            // TODO: handle exception?
             authStore.getUser();
         }
     }, [])

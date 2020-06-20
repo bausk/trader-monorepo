@@ -15,13 +15,12 @@ class AuthStore {
     @action start = () => {
         this.timer = setInterval(flow(function* () {
             this.lastUpdate = Date.now();
-            console.log(`trying to get access token... ${this.user ? 'proceeding': 'no user'}`);
             if (this.user) {
                 try {
                     const token = yield Auth.gettoken();
                     this.accessToken = token.accessToken;
                 } catch (e) {
-                    // nullify accessToken?
+                    // TODO: nullify accessToken?
                     this.stop();
                 }
             } else {
@@ -68,7 +67,7 @@ class AuthStore {
 
     hydrate = (data) => {
         Object.keys(data).forEach(k => this[k] = data[k]);
-        if (data.user && typeof window !== 'undefined') {
+        if (data?.user && typeof window !== 'undefined') {
             localStorage.setItem('login', new Date())
         }
     };

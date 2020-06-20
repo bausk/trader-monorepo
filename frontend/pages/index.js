@@ -6,7 +6,7 @@ import { useStores } from 'components/rootStore';
 
 
 function Home() {
-  const { sourcesStore, authStore } = useStores();
+  const { authStore } = useStores();
   const { loading, user } = authStore;
   const isLoading = loading === 'fetching';
   const label = isLoading ? 'Pending...' : (user  ? 'Logout' : 'Login');
@@ -17,17 +17,9 @@ function Home() {
       authStore.login();
     }
   }, [authStore, user]);
-  const elements = sourcesStore.sources.map((source) => {
-    return(
-      <ul key={source.id}>
-        <div>{source.name}</div>
-        <DeleteButton element={source} />
-      </ul>
-    );
-  });
   return (
     <>
-      <h1>Next.js and Auth0 Example</h1>
+      <h1>Livewater Trading Platform</h1>
 
         <Button
           component="a"
@@ -56,13 +48,6 @@ function Home() {
       {user && (
         <>
           <h4>Rendered user info on the client</h4>
-          <img src={user.picture} alt="user picture" />
-          <br />
-          <ApiButton color="primary" variant="outlined">
-              Retrieve public data
-          </ApiButton>
-          <div>{elements}</div>
-          <p>nickname: {user.nickname}</p>
           <p>name: {user.name}</p>
         </>
       )}

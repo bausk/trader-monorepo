@@ -6,7 +6,6 @@ const LightweightChart = ({ data }) => {
     const inputEl = useRef(null);
     const chr = useRef(null);
     useEffect(() => {
-        console.log(data);
         if(!inputEl.current) {
             const chart = createChart(
                 canvasRoot.current,
@@ -24,6 +23,7 @@ const LightweightChart = ({ data }) => {
             const lineSeries = chart.addLineSeries();
             inputEl.current = lineSeries;
         }
+        // TODO: add are, document, or remove
         // const areaSeries = inputEl.current.addAreaSeries({
         //     topColor: 'rgba(21, 146, 230, 0.4)',
         //     bottomColor: 'rgba(21, 146, 230, 0)',
@@ -71,7 +71,6 @@ const LightweightChart = ({ data }) => {
                 timeVisible: true,
                 secondsVisible: true,
                 tickMarkFormatter: function(timePoint, tickMarkType, locale) {
-                    console.log(timePoint, tickMarkType, locale);
                     return String(new Date(timePoint.timestamp * 1000).getUTCFullYear());
                 },
             },

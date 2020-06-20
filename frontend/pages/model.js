@@ -54,7 +54,6 @@ function ListStrategies() {
     mutate();
   }, []);
   const { user, loading } = authStore;
-  console.log(router);
   const rows = data || [];
   if (!loading && !user) {
     return null;

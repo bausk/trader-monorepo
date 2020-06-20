@@ -16,8 +16,8 @@ export class RootStore {
         this.hydrate(initialState);
     }
     hydrate = ({ authStore, sourcesStore }) => {
-        this.authStore.hydrate(authStore);
-        this.sourcesStore.hydrate(sourcesStore);
+        authStore && this.authStore.hydrate(authStore);
+        sourcesStore && this.sourcesStore.hydrate(sourcesStore);
     }
 }
 

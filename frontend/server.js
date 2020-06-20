@@ -15,7 +15,6 @@ app.prepare().then(() => {
     // This tells it to parse the query portion of the URL.
     const parsedUrl = parse(req.url, true)
     const { pathname, query } = parsedUrl
-    console.log(pathname);
     if (pathname === '/explore/new') {
       app.render(req, res, '/explore', { ...query, newModal: true })
     } else {

@@ -27,10 +27,7 @@ function Explore() {
   const router = useRouter();
   const { data, error, mutate } = useSWR(
     b.SOURCES,
-    async () => {
-      console.log('fired by useSWR');
-      return await sourcesStore.list();
-    }
+    sourcesStore.list
   );
   if(error) {
     authStore.login();
@@ -59,7 +56,6 @@ function Explore() {
     mutate();
   }, [mutate]);
   const { user, loading } = authStore;
-  console.log(router);
   const rows = data || [];
   if (!loading && !user) {
     return null;
