@@ -1,4 +1,5 @@
 from datetime import datetime
+from utils.schemas.timeseries_schemas import TickSchema
 from .abstract_source import AbstractSource
 
 
@@ -11,11 +12,11 @@ class LiveKunaSource(AbstractSource):
     def to_trades(self, in_data):
         trades = []
         for result in in_data:
-            trade = dict(
+            trade = TickSchema(
                 price=result['price'],
                 volume=result['volume'],
                 funds=result['funds'],
-                created_at=result['created_at'],
+                timestamp=result['created_at'],
             )
             trades.append(trade)
         return trades
@@ -36,11 +37,11 @@ class LiveCryptowatchSource(AbstractSource):
         trades = []
         data = in_data['result']
         for result in data:
-            trade = dict(
+            trade = TickSchema(
                 price=result[2],
                 volume=result[3],
                 funds=result[2] * result[3],
-                created_at=result[1],
+                timestamp=result[1],
             )
             trades.append(trade)
         return trades

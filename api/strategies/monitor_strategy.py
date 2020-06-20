@@ -8,8 +8,8 @@ async def monitor_strategy_executor(strategy: StrategySchema, in_queue: Queue, o
     config = strategy.config_json
     while True:
         tick_result = await in_queue.async_q.get()
-        # print(tick_result)
         result = {
+            "tick": tick_result,
             "signals": strategy.id,
             "orders": strategy.id,
             "symbols": strategy.id

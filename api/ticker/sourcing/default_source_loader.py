@@ -1,6 +1,7 @@
 import asyncio
 from datetime import timedelta
 from parameters.enums import LiveSourcesEnum
+from dbmodels.strategy_params_models import LiveParamsSchema
 from utils.sources.live_sources import LiveCryptowatchSource, LiveKunaSource
 
 
@@ -10,7 +11,7 @@ LIVE_SOURCES = {
 }
 
 
-async def default_source_loader(config, strategy, source_queue, session):
+async def default_source_loader(config: LiveParamsSchema, strategy, source_queue, session):
     primary_source = LIVE_SOURCES.get(config.source_primary)(
         session=session,
         config=dict(
@@ -23,6 +24,7 @@ async def default_source_loader(config, strategy, source_queue, session):
         session=session,
         config=dict(currency="btcuah")
     )
+    sleep_seconds = config.tick_frequency
     while True:
         print(f"[source tick] for {strategy.id}...")
         primary_result = asyncio.create_task(primary_source.get_latest())
@@ -42,4 +44,4 @@ async def default_source_loader(config, strategy, source_queue, session):
                 coro.cancel()
             for coro in pending:
                 coro.cancel()
-        await asyncio.sleep(DEFAULT_STRATEGY_TICK)
+        await asyncio.sleep(sleep_seconds)
