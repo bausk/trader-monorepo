@@ -1,17 +1,14 @@
-from timeit import default_timer as timer
-import math
-import os
 import asyncio
-from aiohttp import web
-from dotenv import load_dotenv
-from pathlib import Path
-import click
-import datetime
-import pytz
 import asyncpg
+import datetime
+from dotenv import load_dotenv
 from janus import Queue
-from secrets_management.manage import encrypt_credentials, decrypt_credentials, load_credentials
-from utils.test_utils import generate_data, format_int
+from pathlib import Path
+import pytz
+from timeit import default_timer as timer
+from secrets_management.manage import decrypt_credentials, load_credentials
+from utils.formatting import format_int
+from utils.mocks.ticks import generate_data
 from utils.timeseries.timescale_utils import init_db, init_connection
 
 

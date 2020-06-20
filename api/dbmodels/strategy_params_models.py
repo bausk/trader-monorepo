@@ -16,6 +16,7 @@ class BacktestParamsSchema(Privatable):
     finish_at: Optional[Union[datetime, date]]
     source_primary: Optional[SourceTypesEnum]
     source_secondary: Optional[SourceTypesEnum]
+    tick_frequency: Optional[int]
 
 
 class LiveParamsSchema(Privatable):
@@ -25,3 +26,4 @@ class LiveParamsSchema(Privatable):
     order_executor: Optional[OrderExecutorsEnum]
     source_primary: Optional[LiveSourcesEnum]
     source_secondary: Optional[LiveSourcesEnum]
+    tick_frequency: Optional[int]

@@ -3,88 +3,46 @@ import asyncio
 import aiojobs
 from aiojobs._job import Job
 from janus import Queue
-from datetime import datetime, timedelta
-from typing import Type, List
+from typing import Type
 
 from dbmodels.db import db, StrategyModel, BaseModel
 from dbmodels.strategy_models import StrategySchema
 from dbmodels.strategy_params_models import LiveParamsSchema
 from parameters.enums import StrategiesEnum, LiveSourcesEnum
 from strategies.monitor_strategy import monitor_strategy_executor
-from utils.sources.live_sources import LiveCryptowatchSource, LiveKunaSource
+from .processing.default_postprocessor import default_postprocessor
+from .sourcing.default_source_loader import default_source_loader
 
 
 STRATEGY_EXECUTORS = {
     StrategiesEnum.monitor: monitor_strategy_executor,
 }
 
-LIVE_SOURCES = {
-    LiveSourcesEnum.kunaio: LiveKunaSource,
-    LiveSourcesEnum.cryptowatch: LiveCryptowatchSource,
-}
+DEFAULT_STRATEGY_TICK = 8
 
 
 async def acquire_executor(strategy: Type[StrategySchema], app):
     config: LiveParamsSchema = strategy.config_json
-    DEFAULT_STRATEGY_TICK = 8
-    strategy_typename = strategy.typename
+    # TODO: Use strategy typename and/or something else to customize execution
+    # strategy_typename = strategy.typename
     config.strategy_name = StrategiesEnum.monitor
     config.source_primary = LiveSourcesEnum.cryptowatch
     config.source_secondary = LiveSourcesEnum.kunaio
-    strategy_tick_func = STRATEGY_EXECUTORS.get(config.strategy_name)
-    if strategy_tick_func is None:
+    config.tick_frequency = DEFAULT_STRATEGY_TICK
+    strategy_ontick_function = STRATEGY_EXECUTORS.get(config.strategy_name)
+    if strategy_ontick_function is None:
         return MockExecutor()
 
-    session = app['PERSISTENT_SESSION']
-    strategy_scheduler = await aiojobs.create_scheduler()
+    scheduler = await aiojobs.create_scheduler()
     source_queue = Queue()
-    signal_queue = Queue()
+    processing_queue = Queue()
 
-    async def source_executor(config, source_queue, session):
-        primary_source = LIVE_SOURCES.get(config.source_primary)(
-            session=session,
-            config=dict(
-                currency="btcusd",
-                limit=100,
-                after=timedelta(minutes=2)
-            )
-        )
-        secondary_source = LIVE_SOURCES.get(config.source_secondary)(
-            session=session,
-            config=dict(currency="btcuah")
-        )
-        while True:
-            print(f"[source tick] for {strategy.id}...")
-            primary_result = asyncio.create_task(primary_source.get_latest())
-            secondary_result = asyncio.create_task(secondary_source.get_latest())
-            done, pending = await asyncio.wait({primary_result, secondary_result}, timeout=4)
-            if primary_result in done and secondary_result in done:
-                result = []
-                for coro in [primary_result, secondary_result]:
-                    try:
-                        result.append(coro.result())
-                    except Exception:
-                        print('Source fetch failed!')
-                if len(result) == len(done):
-                    await source_queue.async_q.put(result)
-            else:
-                for coro in done:
-                    coro.cancel()
-                for coro in pending:
-                    coro.cancel()
-            await asyncio.sleep(DEFAULT_STRATEGY_TICK)
+    session = app['PERSISTENT_SESSION']
+    await scheduler.spawn(default_source_loader(config, strategy, source_queue, session))
+    await scheduler.spawn(strategy_ontick_function(strategy, source_queue, processing_queue))
+    await scheduler.spawn(default_postprocessor(config, processing_queue))
 
-    await strategy_scheduler.spawn(source_executor(config, source_queue, session))
-    await strategy_scheduler.spawn(strategy_tick_func(strategy, source_queue, signal_queue))
-
-    async def order_executor(config, signal_queue):
-        while True:
-            task = await signal_queue.async_q.get()
-            print(f"[result tick] executing result for {task}")
-            signal_queue.async_q.task_done()
-    await strategy_scheduler.spawn(order_executor(config, signal_queue))
-
-    return strategy_scheduler
+    return scheduler
 
 
 class MockExecutor:
