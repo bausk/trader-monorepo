@@ -27,6 +27,7 @@ class Source(db.Model):
 
 class SourceSchema(Privatable):
     class Config:
+        validate_assignment = True
         orm_mode = True
     id: Optional[int]
     name: str = 'Unnamed'

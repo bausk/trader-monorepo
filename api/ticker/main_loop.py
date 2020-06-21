@@ -106,6 +106,7 @@ class Ticker:
             del self.active_executors[strategy_id]
         if not active_executor:
             print(f'Activating executor {strategy_id}')
+            # TODO: remove cruft
             # strategy_executor = await acquire_executor(strategy)
             self.active_executors[strategy_id] = await acquire_executor(strategy, self.app)
             # if strategy_executor:

@@ -1,4 +1,5 @@
 import json
+import sys, traceback
 from datetime import datetime
 from aiohttp import web
 from aiohttp.web import Response
@@ -28,9 +29,9 @@ class StrategiesView(web.View, CorsViewMixin):
         await check_permission(self.request, Permissions.READ)
         response = []
         async with db.transaction():
-            async for s in StrategyModel.query.order_by(StrategyModel.id).gino.iterate():
+            async for s in StrategyModel.load(live_session_model=LiveSessionModel).query.order_by(StrategyModel.id).gino.iterate():
                 validated = self.schema.from_orm(s)
-                response.append(validated.dict())
+                response.append(json.loads(validated.json()))
         return web.json_response(response)
 
     async def post(self: web.View) -> Response:
@@ -41,8 +42,8 @@ class StrategiesView(web.View, CorsViewMixin):
             incoming = self.schema(**raw_data)
             async with db.transaction():
                 await StrategyModel.create(**incoming.private_dict())
-                async for s in StrategyModel.query.order_by(StrategyModel.id).gino.iterate():
-                    response.append(self.schema.from_orm(s).dict())
+                async for s in StrategyModel.load(live_session_model=LiveSessionModel).query.order_by(StrategyModel.id).gino.iterate():
+                    response.append(json.loads(self.schema.from_orm(s).json()))
         except Exception as e:
             raise web.HTTPBadRequest
         return web.json_response(response)
@@ -54,9 +55,9 @@ class StrategiesView(web.View, CorsViewMixin):
         response = []
         async with db.transaction():
             await StrategyModel.delete.where(StrategyModel.id == incoming.id).gino.status()
-            async for s in StrategyModel.query.order_by(StrategyModel.id).gino.iterate():
+            async for s in StrategyModel.load(live_session_model=LiveSessionModel).query.order_by(StrategyModel.id).gino.iterate():
                 validated = self.schema.from_orm(s)
-                response.append(validated.dict())
+                response.append(json.loads(validated.json()))
         return web.json_response(response)
 
 
@@ -135,4 +136,5 @@ class StrategyLiveView(web.View, CorsViewMixin):
                     await strategy.update(live_session_id=None).apply()
             return web.json_response(strategy_model.dict())
         except Exception as e:
+            traceback.print_exc(file=sys.stdout)
             raise web.HTTPBadRequest

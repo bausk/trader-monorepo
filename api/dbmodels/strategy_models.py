@@ -26,13 +26,14 @@ class StrategyModel(db.Model):
 
 class StrategySchema(Privatable):
     class Config:
+        validate_assignment = True
         orm_mode = True
 
     id: Optional[int]
     name: str = 'Default'
     typename: StrategyTypesEnum
     live_session_id: Optional[int]
-    live_session: Optional[LiveSessionSchema]
+    live_session_model: Optional[LiveSessionSchema]
     config_json: Optional[LiveParamsSchema]
 
     @validator('config_json', pre=True)
