@@ -5,7 +5,7 @@ from aiojobs._job import Job
 from janus import Queue
 from typing import Type
 
-from dbmodels.db import db, StrategyModel, BaseModel
+from dbmodels.db import db, StrategyModel, BaseModel, LiveSessionModel
 from dbmodels.strategy_models import StrategySchema
 from dbmodels.strategy_params_models import LiveParamsSchema
 from parameters.enums import StrategiesEnum, LiveSourcesEnum
@@ -85,7 +85,9 @@ class Ticker:
         active_strategies = {}
         schema: Type[BaseModel] = StrategySchema
         async with db.transaction():
-            async for s in StrategyModel.query.where(StrategyModel.live_session_id.isnot(None)).order_by(StrategyModel.id).gino.iterate():
+            async for s in StrategyModel.load(
+                live_session_model=LiveSessionModel
+            ).query.where(StrategyModel.live_session_id.isnot(None)).order_by(StrategyModel.id).gino.iterate():
                 validated = schema.from_orm(s)
                 active_strategies[validated.id] = validated
         # Stop removed or inactive strategies
