@@ -10,7 +10,7 @@ from dbmodels.strategy_models import StrategySchema
 from dbmodels.strategy_params_models import LiveParamsSchema
 from parameters.enums import StrategiesEnum, LiveSourcesEnum
 from strategies.monitor_strategy import monitor_strategy_executor
-from utils.timeseries.timescale_utils import init_db
+from utils.timeseries.timescale_utils import init_db, get_pool
 from .processing.default_postprocessor import default_postprocessor
 from .sourcing.default_source_loader import default_source_loader
 
@@ -22,7 +22,7 @@ STRATEGY_EXECUTORS = {
 DEFAULT_STRATEGY_TICK = 8
 
 
-async def acquire_executor(strategy: Type[StrategySchema], app):
+async def acquire_executor(strategy: Type[StrategySchema], app, pool):
     config: LiveParamsSchema = strategy.config_json
     # TODO: Use strategy typename and/or something else to customize execution
     # strategy_typename = strategy.typename
@@ -41,7 +41,7 @@ async def acquire_executor(strategy: Type[StrategySchema], app):
     session = app['PERSISTENT_SESSION']
     await scheduler.spawn(default_source_loader(config, strategy, source_queue, session))
     await scheduler.spawn(strategy_ontick_function(strategy, source_queue, processing_queue))
-    await scheduler.spawn(default_postprocessor(config, processing_queue))
+    await scheduler.spawn(default_postprocessor(pool, strategy, config, processing_queue))
 
     return scheduler
 
@@ -68,7 +68,7 @@ class Ticker:
 
     async def start_ticker(self):
         print('init DB')
-        await init_db('livewater')
+        self.timeseries_connection_pool = await get_pool('livewater')
         self.scheduler = await aiojobs.create_scheduler()
         tick_count = 0
         while True:
@@ -110,7 +110,11 @@ class Ticker:
             print(f'Activating executor {strategy_id}')
             # TODO: remove cruft
             # strategy_executor = await acquire_executor(strategy)
-            self.active_executors[strategy_id] = await acquire_executor(strategy, self.app)
+            self.active_executors[strategy_id] = await acquire_executor(
+                strategy,
+                self.app,
+                self.timeseries_connection_pool
+            )
             # if strategy_executor:
             #     self.active_executors[strategy_id]: Job = await self.scheduler.spawn(strategy_executor(self.app))
             # else:

@@ -33,7 +33,7 @@ async def default_source_loader(config: LiveParamsSchema, strategy, source_queue
         done, pending = await asyncio.wait({primary_result, secondary_result}, timeout=4)
         if primary_result in done and secondary_result in done:
             result = {}
-            for key, coro in [('primary', primary_result), ('secondary', secondary_result)]:
+            for key, coro in [('primary_ticks', primary_result), ('secondary_ticks', secondary_result)]:
                 try:
                     result[key] = coro.result()
                 except Exception:

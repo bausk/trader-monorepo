@@ -2,6 +2,8 @@ import os
 import datetime
 import pytz
 import asyncpg
+from typing import List
+from utils.schemas.dataflow_schemas import TickSchema
 
 
 def get_url():
@@ -26,9 +28,9 @@ async def reset_db(dbname):
 async def init_ticks_table(conn):
     TICKS_TABLE_SCHEMA = """ticks (
         timestamp TIMESTAMPTZ NOT NULL,
-        session_id INTEGER,
-        data_type INTEGER,
-        label VARCHAR(50),
+        session_id INTEGER, -- session id associated with the tick
+        data_type INTEGER, -- type of data (primary_ticks = 1, secondary_ticks = 2 etc)
+        label VARCHAR(50), -- asset name or other string identifier if N/A
         price DOUBLE PRECISION,
         volume DOUBLE PRECISION,
         funds DOUBLE PRECISION
@@ -55,5 +57,52 @@ async def init_db(dbname):
     await init_ticks_table(conn)
 
 
-async def write_ticks(dbname, ticks):
-    pass
+async def get_pool(dbname) -> asyncpg.pool.Pool:
+    await init_db(dbname)
+    try:
+        return await asyncpg.create_pool(
+            f"{get_url()}{dbname}",
+            max_inactive_connection_lifetime=10
+        )
+    except Exception as e:
+        print('Failed to start up connection pool')
+        raise e
+
+DATA_TYPES = {
+    'primary_ticks': 1,
+    'secondary_ticks': 2
+}
+
+LABELS = {
+    'primary_ticks': 'BTCUSD',
+    'secondary_ticks': 'BTCUAH'
+}
+
+
+async def write_ticks(dbname, session_id, key, ticks: List[TickSchema], pool):
+    tick_strings = []
+    for tick in ticks:
+        timestamp = tick.timestamp.replace(tzinfo=pytz.UTC)
+        data_type = DATA_TYPES.get(key, 0)
+        label = LABELS.get(key, 'UNDEFINED')
+        values = f"""('{timestamp.strftime("%Y-%m-%d %H:%M:%S.%f")}',
+            {session_id},
+            {data_type},
+            '{label}',
+            {tick.price},
+            {tick.volume},
+            {tick.funds})
+        """
+        tick_strings.append(values)
+
+    async with pool.acquire() as conn:
+        try:
+            await conn.execute(f'''
+                INSERT INTO ticks(timestamp, session_id, data_type, label, price, volume, funds)
+                VALUES {', '.join(tick_strings)}
+                ON CONFLICT (timestamp, session_id, data_type, label, funds) DO UPDATE
+                SET price=EXCLUDED.price,
+                    volume=EXCLUDED.volume;
+            ''')
+        except asyncpg.exceptions.UniqueViolationError:
+            pass
