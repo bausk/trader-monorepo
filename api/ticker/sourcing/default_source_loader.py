@@ -13,7 +13,7 @@ LIVE_SOURCES = {
 
 
 async def default_source_loader(config: LiveParamsSchema, strategy, source_queue, session):
-    primary_source = LIVE_SOURCES.get(config.source_primary)(
+    primary_source: LiveCryptowatchSource = LIVE_SOURCES.get(config.source_primary)(
         session=session,
         config=dict(
             currency="btcusd",

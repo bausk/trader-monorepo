@@ -5,6 +5,7 @@ from datetime import datetime
 
 class TickSchema(BaseModel):
     price: float
+    source_id: Optional[int]
     timestamp: datetime
     queried_at: Optional[datetime]
     volume: Optional[float]

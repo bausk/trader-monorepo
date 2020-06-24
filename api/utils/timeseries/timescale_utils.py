@@ -28,6 +28,7 @@ async def reset_db(dbname):
 async def init_ticks_table(conn):
     TICKS_TABLE_SCHEMA = """ticks (
         timestamp TIMESTAMPTZ NOT NULL,
+        source_id VARCHAR(70), -- third-party tick ID
         session_id INTEGER, -- session id associated with the tick
         data_type INTEGER, -- type of data (primary_ticks = 1, secondary_ticks = 2 etc)
         label VARCHAR(50), -- asset name or other string identifier if N/A
@@ -43,7 +44,7 @@ async def init_ticks_table(conn):
         pass
 
     await conn.execute("CREATE UNIQUE INDEX IF NOT EXISTS unique_ticks \
-        ON ticks(timestamp, session_id, data_type, label, funds);")
+        ON ticks(timestamp, source_id, session_id, data_type, label, funds);")
 
 
 async def init_db(dbname):
@@ -100,7 +101,7 @@ async def write_ticks(dbname, session_id, key, ticks: List[TickSchema], pool):
             await conn.execute(f'''
                 INSERT INTO ticks(timestamp, session_id, data_type, label, price, volume, funds)
                 VALUES {', '.join(tick_strings)}
-                ON CONFLICT (timestamp, session_id, data_type, label, funds) DO UPDATE
+                ON CONFLICT (timestamp, source_id, session_id, data_type, label, funds) DO UPDATE
                 SET price=EXCLUDED.price,
                     volume=EXCLUDED.volume;
             ''')
