@@ -1,23 +1,21 @@
-import React, { useState, useCallback } from 'react';
-import dynamic from 'next/dynamic';
+import React from 'react';
 import { useRouter } from 'next/router';
 import useSWR, { cache } from 'swr';
 import { observer } from 'mobx-react';
 import { makeStyles } from "@material-ui/core/styles";
-import Card from '@material-ui/core/Card';
 import Container from '@material-ui/core/Container';
-import LinearProgress from '@material-ui/core/LinearProgress';
 import Typography from '@material-ui/core/Typography';
-import Box from '@material-ui/core/Box';
-import Button from '@material-ui/core/Button';
-import Paper from "@material-ui/core/Paper";
+import Grid from '@material-ui/core/Grid';
+import Paper from '@material-ui/core/Paper';
 import IconButton from "@material-ui/core/IconButton";
 import ArrowBackIcon from "@material-ui/icons/ArrowBack";
 import { useStores } from 'components/rootStore';
+import IntervalChart from 'components/Graphics/IntervalChart';
+import Properties from 'components/Blocks/Properties';
+import ModelProperties from 'components/Blocks/ModelProperties';
 import TableLayout from 'components/layouts/TableLayout';
 import f from 'api/frontendRoutes';
 import b from 'api/backendRoutes';
-
 
 const useStyles = makeStyles(theme => ({
     container: {
@@ -26,28 +24,32 @@ const useStyles = makeStyles(theme => ({
         marginRight: theme.spacing(0),
         padding: theme.spacing(1),
     },
+    title: {
+        paddingLeft: theme.spacing(3)
+    },
+    paper: {
+        padding: theme.spacing(2),
+        display: 'flex',
+        overflow: 'auto',
+        flexDirection: 'column',
+        height: 140,
+    },
+    chart: {
+        padding: theme.spacing(2),
+        display: 'flex',
+        overflow: 'auto',
+        flexDirection: 'column',
+    },
 }));
 
 function ModelDetailView() {
     const { sourcesStore } = useStores();
     const classes = useStyles();
     const router = useRouter();
-    const [ startFetchDetail, setFetchDetail ] = useState();
     const cacheData = cache.get(b.STRATEGIES);
     const initialData = cacheData && cacheData.find(c => c.id === parseInt(router.query.id));
-    const { data: detailData, mutate: mutateDetail, isValidating: isValidatingDetail } = useSWR(
-        () => startFetchDetail ? `${b.STRATEGIES}/${router.query.id}` : null,
-        async (query) => {
-            const r = await sourcesStore.strategies.detail(router.query.id);
-            return r;
-        },
-        {
-            revalidateOnFocus: false,
-            revalidateOnReconnect: false,
-        }
-    );
     const { data: listData } = useSWR(
-        () => !initialData ? `${b.SOURCES}` : null,
+        () => !initialData ? `${b.STRATEGIES}` : null,
         async (query) => {
             const r = await sourcesStore.strategies.list();
             return r;
@@ -57,48 +59,49 @@ function ModelDetailView() {
             revalidateOnReconnect: false,
         }
     );
-    const info = listData?.find(c => c?.id === parseInt(router.query.id)) || initialData;
-    const getDetail = () => {
-        if (startFetchDetail) {
-            mutateDetail();
-        }
-        setFetchDetail(true);
-    };
+    console.log(listData);
+    const model = listData?.find(c => c?.id === parseInt(router.query.id)) || initialData;
 
     return (
         <TableLayout
-            title={info?.id}
             toolbar={() => (
-                <IconButton
-                    edge="start"
-                    component="a"
-                    onClick={() => router.push(f.MODEL)}
-                    color="inherit"
-                    aria-label="back to"
-                >
-                <ArrowBackIcon />
-                </IconButton>
+                <>
+                    <IconButton
+                        edge="start"
+                        component="a"
+                        onClick={() => router.push(f.MODEL)}
+                        color="inherit"
+                        aria-label="back to"
+                    >
+                    <ArrowBackIcon />
+                    </IconButton>
+                    <Typography component="h1" variant="h4" color="inherit" noWrap className={classes.title}>
+                        Model: {model?.name}
+                    </Typography>
+                </>
             )}
         >
-            <Paper>
-                <Container maxWidth="sm">
-                    <Box py={4}>
-                        <Typography variant="h4" component="h1" gutterBottom>
-                            {info?.name}
-                        </Typography>
-                    </Box>
-                </Container>
-                <Container>
-                    <Card className={classes.container}>
-                        <Button onClick={getDetail} disabled={isValidatingDetail}>
-                            Refresh Availability
-                        </Button>
-                        {isValidatingDetail && <LinearProgress />}
-                    </Card>
-                </Container>
-            </Paper>
+            <Container maxWidth="lg" className={classes.container}>
+                <Grid container spacing={3}>
+                    <Grid item xs={12} md={6}>
+                        <Paper className={classes.paper}>
+                            <ModelProperties model={model} />
+                        </Paper>
+                    </Grid>
+                    <Grid item xs={12} md={6}>
+                        <Paper className={classes.paper}>
+                            <Properties session={model?.live_session_model} />
+                        </Paper>
+                    </Grid>
+                    <Grid item xs={12}>
+                        <Paper className={classes.chart}>
+                            <IntervalChart />
+                        </Paper>
+                    </Grid>
+                </Grid>
+            </Container>
         </TableLayout>
     );
 }
 
-export default ModelDetailView;
+export default observer(ModelDetailView);
