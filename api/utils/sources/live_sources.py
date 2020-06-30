@@ -5,6 +5,7 @@ from .abstract_source import AbstractSource
 
 class LiveKunaSource(AbstractSource):
     latest_endpoint = "https://kuna.io/api/v2/trades?market={currency}"
+    label = 'btcuah'
 
     def format_endpoint(self):
         return self.latest_endpoint.format(**self.config)
@@ -28,6 +29,7 @@ class LiveKunaSource(AbstractSource):
 
 class LiveCryptowatchSource(AbstractSource):
     latest_endpoint = "https://api.cryptowat.ch/markets/gdax/{currency}/trades?limit={limit}&since={after}"
+    label = 'btcusd'
 
     def format_endpoint(self):
         after = int((datetime.utcnow() - self.config['after']).timestamp())

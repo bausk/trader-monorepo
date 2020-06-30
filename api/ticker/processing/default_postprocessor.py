@@ -1,6 +1,8 @@
+import asyncio
 from dbmodels.strategy_models import StrategySchema
 from utils.schemas.dataflow_schemas import ProcessTaskSchema
 from utils.timeseries.timescale_utils import write_ticks
+from utils.timeseries.constants import DATA_TYPES
 
 
 async def default_postprocessor(pool, strategy: StrategySchema, config, process_queue):
@@ -9,7 +11,19 @@ async def default_postprocessor(pool, strategy: StrategySchema, config, process_
         raise Exception("Data integrity loss: no session ID available during postprocessor start")
     while True:
         task: ProcessTaskSchema = await process_queue.async_q.get()
-        for ticks_key, ticks in task.ticks.items():
-            print(f'---writing {ticks_key}---')
-            await write_ticks('livewater', session_id, ticks_key, ticks, pool)
+        t1 = asyncio.create_task(write_ticks(
+            session_id,
+            DATA_TYPES.ticks_primary,
+            task.label_primary,
+            task.ticks_primary,
+            pool
+        ))
+        t2 = asyncio.create_task(write_ticks(
+            session_id,
+            DATA_TYPES.ticks_secondary,
+            task.label_secondary,
+            task.ticks_secondary,
+            pool
+        ))
+        await asyncio.wait({t1, t2}, timeout=6)
         process_queue.async_q.task_done()

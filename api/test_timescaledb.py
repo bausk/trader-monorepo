@@ -18,7 +18,7 @@ load_dotenv(dotenv_path=env_path)
 
 
 async def test_asyncpg():
-    await init_db('livewater')
+    await init_db('test')
 
     iterations = 1000
 
@@ -35,7 +35,7 @@ async def test_asyncpg():
             await q.put(raw_data)
 
     async def write_data(q):
-        conn = await init_connection('livewater')
+        conn = await init_connection('test')
         try:
             while True:
                 datapoint = await q.get()
@@ -101,7 +101,7 @@ async def test_asyncpg():
         ORDER BY time ASC;
     """
 
-    conn = await init_connection('livewater')
+    conn = await init_connection('test')
     await conn.fetch(query.format(minutes=1))
     end3 = timer()
     elapsed_1min = round(end3 - end2, 4)

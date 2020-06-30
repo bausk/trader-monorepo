@@ -5,9 +5,11 @@ import asyncio
 from dbmodels.db import init_middleware
 from server.security import get_middleware
 from server.routes import routes
+from utils.timeseries.timescale_utils import pool_context
 
 # Load encrypted config
 from secrets_management.manage import decrypt_credentials, load_credentials, get_environment
+
 
 if get_environment() == 'development':
     import ptvsd
@@ -39,6 +41,8 @@ cors = aiohttp_cors.setup(app, defaults={
 for route in list(app.router.routes()):
     cors.add(route)
 
+
+app.cleanup_ctx.append(pool_context)
 
 if __name__ == '__main__':
     web.run_app(app, host='0.0.0.0', port=5000)

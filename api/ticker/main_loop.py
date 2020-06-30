@@ -68,7 +68,7 @@ class Ticker:
 
     async def start_ticker(self):
         print('init DB')
-        self.timeseries_connection_pool = await get_pool('livewater')
+        self.timeseries_connection_pool = await get_pool()
         self.scheduler = await aiojobs.create_scheduler()
         tick_count = 0
         while True:

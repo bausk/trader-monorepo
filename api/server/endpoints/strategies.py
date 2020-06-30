@@ -108,7 +108,7 @@ class StrategyLiveView(web.View, CorsViewMixin):
     schema: Type[BaseModel] = StrategySchema
 
     async def put(self: web.View) -> Response:
-        await check_permission(self.request, Permissions.READ)
+        await check_permission(self.request, Permissions.WRITE_OBJECTS)
         try:
             strategy_id = int(self.request.match_info['id'])
             raw_data = await self.request.json()

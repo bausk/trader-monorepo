@@ -1,9 +1,19 @@
 import os
-import datetime
+from datetime import datetime, timedelta
 import pytz
 import asyncpg
 from typing import List
 from utils.schemas.dataflow_schemas import TickSchema
+from utils.schemas.request_schemas import DataRequestSchema
+
+
+DEFAULT_DBNAME = 'livewater'
+
+
+async def pool_context(app):
+    app['TIMESCALE_POOL'] = pool = await get_pool(DEFAULT_DBNAME)
+    yield
+    await pool.close()
 
 
 def get_url():
@@ -47,7 +57,7 @@ async def init_ticks_table(conn):
         ON ticks(timestamp, source_id, session_id, data_type, label, funds);")
 
 
-async def init_db(dbname):
+async def init_db(dbname=DEFAULT_DBNAME):
     conn = await asyncpg.connect(f"{get_url()}template1")
     try:
         await conn.execute(f"CREATE DATABASE {dbname};")
@@ -58,7 +68,7 @@ async def init_db(dbname):
     await init_ticks_table(conn)
 
 
-async def get_pool(dbname) -> asyncpg.pool.Pool:
+async def get_pool(dbname=DEFAULT_DBNAME) -> asyncpg.pool.Pool:
     await init_db(dbname)
     try:
         return await asyncpg.create_pool(
@@ -69,41 +79,64 @@ async def get_pool(dbname) -> asyncpg.pool.Pool:
         print('Failed to start up connection pool')
         raise e
 
-DATA_TYPES = {
-    'primary_ticks': 1,
-    'secondary_ticks': 2
-}
 
-LABELS = {
-    'primary_ticks': 'BTCUSD',
-    'secondary_ticks': 'BTCUAH'
-}
+async def get_terminal_data(session_id, request_params: DataRequestSchema, request):
+    pool = request.app['TIMESCALE_POOL']
+    if not request_params.to_datetime:
+        request_params.to_datetime = datetime.now()
+    period = timedelta(minutes=request_params.period)
+    async with pool.acquire() as conn:
+        query = """
+        SELECT
+            time_bucket($1, timestamp) AS time,
+            first(price, timestamp) as open,
+            max(price) as high,
+            min(price) as low,
+            last(price, timestamp) as close,
+            sum(volume) as volume
+        FROM ticks
+        WHERE session_id = $2
+        and label = $3
+        and data_type = $4
+        and timestamp BETWEEN $5 and $6
+        GROUP BY time
+        ORDER BY time ASC;
+        """
+        params = (
+            period,
+            session_id,
+            request_params.label,
+            request_params.data_type,
+            request_params.from_datetime,
+            request_params.to_datetime
+        )
+        # params = (period, session_id)
+        return list(await conn.fetch(query, *params))
 
 
-async def write_ticks(dbname, session_id, key, ticks: List[TickSchema], pool):
-    tick_strings = []
+async def write_ticks(session_id, data_type, label, ticks: List[TickSchema], pool):
+    prepared_ticks = []
     for tick in ticks:
         timestamp = tick.timestamp.replace(tzinfo=pytz.UTC)
-        data_type = DATA_TYPES.get(key, 0)
-        label = LABELS.get(key, 'UNDEFINED')
-        values = f"""('{timestamp.strftime("%Y-%m-%d %H:%M:%S.%f")}',
-            {session_id},
-            {data_type},
-            '{label}',
-            {tick.price},
-            {tick.volume},
-            {tick.funds})
-        """
-        tick_strings.append(values)
+        values = (
+            timestamp,
+            session_id,
+            data_type,
+            label,
+            tick.price,
+            tick.volume,
+            tick.funds
+        )
+        prepared_ticks.append(values)
 
     async with pool.acquire() as conn:
         try:
-            await conn.execute(f'''
+            await conn.executemany('''
                 INSERT INTO ticks(timestamp, session_id, data_type, label, price, volume, funds)
-                VALUES {', '.join(tick_strings)}
+                VALUES ($1, $2, $3, $4, $5, $6, $7)
                 ON CONFLICT (timestamp, source_id, session_id, data_type, label, funds) DO UPDATE
                 SET price=EXCLUDED.price,
                     volume=EXCLUDED.volume;
-            ''')
+            ''', prepared_ticks)
         except asyncpg.exceptions.UniqueViolationError:
             pass

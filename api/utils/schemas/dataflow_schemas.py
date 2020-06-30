@@ -13,7 +13,10 @@ class TickSchema(BaseModel):
 
 
 class ProcessTaskSchema(BaseModel):
-    ticks: Optional[Dict[str, List[TickSchema]]]
+    ticks_primary: Optional[List[TickSchema]]
+    label_primary: Optional[str]
+    ticks_secondary: Optional[List[TickSchema]]
+    label_secondary: Optional[str]
     signals: Optional[List[dict]]
     orders: Optional[List[dict]]
     symbols: Optional[List[dict]]

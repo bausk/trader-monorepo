@@ -32,15 +32,18 @@ async def default_source_loader(config: LiveParamsSchema, strategy, source_queue
         secondary_result = asyncio.create_task(secondary_source.get_latest())
         done, pending = await asyncio.wait({primary_result, secondary_result}, timeout=4)
         if primary_result in done and secondary_result in done:
-            result = {}
-            for key, coro in [('primary_ticks', primary_result), ('secondary_ticks', secondary_result)]:
-                try:
-                    result[key] = coro.result()
-                except Exception:
-                    print('Source fetch failed!')
-            if len(result) == len(done):
-                task = ProcessTaskSchema(ticks=result)
-                await source_queue.async_q.put(task)
+            try:
+                ticks_primary = primary_result.result()
+                ticks_secondary = secondary_result.result()
+            except Exception:
+                print('Source fetch failed!')
+            task = ProcessTaskSchema(
+                ticks_primary=ticks_primary,
+                label_primary=primary_source.label,
+                ticks_secondary=ticks_secondary,
+                label_secondary=secondary_source.label,
+            )
+            await source_queue.async_q.put(task)
         else:
             for coro in done:
                 coro.cancel()
