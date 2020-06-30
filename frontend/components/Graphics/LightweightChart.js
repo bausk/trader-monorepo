@@ -1,28 +1,31 @@
 import React, { useRef, useEffect } from 'react';
 import { createChart } from 'lightweight-charts';
 
-const LightweightChart = ({ data }) => {
+const LightweightChart = ({ dataType, data, onVisibleTimeRangeChanged }) => {
     const canvasRoot = useRef(null);
     const inputEl = useRef(null);
     const chr = useRef(null);
     useEffect(() => {
-        if(!inputEl.current) {
-            const chart = createChart(
-                canvasRoot.current,
-                { width: 800, height: 400 }
-            );
-            chr.current = chart;
-            chr.current.applyOptions({
-                layout: {
-                    backgroundColor: '#F0F0F1',
-                    textColor: '#696969',
-                    fontSize: 14,
-                    fontFamily: 'Calibri',
-                },
-            });
-            const lineSeries = chart.addLineSeries();
-            inputEl.current = lineSeries;
+        const chart = createChart(
+            canvasRoot.current,
+            { width: 800, height: 400 }
+        );
+        chr.current = chart;
+        chr.current.applyOptions({
+            layout: {
+                backgroundColor: '#F0F0F1',
+                textColor: '#696969',
+                fontSize: 14,
+                fontFamily: 'Calibri',
+            },
+        });
+        let series;
+        if (dataType === 'candlestick') {
+            series = chart.addCandlestickSeries();
+        } else {
+            series = chart.addLineSeries();
         }
+        inputEl.current = series;
         // TODO: add are, document, or remove
         // const areaSeries = inputEl.current.addAreaSeries({
         //     topColor: 'rgba(21, 146, 230, 0.4)',
@@ -53,11 +56,38 @@ const LightweightChart = ({ data }) => {
         //     { time: Date.parse("2019-04-13 02:12:00")/1000, open: 106.33, high: 110.20, low: 90.39, close: 98.10 },
         //     { time: Date.parse("2019-04-13 02:13:00")/1000, open: 109.87, high: 114.69, low: 85.66, close: 111.26 },
         // ]);
+
+        console.log('subscribing...');
+        if (onVisibleTimeRangeChanged) {
+            chr.current.timeScale().subscribeVisibleTimeRangeChange(onVisibleTimeRangeChanged);
+        }
+
+        return () => {
+            console.log('unsubscribing...');
+            if (onVisibleTimeRangeChanged) {
+                chr.current.timeScale().unsubscribeVisibleTimeRangeChange(onVisibleTimeRangeChanged);
+            }
+        }
+    }, []);
+    useEffect(() => {
         const tickToChart = (tick) => {
             return { time: Date.parse(tick.queried_at)/1000, value: tick.price };
         }
+        const ohlcToChart = (ohlc) => {
+            return {
+                time: Date.parse(ohlc.time)/1000,
+                open: ohlc.open,
+                high: ohlc.high,
+                low: ohlc.low,
+                close: ohlc.close,
+                volume: ohlc.volume,
+            };
+        }
         if (data?.length) {
-            inputEl.current.setData(data.map(tickToChart));
+            const parsed = (dataType === 'candlestick') ?
+                data.map(ohlcToChart) :
+                data.map(tickToChart);
+            inputEl.current.setData(parsed);
         }
         chr.current.applyOptions({
             timeScale: {
@@ -75,8 +105,9 @@ const LightweightChart = ({ data }) => {
                 },
             },
         });
-        chr.current.timeScale().fitContent();
-    }, [data]);
+        // chr.current.timeScale().fitContent();
+
+    }, [data, onVisibleTimeRangeChanged, dataType]);
 
     return (
         <>

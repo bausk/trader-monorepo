@@ -10,7 +10,7 @@ import Paper from '@material-ui/core/Paper';
 import IconButton from "@material-ui/core/IconButton";
 import ArrowBackIcon from "@material-ui/icons/ArrowBack";
 import { useStores } from 'components/rootStore';
-import IntervalChart from 'components/Graphics/IntervalChart';
+import SessionChart from 'components/Sessions/SessionChart';
 import Properties from 'components/Blocks/Properties';
 import ModelProperties from 'components/Blocks/ModelProperties';
 import TableLayout from 'components/layouts/TableLayout';
@@ -59,7 +59,6 @@ function ModelDetailView() {
             revalidateOnReconnect: false,
         }
     );
-    console.log(listData);
     const model = listData?.find(c => c?.id === parseInt(router.query.id)) || initialData;
 
     return (
@@ -95,7 +94,7 @@ function ModelDetailView() {
                     </Grid>
                     <Grid item xs={12}>
                         <Paper className={classes.chart}>
-                            <IntervalChart />
+                            <SessionChart session={model?.live_session_model} />
                         </Paper>
                     </Grid>
                 </Grid>
