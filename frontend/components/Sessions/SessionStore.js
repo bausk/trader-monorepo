@@ -19,6 +19,7 @@ class SessionStore {
     @observable ohlc = [];
     @observable newOhlc = [];
     @observable state = fetchStates.IDLE;
+    @observable period = 5;
 
     getData = flow(function* (element, params) {
         this.state = fetchStates.FETCHING;

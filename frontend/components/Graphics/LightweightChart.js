@@ -1,15 +1,27 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { useDebouncedCallback } from 'use-debounce';
 import { createChart } from 'lightweight-charts';
+import { DateTime } from "luxon";
 
-const LightweightChart = ({ dataType, newData, onVisibleTimeRangeChanged }) => {
+
+const LightweightChart = ({ dataType, newData, onRangeChanged, period }) => {
     const canvasRoot = useRef(null);
     const primarySeries = useRef(null);
     const [ isFirstInit, setIsFirstInit ] = useState(true);
     const chr = useRef(null);
     const [ onChanged ] = useDebouncedCallback(() => {
-        const visibleRange = chr.current.timeScale().getVisibleRange();
-        onVisibleTimeRangeChanged(visibleRange);
+        const logicalRange = chr.current.timeScale().getVisibleLogicalRange();
+        const barsInfo = primarySeries.current.barsInLogicalRange(logicalRange);
+        if (barsInfo !== null && barsInfo.barsBefore < 50) {
+            const visibleRange = chr.current.timeScale().getVisibleRange();
+            const barsToLoad = 100 - barsInfo.barsBefore;
+            const startTime = DateTime.fromSeconds(visibleRange.from).minus({ minutes: barsToLoad * period });
+            const endTime = DateTime.fromSeconds(visibleRange.from).plus({ minutes: 10 * period })
+            onRangeChanged({
+                from: startTime,
+                to: endTime
+            });
+        }
     }, 1000);
     useEffect(() => {
         const chart = createChart(
@@ -62,17 +74,10 @@ const LightweightChart = ({ dataType, newData, onVisibleTimeRangeChanged }) => {
         //     { time: Date.parse("2019-04-13 02:12:00")/1000, open: 106.33, high: 110.20, low: 90.39, close: 98.10 },
         //     { time: Date.parse("2019-04-13 02:13:00")/1000, open: 109.87, high: 114.69, low: 85.66, close: 111.26 },
         // ]);
-
-        console.log('subscribing...');
-        if (onVisibleTimeRangeChanged) {
-            chr.current.timeScale().subscribeVisibleTimeRangeChange(onChanged);
-        }
+        chr.current.timeScale().subscribeVisibleTimeRangeChange(onChanged);
 
         return () => {
-            console.log('unsubscribing...');
-            if (onVisibleTimeRangeChanged) {
-                chr.current.timeScale().unsubscribeVisibleTimeRangeChange(onChanged);
-            }
+            chr.current.timeScale().unsubscribeVisibleTimeRangeChange(onChanged);
         }
     }, []);
 
@@ -100,13 +105,14 @@ const LightweightChart = ({ dataType, newData, onVisibleTimeRangeChanged }) => {
                     timeScale: {
                         rightOffset: 12,
                         barSpacing: 3,
-                        lockVisibleTimeRangeOnResize: true,
-                        rightBarStaysOnScroll: true,
+                        //lockVisibleTimeRangeOnResize: true,
+                        //rightBarStaysOnScroll: true,
                         borderVisible: false,
                         borderColor: '#fff000',
                         visible: true,
                         timeVisible: true,
                         secondsVisible: true,
+                        fixLeftEdge: true,
                         // tickMarkFormatter: function(timePoint, tickMarkType, locale) {
                         //     return String(new Date(timePoint.timestamp * 1000).getUTCFullYear());
                         // },
@@ -121,7 +127,7 @@ const LightweightChart = ({ dataType, newData, onVisibleTimeRangeChanged }) => {
 
         // chr.current.timeScale().fitContent();
 
-    }, [newData, onVisibleTimeRangeChanged, dataType]);
+    }, [newData, dataType]);
 
     return (
         <>

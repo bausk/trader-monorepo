@@ -41,11 +41,12 @@ const HoverLinearProgress = () => {
 function SessionChart({ session }) {
     const [ show, setShow ] = useState(false);
     const { sessionStore } = useStores();
+    const period = sessionStore.period;
     useEffect(() => {
         console.log('Running effect...');
         const params = {
-            period: 5,
-            from_datetime: DateTime.utc().minus({hours: 6}).toISO(),
+            period: period,
+            from_datetime: DateTime.utc().minus({hours: 3}).toISO(),
             label: 'btcusd',
             data_type: 1
         }
@@ -53,14 +54,12 @@ function SessionChart({ session }) {
     }, []);
     const isButtonEnabled = sessionStore.state === fetchStates.SUCCESS;
     const isLoading = sessionStore.state === fetchStates.FETCHING;
-    const onVisibleTimeRangeChanged = (a) => {
-        console.log('time range changed');
-        console.log(a);
+    const onRangeChanged = (a) => {
         if (a?.from && a?.to) {
             const params = {
-                period: 5,
-                from_datetime: DateTime.fromSeconds(a.from).toISO(),
-                to_datetime: DateTime.fromSeconds(a.to).toISO(),
+                period: period,
+                from_datetime: a.from.toISO(),
+                to_datetime: a.to.toISO(),
                 label: 'btcusd',
                 data_type: 1
             }
@@ -85,7 +84,8 @@ function SessionChart({ session }) {
                 <LightweightChart
                     dataType="candlestick"
                     newData={sessionStore.newOhlc}
-                    onVisibleTimeRangeChanged={onVisibleTimeRangeChanged}
+                    onRangeChanged={onRangeChanged}
+                    period={period}
                 />
             }
         </Container>
