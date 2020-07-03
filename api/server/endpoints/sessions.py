@@ -3,7 +3,6 @@ import json
 from aiohttp import web
 from aiohttp.web import Response
 from aiohttp_cors import CorsViewMixin, ResourceOptions
-from pydantic import parse_obj_as
 from dbmodels.db import BaseModel
 from server.security import check_permission, Permissions
 from typing import Type, List
@@ -32,8 +31,7 @@ class SessionDataView(web.View, CorsViewMixin):
         try:
             session_id = int(self.request.match_info['id'])
             request_data = self.schema(**self.request.query)
-            result = await get_terminal_data(session_id, request_data, self.request)
-            validated = parse_obj_as(List[OHLCSchema], result)
+            validated = await get_terminal_data(session_id, request_data, self.request)
             return web.json_response(body=json.dumps([json.loads(x.json()) for x in validated]))
         except Exception:
             traceback.print_exc(file=sys.stdout)
