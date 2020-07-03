@@ -1,10 +1,16 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
+import { useDebouncedCallback } from 'use-debounce';
 import { createChart } from 'lightweight-charts';
 
-const LightweightChart = ({ dataType, data, onVisibleTimeRangeChanged }) => {
+const LightweightChart = ({ dataType, newData, onVisibleTimeRangeChanged }) => {
     const canvasRoot = useRef(null);
-    const inputEl = useRef(null);
+    const primarySeries = useRef(null);
+    const [ isFirstInit, setIsFirstInit ] = useState(true);
     const chr = useRef(null);
+    const [ onChanged ] = useDebouncedCallback(() => {
+        const visibleRange = chr.current.timeScale().getVisibleRange();
+        onVisibleTimeRangeChanged(visibleRange);
+    }, 1000);
     useEffect(() => {
         const chart = createChart(
             canvasRoot.current,
@@ -25,7 +31,7 @@ const LightweightChart = ({ dataType, data, onVisibleTimeRangeChanged }) => {
         } else {
             series = chart.addLineSeries();
         }
-        inputEl.current = series;
+        primarySeries.current = series;
         // TODO: add are, document, or remove
         // const areaSeries = inputEl.current.addAreaSeries({
         //     topColor: 'rgba(21, 146, 230, 0.4)',
@@ -59,16 +65,17 @@ const LightweightChart = ({ dataType, data, onVisibleTimeRangeChanged }) => {
 
         console.log('subscribing...');
         if (onVisibleTimeRangeChanged) {
-            chr.current.timeScale().subscribeVisibleTimeRangeChange(onVisibleTimeRangeChanged);
+            chr.current.timeScale().subscribeVisibleTimeRangeChange(onChanged);
         }
 
         return () => {
             console.log('unsubscribing...');
             if (onVisibleTimeRangeChanged) {
-                chr.current.timeScale().unsubscribeVisibleTimeRangeChange(onVisibleTimeRangeChanged);
+                chr.current.timeScale().unsubscribeVisibleTimeRangeChange(onChanged);
             }
         }
     }, []);
+
     useEffect(() => {
         const tickToChart = (tick) => {
             return { time: Date.parse(tick.queried_at)/1000, value: tick.price };
@@ -83,31 +90,38 @@ const LightweightChart = ({ dataType, data, onVisibleTimeRangeChanged }) => {
                 volume: ohlc.volume,
             };
         }
-        if (data?.length) {
+        if (newData?.length) {
             const parsed = (dataType === 'candlestick') ?
-                data.map(ohlcToChart) :
-                data.map(tickToChart);
-            inputEl.current.setData(parsed);
+                newData.map(ohlcToChart) :
+                newData.map(tickToChart);
+            if (isFirstInit) {
+                primarySeries.current.setData(parsed);
+                chr.current.applyOptions({
+                    timeScale: {
+                        rightOffset: 12,
+                        barSpacing: 3,
+                        lockVisibleTimeRangeOnResize: true,
+                        rightBarStaysOnScroll: true,
+                        borderVisible: false,
+                        borderColor: '#fff000',
+                        visible: true,
+                        timeVisible: true,
+                        secondsVisible: true,
+                        // tickMarkFormatter: function(timePoint, tickMarkType, locale) {
+                        //     return String(new Date(timePoint.timestamp * 1000).getUTCFullYear());
+                        // },
+                    },
+                });
+                setIsFirstInit(false);
+            } else {
+                console.log(parsed.length);
+                parsed.map(b => primarySeries.current.update(b));
+            }
         }
-        chr.current.applyOptions({
-            timeScale: {
-                rightOffset: 12,
-                barSpacing: 3,
-                lockVisibleTimeRangeOnResize: true,
-                rightBarStaysOnScroll: true,
-                borderVisible: false,
-                borderColor: '#fff000',
-                visible: true,
-                timeVisible: true,
-                secondsVisible: true,
-                tickMarkFormatter: function(timePoint, tickMarkType, locale) {
-                    return String(new Date(timePoint.timestamp * 1000).getUTCFullYear());
-                },
-            },
-        });
+
         // chr.current.timeScale().fitContent();
 
-    }, [data, onVisibleTimeRangeChanged, dataType]);
+    }, [newData, onVisibleTimeRangeChanged, dataType]);
 
     return (
         <>
