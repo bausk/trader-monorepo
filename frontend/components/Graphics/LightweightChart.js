@@ -4,7 +4,7 @@ import { createChart } from 'lightweight-charts';
 import { DateTime } from "luxon";
 
 
-const LightweightChart = ({ dataType, newData, onRangeChanged, period }) => {
+const LightweightChart = ({ dataType, newData, newAutorefreshData, onRangeChanged, period }) => {
     const canvasRoot = useRef(null);
     const primarySeries = useRef(null);
     const [ isFirstInit, setIsFirstInit ] = useState(true);
@@ -81,20 +81,22 @@ const LightweightChart = ({ dataType, newData, onRangeChanged, period }) => {
         }
     }, []);
 
+    const tickToChart = (tick) => {
+        return { time: Date.parse(tick.queried_at)/1000, value: tick.price };
+    };
+
+    const ohlcToChart = (ohlc) => {
+        return {
+            time: Date.parse(ohlc.time)/1000,
+            open: ohlc.open,
+            high: ohlc.high,
+            low: ohlc.low,
+            close: ohlc.close,
+            volume: ohlc.volume,
+        };
+    };
+
     useEffect(() => {
-        const tickToChart = (tick) => {
-            return { time: Date.parse(tick.queried_at)/1000, value: tick.price };
-        }
-        const ohlcToChart = (ohlc) => {
-            return {
-                time: Date.parse(ohlc.time)/1000,
-                open: ohlc.open,
-                high: ohlc.high,
-                low: ohlc.low,
-                close: ohlc.close,
-                volume: ohlc.volume,
-            };
-        }
         if (newData?.length) {
             const parsed = (dataType === 'candlestick') ?
                 newData.map(ohlcToChart) :
@@ -113,21 +115,25 @@ const LightweightChart = ({ dataType, newData, onRangeChanged, period }) => {
                         timeVisible: true,
                         secondsVisible: true,
                         fixLeftEdge: true,
-                        // tickMarkFormatter: function(timePoint, tickMarkType, locale) {
-                        //     return String(new Date(timePoint.timestamp * 1000).getUTCFullYear());
-                        // },
                     },
                 });
                 setIsFirstInit(false);
             } else {
-                console.log(parsed.length);
                 parsed.map(b => primarySeries.current.update(b));
             }
         }
-
-        // chr.current.timeScale().fitContent();
-
     }, [newData, dataType]);
+
+    useEffect(() => {
+        if (newAutorefreshData?.length) {
+            const parsed = (dataType === 'candlestick') ?
+                newData.map(ohlcToChart) :
+                newData.map(tickToChart);
+            parsed.map(b => primarySeries.current.update(b));
+        }
+    }, [newAutorefreshData, dataType]);
+
+
 
     return (
         <>

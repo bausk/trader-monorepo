@@ -88,6 +88,8 @@ async def get_terminal_data(session_id, request_params: DataRequestSchema, reque
     if not request_params.to_datetime:
         request_params.to_datetime = datetime.now()
     period = timedelta(minutes=request_params.period)
+
+    # TODO: Peg to and from datetimes to period breakpoints
     async with pool.acquire() as conn:
         query = """
         SELECT

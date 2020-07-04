@@ -16,8 +16,8 @@ class SessionStore {
     constructor(rootStore) {
         this.rootStore = rootStore;
     }
-    @observable ohlc = [];
     @observable newOhlc = [];
+    @observable newAutorefreshOhlc = [];
     @observable state = fetchStates.IDLE;
     @observable period = 5;
 
@@ -27,11 +27,23 @@ class SessionStore {
         try {
             const token = this.rootStore.authStore.accessToken;
             const result = yield fetchBackend.get(b.SESSIONS_DATA(id), token, params);
-            this.ohlc = merge(this.ohlc, result, 'time');
             this.newOhlc = result;
             this.state = fetchStates.SUCCESS;
         } catch (error) {
             this.state = fetchStates.ERROR;
+            if (error.message === '401') {
+                yield this.rootStore.authStore.relogin();
+            }
+        }
+    }).bind(this);
+
+    getAutorefreshData = flow(function* (element, params) {
+        const id = element?.id || element;
+        try {
+            const token = this.rootStore.authStore.accessToken;
+            const result = yield fetchBackend.get(b.SESSIONS_DATA(id), token, params);
+            this.newAutorefreshOhlc = result;
+        } catch (error) {
             if (error.message === '401') {
                 yield this.rootStore.authStore.relogin();
             }

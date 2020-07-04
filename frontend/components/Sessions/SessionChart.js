@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useCallback, useEffect } from 'react';
+import React, { useRef, useState, useCallback, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import { observer } from 'mobx-react';
 import Container from '@material-ui/core/Container';
@@ -17,6 +17,25 @@ const LightweightChart = dynamic(
     { ssr: false }
 );
 
+function useInterval(callback, delay) {
+    const savedCallback = useRef();
+
+    // Remember the latest callback.
+    useEffect(() => {
+        savedCallback.current = callback;
+    }, [callback]);
+
+    // Set up the interval.
+    useEffect(() => {
+        function tick() {
+            savedCallback.current();
+        }
+        if (delay !== null) {
+            let id = setInterval(tick, delay);
+            return () => clearInterval(id);
+        }
+    }, [delay]);
+}
 
 const useStyles = makeStyles({
     container: {
@@ -53,6 +72,7 @@ function SessionChart({ session }) {
         sessionStore.getData(session, params);
     }, []);
     const isButtonEnabled = sessionStore.state === fetchStates.SUCCESS;
+    const isAutorefreshEnabled = sessionStore.state !== fetchStates.IDLE;
     const isLoading = sessionStore.state === fetchStates.FETCHING;
     const onRangeChanged = (a) => {
         if (a?.from && a?.to) {
@@ -69,6 +89,19 @@ function SessionChart({ session }) {
     const onClick = useCallback(() => {
         setShow(true);
     }, []);
+
+    useInterval(() => {
+        const now = DateTime.utc();
+        const params = {
+            period: period,
+            from_datetime: now.minus({minutes: 30}).toISO(),
+            to_datetime: now.plus({minutes: 5}).toISO(),
+            label: 'btcusd',
+            data_type: 1
+        }
+        sessionStore.getData(session, params);
+    }, isAutorefreshEnabled ? 4000 : null)
+
     return (
         <>
         <Container>
@@ -84,6 +117,7 @@ function SessionChart({ session }) {
                 <LightweightChart
                     dataType="candlestick"
                     newData={sessionStore.newOhlc}
+                    newAutorefreshData={sessionStore.newAutorefreshOhlc}
                     onRangeChanged={onRangeChanged}
                     period={period}
                 />
