@@ -23,8 +23,14 @@ import b from 'api/backendRoutes';
 import f from 'api/frontendRoutes';
 
 function ListStrategies() {
-  const { sourcesStore, authStore } = useStores();
+  const { sourcesStore, resourcesStore, authStore } = useStores();
   const router = useRouter();
+
+  const { data: resourcesList } = useSWR(
+    b.RESOURCES,
+    resourcesStore.resources.listResource
+  );
+
   const { data, error, mutate } = useSWR(
     b.STRATEGIES,
     async () => {
@@ -40,10 +46,9 @@ function ListStrategies() {
   const onSubmit = useCallback(async (result) => {
     const newStrategy = {
       id: undefined,
-      name: result.name,
-      typename: result.typename,
       config_json: JSON.stringify({
       }),
+      ...result
     };
     mutate(async (prev) => [...prev, newStrategy], false);
     mutate(sourcesStore.strategies.add(newStrategy));
@@ -80,6 +85,7 @@ function ListStrategies() {
             open={newModal}
             onClose={onClose}
             onSubmit={onSubmit}
+            resources={resourcesList}
           />
           <IconButton
             edge="start"
@@ -104,7 +110,9 @@ function ListStrategies() {
         <TableHead>
           <TableRow>
             <TableCell>Strategy ID</TableCell>
+            <TableCell>Name</TableCell>
             <TableCell>Type</TableCell>
+            <TableCell>Connected Sources</TableCell>
             <TableCell align="right">Operations</TableCell>
           </TableRow>
         </TableHead>
@@ -120,6 +128,12 @@ function ListStrategies() {
               </TableCell>
               <TableCell>
                 {row.name}
+              </TableCell>
+              <TableCell>
+                {row.typename}
+              </TableCell>
+              <TableCell>
+                {row?.resource_model?.name || 'None'}
               </TableCell>
               <TableCell align="right">
                 <SwitchIsLive element={row} onChange={handleChange} />

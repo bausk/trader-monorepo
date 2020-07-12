@@ -70,7 +70,7 @@ export default function NewEntityModal({ open, onClose, onSubmit }) {
                     fullWidth
                 />
                 <TextField
-                    margin="normal"
+                    margin="dense"
                     id="tablename"
                     label="Table Name"
                     type="text"
@@ -81,7 +81,7 @@ export default function NewEntityModal({ open, onClose, onSubmit }) {
                 <FormControl className={classes.formControl}>
                     <InputLabel id="demo-simple-select-outlined-label">Type</InputLabel>
                     <Select
-                        margin="normal"
+                        margin="dense"
                         labelId="demo-simple-select-outlined-label"
                         id="demo-simple-select-outlined"
                         value={sourceType}

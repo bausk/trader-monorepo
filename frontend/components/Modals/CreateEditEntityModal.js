@@ -68,10 +68,11 @@ export default function CreateEditEntityModal({ open, onClose, onSubmit, sources
             onClose={handleClose}
             aria-labelledby="form-dialog-title"
         >
-            <DialogTitle id="form-dialog-title">Create Source</DialogTitle>
+            <DialogTitle id="form-dialog-title">Create Source Assembly</DialogTitle>
             <DialogContent>
                 <DialogContentText>
-                    Provide name, source type and table:
+                    Source Assembly is used to group sources into a single entity that can be
+                    processed by a strategy in a single tick. Provide name, live and backtest sources to create a source assembly.
                 </DialogContentText>
                 <TextField
                     autoFocus

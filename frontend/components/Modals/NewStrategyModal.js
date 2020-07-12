@@ -15,7 +15,7 @@ import Select from "@material-ui/core/Select";
 const useStyles = makeStyles(theme => ({
     formControl: {
         marginTop: theme.spacing(2),
-        minWidth: 120,
+        minWidth: 280,
     },
     selectEmpty: {
         marginTop: theme.spacing(2)
@@ -27,7 +27,7 @@ const strategyTypesEnum = {
     'signalbased': "Single Exchange",
 };
 
-export default function NewStrategyModal({ open, onClose, onSubmit }) {
+export default function NewStrategyModal({ open, onClose, onSubmit, resources }) {
     const classes = useStyles();
     const handleClose = () => {
         onClose(false);
@@ -41,10 +41,15 @@ export default function NewStrategyModal({ open, onClose, onSubmit }) {
     const handleNameChange = (event) => {
       setName(event.target.value);
     };
+    const [resource, setResource] = React.useState("");
+    const handleResourceChange = event => {
+        setResource(event.target.value);
+    };
     const handleSubmit = () => {
         onSubmit({
             name,
-            typename
+            typename,
+            resource_id: resource || undefined,
         });
         onClose(true);
     };
@@ -72,19 +77,35 @@ export default function NewStrategyModal({ open, onClose, onSubmit }) {
                 <FormControl className={classes.formControl}>
                     <InputLabel id="demo-simple-select-outlined-label">Type</InputLabel>
                     <Select
-                        margin="normal"
+                        margin="dense"
                         labelId="demo-simple-select-outlined-label"
                         id="demo-simple-select-outlined"
                         value={typename}
                         onChange={handleTypeChange}
                         label="Type"
                     >
-                        {/* <MenuItem value="">
-                            <em>None</em>
-                        </MenuItem> */}
                         {Object.entries(strategyTypesEnum).map(value => (
                             <MenuItem key={value[0]} value={value[0]}>{value[1]}</MenuItem>
                         ))}
+                    </Select>
+                </FormControl>
+                <FormControl className={classes.formControl}>
+                    <InputLabel id="demo-simple-select-outlined-label">Source Assembly</InputLabel>
+                    <Select
+                        margin="dense"
+                        labelId="demo-simple-select-outlined-label"
+                        id="demo-simple-select-outlined"
+                        value={resource}
+                        onChange={handleResourceChange}
+                        label="Source Assembly"
+                    >
+                        <MenuItem value={""}>
+                            <em>None</em>
+                        </MenuItem>
+                        {resources?.map(s => (
+                            <MenuItem key={s.id} value={s.id}>{s.id} - {s.name}</MenuItem>
+                        ))
+                        }
                     </Select>
                 </FormControl>
             </DialogContent>

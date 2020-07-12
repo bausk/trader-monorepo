@@ -64,7 +64,7 @@ function ResourceList() {
   
   return (
     <TableLayout
-      title="Resources"
+      title="Source Assemblies"
       toolbar={() => (
         <>
           <CreateEditEntityModal
@@ -96,28 +96,42 @@ function ResourceList() {
       <TableHead>
         <TableRow>
           <TableCell>Resource ID</TableCell>
-          <TableCell>Type</TableCell>
+          <TableCell>Name</TableCell>
+          <TableCell>Live Sources</TableCell>
+          <TableCell>Backtest Sources</TableCell>
           <TableCell align="right">Operations</TableCell>
         </TableRow>
       </TableHead>
       <TableBody>
-        {rows.map((row, i) => (
-          <TableRow key={i}>
-            <TableCell component="th" scope="row">
-              <Button
-                onClick={() => router.push(`${f.EXPLORE_RESOURCE}/[id]`, `${f.EXPLORE_RESOURCE}/${row.id}`)}
-              >
-                {row.id}
-              </Button>
-            </TableCell>
-            <TableCell>
-              {row.name}
-            </TableCell>
-            <TableCell align="right">
-              <DeleteButton element={row} mutate={mutate} onDelete={resourcesStore.resources.deleteResource} />
-            </TableCell>
-          </TableRow>
-        ))}
+        {rows.map((row, i) => {
+          const primaryLive = row.primary_live_source_model && `${row.primary_live_source_model.id}(${row.primary_live_source_model.name})`;
+          const secondaryLive = row.secondary_live_source_model && `${row.secondary_live_source_model.id}(${row.secondary_live_source_model.name})`;
+          const primaryBacktest = row.primary_backtest_source_model && `${row.primary_backtest_source_model.id}(${row.primary_backtest_source_model.name})`;
+          const secondaryBacktest = row.secondary_backtest_source_model && `${row.secondary_backtest_source_model.id}(${row.secondary_backtest_source_model.name})`;
+          const liveRepresentation = [ primaryLive, secondaryLive ].filter(Boolean).join(' + ')
+          const backtestRepresentation = [ primaryBacktest, secondaryBacktest ].filter(Boolean).join(' + ')
+          return (
+            <TableRow key={i}>
+              <TableCell component="th" scope="row">
+                <b>
+                  {row.id}
+                </b>
+              </TableCell>
+              <TableCell>
+                {row.name}
+              </TableCell>
+              <TableCell>
+                {liveRepresentation}
+              </TableCell>
+              <TableCell>
+                {backtestRepresentation}
+              </TableCell>
+              <TableCell align="right">
+                <DeleteButton element={row} mutate={mutate} onDelete={resourcesStore.resources.deleteResource} />
+              </TableCell>
+            </TableRow>
+          ); 
+        })}
       </TableBody>
   </Table>
   </TableContainer>

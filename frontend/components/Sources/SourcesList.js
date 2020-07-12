@@ -93,6 +93,7 @@ function SourcesList() {
       <TableHead>
         <TableRow>
           <TableCell>Source ID</TableCell>
+          <TableCell>Name</TableCell>
           <TableCell>Type</TableCell>
           <TableCell align="right">Operations</TableCell>
         </TableRow>
@@ -109,6 +110,9 @@ function SourcesList() {
             </TableCell>
             <TableCell>
               {row.name}
+            </TableCell>
+            <TableCell>
+              {row.typename}
             </TableCell>
             <TableCell align="right">
               <DeleteButton element={row} mutate={mutate} store={sourcesStore} />
