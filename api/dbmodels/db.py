@@ -5,7 +5,10 @@ from gino.ext.aiohttp import Gino
 db = Gino()
 
 from .common_models import BaseModel
-from .source_models import Source, SourceSchema, SourceSchemaWithStats, SourceTypesEnum
+from .source_models import (
+    Source, SourceSchema, SourceSchemaWithStats, SourceTypesEnum,
+    ResourceModel, ResourceSchema
+)
 from .strategy_models import StrategyModel, StrategySchema, StrategyTypesEnum
 from .session_models import BacktestSessionModel, LiveSessionModel, BacktestSessionSchema, LiveSessionSchema
 

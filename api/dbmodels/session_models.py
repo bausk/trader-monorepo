@@ -23,6 +23,8 @@ class LiveSessionModel(db.Model):
     id = db.Column(db.Integer(), primary_key=True)
     start_datetime = db.Column(db.DateTime(), nullable=True)
     end_datetime = db.Column(db.DateTime(), nullable=True)
+
+    # Used for logging only. Model config is copied
     config_json = db.Column(db.Unicode(), default="{}")
 
 

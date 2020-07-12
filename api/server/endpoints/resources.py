@@ -1,0 +1,61 @@
+import json
+from aiohttp import web
+from aiohttp.web import Response
+from aiohttp_cors import CorsViewMixin, ResourceOptions
+from dbmodels.db import db, Source, SourceSchema, ResourceModel, ResourceSchema, BaseModel
+from server.security import check_permission, Permissions
+from typing import Type
+from utils.sources.select import select_source
+
+from server.endpoints.routedef import routes
+
+
+@routes.view('/resources')
+class ResourcesView(web.View, CorsViewMixin):
+    cors_config = {
+        "*": ResourceOptions(
+            allow_credentials=True,
+            allow_headers="*",
+            expose_headers="*",
+        )
+    }
+    schema: Type[BaseModel] = ResourceSchema
+    model: db.Model = ResourceModel
+
+    async def get(self: web.View) -> Response:
+        await check_permission(self.request, Permissions.READ)
+        response = []
+        async with db.transaction():
+            async for s in self.model.query.order_by(self.model.id).gino.iterate():
+                validated = self.schema.from_orm(s)
+                response.append(validated.dict())
+        return web.json_response(response)
+
+    async def post(self: web.View) -> Response:
+        await check_permission(self.request, Permissions.WRITE_OBJECTS)
+        response = []
+        try:
+            raw_data = await self.request.json()
+            print(raw_data)
+            incoming = self.schema(**raw_data)
+            print(incoming)
+            async with db.transaction():
+                await self.model.create(**incoming.private_dict())
+                async for s in self.model.query.order_by(self.model.id).gino.iterate():
+                    response.append(self.schema.from_orm(s).dict())
+        except Exception as e:
+            print(e)
+            raise web.HTTPBadRequest
+        return web.json_response(response)
+
+    async def delete(self: web.View) -> Response:
+        await check_permission(self.request, Permissions.WRITE_OBJECTS)
+        raw_data = await self.request.json()
+        incoming = self.schema(**raw_data)
+        response = []
+        async with db.transaction():
+            await self.model.delete.where(self.model.id == incoming.id).gino.status()
+            async for s in self.model.query.order_by(self.model.id).gino.iterate():
+                validated = self.schema.from_orm(s)
+                response.append(validated.dict())
+        return web.json_response(response)
