@@ -5,6 +5,7 @@ from aiohttp import web
 from aiohttp.web import Response
 from aiohttp_cors import CorsViewMixin, ResourceOptions
 from dbmodels.db import db, StrategyModel, LiveSessionModel, LiveSessionSchema, StrategySchema, BaseModel
+from dbmodels.source_models import ResourceModel
 from server.security import check_permission, Permissions
 from typing import Type
 from utils.sources.select import select_source
@@ -29,7 +30,12 @@ class StrategiesView(web.View, CorsViewMixin):
         await check_permission(self.request, Permissions.READ)
         response = []
         async with db.transaction():
-            async for s in StrategyModel.load(live_session_model=LiveSessionModel).query.order_by(StrategyModel.id).gino.iterate():
+            query = StrategyModel.load(
+                live_session_model=LiveSessionModel
+            ).load(
+                resource_model=ResourceModel.on(StrategyModel.resource_id == ResourceModel.id)
+            ).order_by(StrategyModel.id)
+            async for s in query.gino.iterate():
                 validated = self.schema.from_orm(s)
                 response.append(json.loads(validated.json()))
         return web.json_response(response)
@@ -42,7 +48,11 @@ class StrategiesView(web.View, CorsViewMixin):
             incoming = self.schema(**raw_data)
             async with db.transaction():
                 await StrategyModel.create(**incoming.private_dict())
-                async for s in StrategyModel.load(live_session_model=LiveSessionModel).query.order_by(StrategyModel.id).gino.iterate():
+                async for s in StrategyModel.load(
+                    live_session_model=LiveSessionModel
+                ).load(
+                    resource_model=ResourceModel.on(StrategyModel.resource_id == ResourceModel.id)
+                ).query.order_by(StrategyModel.id).gino.iterate():
                     response.append(json.loads(self.schema.from_orm(s).json()))
         except Exception as e:
             raise web.HTTPBadRequest
@@ -55,7 +65,11 @@ class StrategiesView(web.View, CorsViewMixin):
         response = []
         async with db.transaction():
             await StrategyModel.delete.where(StrategyModel.id == incoming.id).gino.status()
-            async for s in StrategyModel.load(live_session_model=LiveSessionModel).query.order_by(StrategyModel.id).gino.iterate():
+            async for s in StrategyModel.load(
+                live_session_model=LiveSessionModel
+            ).load(
+                resource_model=ResourceModel.on(StrategyModel.resource_id == ResourceModel.id)
+            ).query.order_by(StrategyModel.id).gino.iterate():
                 validated = self.schema.from_orm(s)
                 response.append(json.loads(validated.json()))
         return web.json_response(response)

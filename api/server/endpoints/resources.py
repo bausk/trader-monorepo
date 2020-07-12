@@ -25,8 +25,28 @@ class ResourcesView(web.View, CorsViewMixin):
     async def get(self: web.View) -> Response:
         await check_permission(self.request, Permissions.READ)
         response = []
+        primary_live_source = Source.alias()
+        secondary_live_source = Source.alias()
+        primary_backtest_source = Source.alias()
+        secondary_backtest_source = Source.alias()
         async with db.transaction():
-            async for s in self.model.query.order_by(self.model.id).gino.iterate():
+            async for s in self.model.load(
+                primary_live_source_model=primary_live_source.on(
+                    primary_live_source.id == self.model.primary_live_source_id
+                )
+            ).load(
+                secondary_live_source_model=secondary_live_source.on(
+                    secondary_live_source.id == self.model.secondary_live_source_id
+                )
+            ).load(
+                primary_backtest_source_model=primary_backtest_source.on(
+                    primary_backtest_source.id == self.model.primary_backtest_source_id
+                )
+            ).load(
+                secondary_backtest_source_model=secondary_backtest_source.on(
+                    secondary_backtest_source.id == self.model.secondary_backtest_source_id
+                )
+            ).order_by(self.model.id).gino.iterate():
                 validated = self.schema.from_orm(s)
                 response.append(validated.dict())
         return web.json_response(response)

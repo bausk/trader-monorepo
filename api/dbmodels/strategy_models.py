@@ -9,6 +9,7 @@ from .common_models import Privatable
 from .db import db
 from .strategy_params_models import BacktestParamsSchema, LiveParamsSchema
 from .session_models import LiveSessionSchema
+from .source_models import ResourceSchema
 
 
 class StrategyModel(db.Model):
@@ -21,6 +22,7 @@ class StrategyModel(db.Model):
         values_callable=lambda x: [e.value for e in x]
     ))
     live_session_id = db.Column(db.Integer, db.ForeignKey('live_sessions.id'), nullable=True)
+    resource_id = db.Column(db.Integer, db.ForeignKey('resources.id'), nullable=True)
     config_json = db.Column(db.Unicode(), default='{}')
 
 
@@ -34,6 +36,8 @@ class StrategySchema(Privatable):
     typename: StrategyTypesEnum
     live_session_id: Optional[int]
     live_session_model: Optional[LiveSessionSchema]
+    resource_id: Optional[int]
+    resource_model: Optional[ResourceSchema]
     config_json: Optional[LiveParamsSchema]
 
     @validator('config_json', pre=True)
