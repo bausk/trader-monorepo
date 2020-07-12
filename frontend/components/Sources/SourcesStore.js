@@ -8,8 +8,6 @@ class SourcesStore {
     constructor(rootStore) {
         this.rootStore = rootStore;
     }
-    @observable sources;
-    @observable state = "pending";
 
     strategies = {
         list: flow(authenticatedFetchCreator(

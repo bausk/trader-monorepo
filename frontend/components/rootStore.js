@@ -1,6 +1,7 @@
 import React from 'react';
 import { useStaticRendering } from 'mobx-react'
 
+import ResourcesStore from './Resources/ResourcesStore';
 import SourcesStore from './Sources/SourcesStore';
 import SessionStore from './Sessions/SessionStore';
 import AuthStore from './Auth/AuthStore';
@@ -14,12 +15,14 @@ export class RootStore {
     constructor(initialState) {
         this.authStore = new AuthStore(this);
         this.sourcesStore = new SourcesStore(this);
+        this.resourcesStore = new ResourcesStore(this);
         this.sessionStore = new SessionStore(this);
         this.hydrate(initialState);
     }
-    hydrate = ({ authStore, sourcesStore, sessionStore }) => {
+    hydrate = ({ authStore, sourcesStore, resourcesStore, sessionStore }) => {
         authStore && this.authStore.hydrate(authStore);
         sourcesStore && this.sourcesStore.hydrate(sourcesStore);
+        resourcesStore && this.resourcesStore.hydrate(resourcesStore);
         sessionStore && this.sessionStore.hydrate(sessionStore);
     }
 }

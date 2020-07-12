@@ -8,7 +8,9 @@ const routes = {
     LOGOUT: '/api/logout',
 
     EXPLORE: '/explore',
+    EXPLORE_RESOURCE: '/exploreResource',
     EXPLORE_NEW: '/explore/new',
+    RESOURCE_NEW: '/explore/newResource',
     MODEL: '/model',
     MODEL_NEW: '/model/new',
     OPTIMIZE: '/optimize',

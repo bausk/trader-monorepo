@@ -74,6 +74,7 @@ function SessionChart({ session }) {
     const isButtonEnabled = sessionStore.state === fetchStates.SUCCESS;
     const isAutorefreshEnabled = sessionStore.state !== fetchStates.IDLE;
     const isLoading = sessionStore.state === fetchStates.FETCHING;
+    console.log(sessionStore.state);
     const onRangeChanged = (a) => {
         if (a?.from && a?.to) {
             const params = {
@@ -99,7 +100,7 @@ function SessionChart({ session }) {
             label: 'btcusd',
             data_type: 1
         }
-        sessionStore.getData(session, params);
+        sessionStore.getAutorefreshData(session, params);
     }, isAutorefreshEnabled ? 4000 : null)
 
     return (

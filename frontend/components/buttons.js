@@ -5,13 +5,17 @@ import DeleteIcon from "@material-ui/icons/Delete";
 import { observer } from 'mobx-react';
 
 
-export const DeleteButton = observer(({ element, mutate, store }) => {
+export const DeleteButton = observer(({ element, mutate, store, onDelete }) => {
     const onClick = useCallback(() => {
         mutate(async (prev) => {
             return prev.filter(el => el.id !== element.id);
         }, false);
-        mutate(store.delete(element));
-    }, [store, element, mutate]);
+        if (onDelete) {
+            mutate(onDelete(element));
+        } else {
+            mutate(store.delete(element));
+        }
+    }, [store, element, mutate, onDelete]);
     return (
         <IconButton
             onClick={onClick}

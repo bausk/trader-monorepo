@@ -32,9 +32,11 @@ function ListStrategies() {
     }
   );
   const newModal = router.asPath === f.MODEL_NEW;
+
   const onAdd = useCallback(async () => {
     return router.push(f.MODEL, f.MODEL_NEW);
   }, [router]);
+
   const onSubmit = useCallback(async (result) => {
     const newStrategy = {
       id: undefined,
@@ -42,10 +44,11 @@ function ListStrategies() {
       typename: result.typename,
       config_json: JSON.stringify({
       }),
-    }
+    };
     mutate(async (prev) => [...prev, newStrategy], false);
     mutate(sourcesStore.strategies.add(newStrategy));
   }, []);
+
   const onClose = useCallback(() => {
     return router.push(f.MODEL);
   }, [router]);
