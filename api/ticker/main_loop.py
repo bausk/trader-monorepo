@@ -5,14 +5,16 @@ from aiojobs._job import Job
 from janus import Queue
 from typing import Type
 
+from sqlalchemy.orm import aliased
 from dbmodels.db import db, StrategyModel, BaseModel, LiveSessionModel
 from dbmodels.strategy_models import StrategySchema
+from dbmodels.source_models import ResourceModel, ResourceSchema, Source, SourceSchema
 from dbmodels.strategy_params_models import LiveParamsSchema
 from parameters.enums import StrategiesEnum, LiveSourcesEnum
 from strategies.monitor_strategy import monitor_strategy_executor
 from utils.timeseries.timescale_utils import init_db, get_pool
 from .processing.default_postprocessor import default_postprocessor
-from .sourcing.default_source_loader import default_source_loader
+from .sourcing.default_source_loader import default_resource_loader
 
 
 STRATEGY_EXECUTORS = {
@@ -20,30 +22,6 @@ STRATEGY_EXECUTORS = {
 }
 
 DEFAULT_STRATEGY_TICK = 8
-
-
-async def acquire_executor(strategy: Type[StrategySchema], app, pool):
-    config: LiveParamsSchema = strategy.config_json
-    # TODO: Use strategy typename and/or something else to customize execution
-    # strategy_typename = strategy.typename
-    config.strategy_name = StrategiesEnum.monitor
-    config.source_primary = LiveSourcesEnum.cryptowatch
-    config.source_secondary = LiveSourcesEnum.kunaio
-    config.tick_frequency = DEFAULT_STRATEGY_TICK
-    strategy_ontick_function = STRATEGY_EXECUTORS.get(config.strategy_name)
-    if strategy_ontick_function is None:
-        return MockExecutor()
-
-    scheduler = await aiojobs.create_scheduler()
-    source_queue = Queue()
-    processing_queue = Queue()
-
-    session = app['PERSISTENT_SESSION']
-    await scheduler.spawn(default_source_loader(config, strategy, source_queue, session))
-    await scheduler.spawn(strategy_ontick_function(strategy, source_queue, processing_queue))
-    await scheduler.spawn(default_postprocessor(pool, strategy, config, processing_queue))
-
-    return scheduler
 
 
 class MockExecutor:
@@ -60,7 +38,10 @@ class Ticker:
     def __init__(self):
         self.app = None
         self.scheduler = None
-        self.active_executors = {}
+        self.active_schedulers = {}
+        self.resource_schedulers = {}
+        self.strategy_queues = {}
+        self.queues_per_resource = {}
 
     async def run(self, app):
         self.app = app
@@ -75,56 +56,113 @@ class Ticker:
             tick_count += 1
             try:
                 timer = asyncio.create_task(asyncio.sleep(self.BASE_TICK_TIME))
-                job: Job = await self.scheduler.spawn(self.check_strategies(tick_count))
+                job: Job = await self.scheduler.spawn(self.check_resources(tick_count))
                 await asyncio.wait({timer, job.wait()})
             except Exception as e:
                 print(e)
                 traceback.print_exc(file=sys.stdout)
 
-    async def check_strategies(self, tick_count):
-        active_strategies = {}
-        schema: Type[BaseModel] = StrategySchema
+    async def check_resources(self, tick_count):
+        active_resources = {}
+        primary_live_source = Source.alias()
+        secondary_live_source = Source.alias()
+        primary_backtest_source = Source.alias()
+        secondary_backtest_source = Source.alias()
         async with db.transaction():
-            async for s in StrategyModel.load(
-                live_session_model=LiveSessionModel
-            ).query.where(StrategyModel.live_session_id.isnot(None)).order_by(StrategyModel.id).gino.iterate():
-                validated = schema.from_orm(s)
-                active_strategies[validated.id] = validated
-        # Stop removed or inactive strategies
-        executor_ids_to_stop = [x for x in self.active_executors if x not in active_strategies]
-        for executor_id in executor_ids_to_stop:
-            await self.stop_executor(executor_id)
+            query = ResourceModel.load(
+                strategy=StrategyModel.on(
+                    ResourceModel.id == StrategyModel.resource_id
+                )
+            ).load(
+                primary_live_source_model=primary_live_source.on(
+                    primary_live_source.id == ResourceModel.primary_live_source_id
+                )
+            ).load(
+                secondary_live_source_model=secondary_live_source.on(
+                    secondary_live_source.id == ResourceModel.secondary_live_source_id
+                )
+            ).load(
+                primary_backtest_source_model=primary_backtest_source.on(
+                    primary_backtest_source.id == ResourceModel.primary_backtest_source_id
+                )
+            ).load(
+                secondary_backtest_source_model=secondary_backtest_source.on(
+                    secondary_backtest_source.id == ResourceModel.secondary_backtest_source_id
+                )
+            ).where(StrategyModel.live_session_id.isnot(None))
+            resources_list = await query.gino.all()
+            resources_hash = {}
+            unique_resources = []
+            active_strategies = {}
+            active_resources = {}
+            for resource in resources_list:
+                validated = ResourceSchema.from_orm(resource)
+                strategy = StrategySchema.from_orm(resource.strategy)
+                active_strategies[strategy.id] = strategy
+                active_resources[validated.id] = validated
+                if validated.id not in resources_hash:
+                    resources_hash[validated.id] = [strategy]
+                    unique_resources.append(validated)
+                else:
+                    resources_hash[validated.id].append(strategy)
+            inactive_strategies = [
+                x for x in self.strategy_queues if x not in active_strategies
+            ]
+            for x in inactive_strategies:
+                print(f'stopping inactive strategy {x}')
+                await self.stop_strategy(x)
 
-        # Ensure all active strategies have running executors
-        for strategy_id, strategy in active_strategies.items():
-            await self.start_strategy(strategy)
+            schedulers_without_active_strategy = [
+                x for x in self.resource_schedulers if x not in active_resources
+            ]
+            for x in schedulers_without_active_strategy:
+                print(f'stopping inactive resource {x}')
+                await self.stop_resource(x)
 
-    async def start_strategy(self, strategy: Type[StrategySchema]):
-        strategy_id = strategy.id
-        active_executor = self.active_executors.get(strategy_id)
-        if active_executor and active_executor.closed:
-            print(f'Deleting closed executor {strategy_id}')
-            active_executor = None
-            del self.active_executors[strategy_id]
-        if not active_executor:
-            print(f'Activating executor {strategy_id}')
-            # TODO: remove cruft
-            # strategy_executor = await acquire_executor(strategy)
-            self.active_executors[strategy_id] = await acquire_executor(
-                strategy,
-                self.app,
-                self.timeseries_connection_pool
-            )
-            # if strategy_executor:
-            #     self.active_executors[strategy_id]: Job = await self.scheduler.spawn(strategy_executor(self.app))
-            # else:
-            #     self.active_executors[strategy_id] = MockExecutorJob()
+            for _, strategy in active_strategies.items():
+                await self.ensure_started_strategy(strategy)
 
-    async def stop_executor(self, executor_id: int):
-        executor = self.active_executors.get(executor_id)
-        if executor.closed:
-            print(f'Deleting executor {executor_id}')
-            del self.active_executors[executor_id]
+            # Reschedule strategy queues to update data in resources
+            for resource_id, strategy_list in resources_hash.items():
+                self.queues_per_resource[resource_id] = [
+                    self.strategy_queues[s.id] for s in strategy_list
+                ]
+
+            for _, resource in active_resources.items():
+                await self.ensure_started_resource(resource)
+
+    async def stop_strategy(self, x):
+        queue = self.strategy_queues[x]
+        await queue.async_q.put(None)
+        del self.strategy_queues[x]
+
+    async def stop_resource(self, resource_id: int):
+        scheduler = self.resource_schedulers[resource_id]
+        if scheduler.closed:
+            print(f'Deleting scheduler {resource_id}')
+            del self.resource_schedulers[resource_id]
         else:
-            print(f'Deactivating executor {executor_id}')
-            await executor.close()
+            print(f'Closing scheduler {resource_id}')
+            await scheduler.close()
+
+    async def ensure_started_resource(self, resource: Type[ResourceSchema]):
+        res_id = resource.id
+        active_scheduler = self.resource_schedulers.get(res_id)
+        if active_scheduler and active_scheduler.closed:
+            print(f'Deleting closed executor {res_id}')
+            active_scheduler = None
+            del self.resource_schedulers[res_id]
+        if not active_scheduler:
+            print(f'Activating executor {res_id}')
+            scheduler: aiojobs.Scheduler = await aiojobs.create_scheduler()
+            session = self.app['PERSISTENT_SESSION']
+            await scheduler.spawn(default_resource_loader(resource, self.queues_per_resource, session))
+            self.resource_schedulers[res_id] = scheduler
+
+    async def ensure_started_strategy(self, strategy: Type[StrategyModel]):
+        if not self.strategy_queues.get(strategy.id):
+            source_q = Queue()
+            processing_q = Queue()
+            await self.scheduler.spawn(monitor_strategy_executor(strategy, source_q, processing_q))
+            await self.scheduler.spawn(default_postprocessor(self.timeseries_connection_pool, strategy, processing_q))
+            self.strategy_queues[strategy.id] = source_q

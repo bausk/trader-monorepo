@@ -2,7 +2,7 @@ import enum
 import json
 from typing import List, Optional, Tuple, Union
 from datetime import datetime, date
-from parameters.enums import OrderExecutorsEnum, StrategiesEnum, LiveSourcesEnum
+from parameters.enums import StrategiesEnum, LiveSourcesEnum
 
 from .common_models import Privatable
 
@@ -24,7 +24,6 @@ class LiveParamsSchema(Privatable):
         arbitrary_types_allowed = True
 
     strategy_name: Optional[StrategiesEnum]
-    order_executor: Optional[OrderExecutorsEnum]
     source_primary: Optional[LiveSourcesEnum]
     source_secondary: Optional[LiveSourcesEnum]
     tick_frequency: Optional[int]

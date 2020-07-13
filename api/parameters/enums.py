@@ -6,11 +6,6 @@ class StrategyTypesEnum(str, enum.Enum):
     signalbased = "signalbased"
 
 
-class OrderExecutorsEnum(str, enum.Enum):
-    live = 'live'
-    backtest = 'backtest'
-
-
 class StrategiesEnum(str, enum.Enum):
     monitor = 'monitor'
     randomwalk = 'randomwalk'
