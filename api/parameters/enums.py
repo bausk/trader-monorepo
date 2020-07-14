@@ -13,6 +13,8 @@ class StrategiesEnum(str, enum.Enum):
     other = 'other'
 
 
-class LiveSourcesEnum(str, enum.Enum):
+class SourcesEnum(str, enum.Enum):
     kunaio = 'kunaio'
     cryptowatch = 'cryptowatch'
+    coinbase = 'coinbase'
+    bigquery = 'bigquery'

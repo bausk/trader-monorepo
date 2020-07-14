@@ -5,14 +5,13 @@ from aiojobs._job import Job
 from janus import Queue
 from typing import Type
 
-from sqlalchemy.orm import aliased
-from dbmodels.db import db, StrategyModel, BaseModel, LiveSessionModel
+from dbmodels.db import db, StrategyModel
 from dbmodels.strategy_models import StrategySchema
-from dbmodels.source_models import ResourceModel, ResourceSchema, Source, SourceSchema
-from dbmodels.strategy_params_models import LiveParamsSchema
-from parameters.enums import StrategiesEnum, LiveSourcesEnum
+from dbmodels.source_models import ResourceModel, ResourceSchema, Source
+from parameters.enums import StrategiesEnum
 from strategies.monitor_strategy import monitor_strategy_executor
-from utils.timeseries.timescale_utils import init_db, get_pool
+from utils.timeseries.timescale_utils import get_pool
+
 from .processing.default_postprocessor import default_postprocessor
 from .sourcing.default_source_loader import default_resource_loader
 
@@ -20,8 +19,6 @@ from .sourcing.default_source_loader import default_resource_loader
 STRATEGY_EXECUTORS = {
     StrategiesEnum.monitor: monitor_strategy_executor,
 }
-
-DEFAULT_STRATEGY_TICK = 8
 
 
 class MockExecutor:

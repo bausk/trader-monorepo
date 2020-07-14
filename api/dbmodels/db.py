@@ -6,7 +6,7 @@ db = Gino()
 
 from .common_models import BaseModel
 from .source_models import (
-    Source, SourceSchema, SourceSchemaWithStats, SourceTypesEnum,
+    Source, SourceSchema, SourceSchemaWithStats,
     ResourceModel, ResourceSchema
 )
 from .strategy_models import StrategyModel, StrategySchema, StrategyTypesEnum

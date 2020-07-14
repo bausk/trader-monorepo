@@ -1,28 +1,18 @@
-import enum
 from typing import List, Optional, Tuple, Union
 from datetime import datetime
 
+from parameters.enums import SourcesEnum
 from .common_models import Privatable
 from .db import db
 from .session_models import LiveSessionSchema
 
 
-class SourceTypesEnum(str, enum.Enum):
-    bigquery = 'bigquery'
-    kuna = 'kuna'
-    cryptowatch = 'cryptowatch'
-
-
-# class Source(Base):
 class Source(db.Model):
     __tablename__ = 'sources'
 
     id = db.Column(db.Integer(), primary_key=True)
     name = db.Column(db.Unicode(), default='Unnamed')
-    typename = db.Column(db.Enum(
-        SourceTypesEnum,
-        values_callable=lambda x: [e.value for e in x]
-    ))
+    typename = db.Column(db.Unicode(), nullable=False)
     config_json = db.Column(db.Unicode(), default='{}')
 
 
@@ -32,7 +22,7 @@ class SourceSchema(Privatable):
         orm_mode = True
     id: Optional[int]
     name: str = 'Unnamed'
-    typename: SourceTypesEnum
+    typename: SourcesEnum
     config_json: Optional[str]
 
 

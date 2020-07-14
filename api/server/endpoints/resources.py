@@ -1,11 +1,9 @@
-import json
 from aiohttp import web
 from aiohttp.web import Response
 from aiohttp_cors import CorsViewMixin, ResourceOptions
-from dbmodels.db import db, Source, SourceSchema, ResourceModel, ResourceSchema, BaseModel
+from dbmodels.db import db, Source, ResourceModel, ResourceSchema, BaseModel
 from server.security import check_permission, Permissions
 from typing import Type
-from utils.sources.select import select_source
 
 from server.endpoints.routedef import routes
 

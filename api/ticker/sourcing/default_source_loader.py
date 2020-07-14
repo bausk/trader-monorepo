@@ -1,17 +1,8 @@
 import asyncio
-from datetime import timedelta
-from parameters.enums import LiveSourcesEnum
-from dbmodels.strategy_params_models import LiveParamsSchema
 from dbmodels.source_models import ResourceSchema
-from utils.sources.live_sources import AbstractSource, LiveCryptowatchSource, LiveKunaSource, LiveCoinbaseSource
+from utils.sources.live_sources import AbstractSource
+from utils.sources.select import LIVE_SOURCES
 from utils.schemas.dataflow_schemas import ProcessTaskSchema
-
-
-# TODO: Remove dependency on enum in highly variable source entity
-LIVE_SOURCES = {
-    LiveSourcesEnum.kunaio: LiveKunaSource,
-    LiveSourcesEnum.cryptowatch: LiveCoinbaseSource,
-}
 
 
 async def default_resource_loader(resource: ResourceSchema, queues_per_resource, session, is_live=True):

@@ -5,7 +5,8 @@ from aiohttp_cors import CorsViewMixin, ResourceOptions
 from dbmodels.db import db, Source, SourceSchema, SourceSchemaWithStats, BaseModel
 from server.security import check_permission, Permissions
 from typing import Type
-from utils.sources.select import select_source
+from utils.sources.abstract_source import AbstractSource
+from utils.sources.select import LIVE_SOURCES
 
 from server.endpoints.routedef import routes
 
@@ -78,7 +79,8 @@ class SourcesStatsView(web.View, CorsViewMixin):
         table_fullname = source_config['table_name']
         if not table_fullname:
             raise web.HTTPConflict(text="table_name not defined in source config")
-        availability_intervals = await select_source(source).list_availability_intervals(
+        source_executor: AbstractSource = LIVE_SOURCES[source_model.typename]
+        availability_intervals = await source_executor.list_availability_intervals(
             interval=3600,
             table_fullname=table_fullname
         )
@@ -110,7 +112,8 @@ class SourcesIntervalView(web.View, CorsViewMixin):
         if not table_fullname:
             raise web.HTTPConflict(text="table_name not defined in source config")
         print(self.request.query)
-        res = await select_source(source).list_data_in_interval(
+        source_executor: AbstractSource = LIVE_SOURCES[source_model.typename]
+        res = await source_executor.list_data_in_interval(
             table_fullname=table_fullname,
             start=self.request.query.get('start'),
             end=self.request.query.get('end'),

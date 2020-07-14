@@ -8,7 +8,6 @@ from dbmodels.db import db, StrategyModel, LiveSessionModel, LiveSessionSchema, 
 from dbmodels.source_models import ResourceModel
 from server.security import check_permission, Permissions
 from typing import Type
-from utils.sources.select import select_source
 from server.endpoints.routedef import routes
 
 
@@ -79,25 +78,6 @@ class StrategiesView(web.View, CorsViewMixin):
 class StrategyDetailView(web.View, CorsViewMixin):
     cors_config = CORS_CONFIG
     schema: Type[BaseModel] = StrategySchema
-
-    async def get(self: web.View) -> Response:
-        await check_permission(self.request, Permissions.READ)
-        strategy_id = int(self.request.match_info['id'])
-        async with db.transaction():
-            source = await StrategyModel.get(strategy_id)
-        source_model = self.schema.from_orm(source)
-        source_config = json.loads(source_model.config_json)
-        table_fullname = source_config['table_name']
-        if not table_fullname:
-            raise web.HTTPConflict(text="table_name not defined in source config")
-        availability_intervals = await select_source(source).list_availability_intervals(
-            interval=3600,
-            table_fullname=table_fullname
-        )
-        source_model.available_intervals = []
-        for res in availability_intervals:
-            source_model.available_intervals.append([res[0], res[1]])
-        return web.json_response(body=source_model.json())
 
     async def put(self: web.View) -> Response:
         await check_permission(self.request, Permissions.WRITE_OBJECTS)
