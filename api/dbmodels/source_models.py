@@ -32,7 +32,6 @@ class ResourceModel(db.Model):
     id = db.Column(db.Integer(), primary_key=True)
     name = db.Column(db.Unicode(), default='Unnamed')
     is_always_on = db.Column(db.Boolean, default=False)
-    live_session_id = db.Column(db.Integer, db.ForeignKey('live_sessions.id'), nullable=True)
 
     primary_live_source_id = db.Column(db.Integer, db.ForeignKey('sources.id'), nullable=True)
     secondary_live_source_id = db.Column(db.Integer, db.ForeignKey('sources.id'), nullable=True)
@@ -47,8 +46,6 @@ class ResourceSchema(Privatable):
     id: Optional[int]
     name: str = 'Unnamed'
     is_always_on: bool = False
-    live_session_id: Optional[int]
-    live_session_model: Optional[LiveSessionSchema]
     primary_live_source_id: Optional[int]
     primary_live_source_model: Optional[SourceSchema]
     secondary_live_source_id: Optional[int]
