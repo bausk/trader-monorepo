@@ -10,3 +10,9 @@ class OHLCSchema(BaseModel):
     low: float
     close: float
     volume: float
+
+
+class PricepointSchema(BaseModel):
+    time: datetime
+    price: Optional[float] = 0.0
+    volume: Optional[float] = 0.0

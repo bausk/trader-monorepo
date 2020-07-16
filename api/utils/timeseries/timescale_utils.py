@@ -2,10 +2,11 @@ import os
 from datetime import datetime, timedelta
 import pytz
 import asyncpg
+from asyncpg.pool import Pool
 from typing import List
 from utils.mocks.ticks import generate_data
 from pydantic import parse_obj_as
-from utils.schemas.response_schemas import OHLCSchema
+from utils.schemas.response_schemas import OHLCSchema, PricepointSchema
 from utils.schemas.dataflow_schemas import TickSchema
 from utils.schemas.request_schemas import DataRequestSchema
 
@@ -83,8 +84,39 @@ async def get_pool(dbname=DEFAULT_DBNAME) -> asyncpg.pool.Pool:
         raise e
 
 
+async def get_prices(session_id, request_params: DataRequestSchema, pool: Pool):
+    period = timedelta(minutes=request_params.period)
+    if not request_params.to_datetime:
+        request_params.to_datetime = datetime.now()
+    async with pool.acquire() as conn:
+        query = """
+        SELECT
+            time_bucket_gapfill($1, timestamp, now() - INTERVAL '2 hours', now()) AS time,
+            locf(avg(price)) as price,
+            sum(volume) as volume
+        FROM ticks
+        WHERE session_id = $2
+        and label = $3
+        and data_type = $4
+        and timestamp BETWEEN $5 and $6
+        GROUP BY time
+        ORDER BY time ASC;
+        """
+        params = (
+            period,
+            session_id,
+            request_params.label,
+            request_params.data_type,
+            request_params.from_datetime,
+            request_params.to_datetime
+        )
+        res = list(await conn.fetch(query, *params))
+        print(res[-1])
+        return parse_obj_as(List[PricepointSchema], list(await conn.fetch(query, *params)))
+
+
 async def get_terminal_data(session_id, request_params: DataRequestSchema, request):
-    pool = request.app['TIMESCALE_POOL']
+    pool: Pool = request.app['TIMESCALE_POOL']
     if not request_params.to_datetime:
         request_params.to_datetime = datetime.now()
     period = timedelta(minutes=request_params.period)

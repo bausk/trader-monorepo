@@ -160,6 +160,6 @@ class Ticker:
         if not self.strategy_queues.get(strategy.id):
             source_q = Queue()
             processing_q = Queue()
-            await self.scheduler.spawn(monitor_strategy_executor(strategy, source_q, processing_q))
+            await self.scheduler.spawn(monitor_strategy_executor(self.timeseries_connection_pool, strategy, source_q, processing_q))
             await self.scheduler.spawn(default_postprocessor(self.timeseries_connection_pool, strategy, processing_q))
             self.strategy_queues[strategy.id] = source_q
