@@ -1,0 +1,1 @@
+docker-compose run --rm tasks bash -c ./scripts/timescale-repl.sh
