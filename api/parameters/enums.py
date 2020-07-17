@@ -18,3 +18,10 @@ class SourcesEnum(str, enum.Enum):
     cryptowatch = 'cryptowatch'
     coinbase = 'coinbase'
     bigquery = 'bigquery'
+
+
+class SignalResultsEnum(str, enum.Enum):
+    BUY_ALL = 'BUY_ALL'
+    SELL_ALL = 'SELL_ALL'
+    AMBIGUOUS = 'AMBIGUOUS'
+    NO_DATA = 'NO_DATA'

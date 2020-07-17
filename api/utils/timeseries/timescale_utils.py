@@ -84,14 +84,15 @@ async def get_pool(dbname=DEFAULT_DBNAME) -> asyncpg.pool.Pool:
         raise e
 
 
-async def get_prices(session_id, request_params: DataRequestSchema, pool: Pool):
+async def get_prices(session_id, request_params: DataRequestSchema, pool: Pool) -> List[PricepointSchema]:
     period = timedelta(minutes=request_params.period)
     if not request_params.to_datetime:
         request_params.to_datetime = datetime.now()
     async with pool.acquire() as conn:
         query = """
         SELECT
-            time_bucket_gapfill($1, timestamp, now() - INTERVAL '2 hours', now()) AS time,
+            -- time_bucket_gapfill($1, timestamp, now() - INTERVAL '2 hours', now()) AS time,
+            time_bucket_gapfill($1, timestamp) AS time,
             locf(avg(price)) as price,
             sum(volume) as volume
         FROM ticks
