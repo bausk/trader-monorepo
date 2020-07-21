@@ -94,6 +94,7 @@ export default function NewEntityModal({ open, onClose, onSubmit }) {
                         <MenuItem value={'bigquery'}>BigQuery</MenuItem>
                         <MenuItem value={'kunaio'}>KunaIO</MenuItem>
                         <MenuItem value={'cryptowatch'}>Cryptowatch</MenuItem>
+                        <MenuItem value={'coinbase'}>Coinbase</MenuItem>
                     </Select>
                 </FormControl>
             </DialogContent>
