@@ -5,7 +5,7 @@ from janus import Queue
 import pandas as pd
 
 from dbmodels.strategy_models import StrategySchema
-from utils.schemas.dataflow_schemas import ProcessTaskSchema, SignalResultSchema
+from utils.schemas.dataflow_schemas import ProcessTaskSchema, SignalResultSchema, PrimitivesSchema
 from utils.schemas.request_schemas import DataRequestSchema
 from utils.schemas.response_schemas import PricepointSchema
 from utils.timeseries.constants import DATA_TYPES
@@ -36,11 +36,12 @@ def check_is_good_for_signal(data):
     return True
 
 
-def calculate_signal(primary_data: List[PricepointSchema], secondary_data: List[PricepointSchema]) -> dict:
+def calculate_signal(primary_data: List[PricepointSchema], secondary_data: List[PricepointSchema]) -> SignalResultSchema:
     result = SignalResultSchema(
-        decision=SignalResultsEnum.NO_DATA,
+        direction=SignalResultsEnum.NO_DATA,
         value=0.0,
-        timestamp=datetime.now()
+        timestamp=datetime.now(),
+        primitives=[]
     )
     if not all([check_is_good_for_signal(primary_data), check_is_good_for_signal(secondary_data)]):
         return result
@@ -80,19 +81,22 @@ def calculate_signal(primary_data: List[PricepointSchema], secondary_data: List[
     sell_indicator = (sell_difference / pseudo_spread_secondary).dropna()
     sell_indicator.loc[sell_indicator > -0.8] = 0
     weighted_sell_indicator = sell_indicator.rolling(rolling_indicator_window).sum()
+    result.primitives = PrimitivesSchema(__root__=[
+        [{'timestamp': x[0], 'value': x[1]} for x in weighted_arbitrage_indicator.items()],
+        [{'timestamp': x[0], 'value': x[1]} for x in weighted_sell_indicator.items()],
+    ])
 
     if len(weighted_arbitrage_indicator) == 0 or len(weighted_sell_indicator) == 0:
         return result
-
     sell_signal = weighted_sell_indicator.iloc[-1].item() < signal_threshold_sell
     buy_signal = weighted_arbitrage_indicator.iloc[-1].item() > signal_threshold_buy
     if sell_signal:
-        result.decision = SignalResultsEnum.SELL_ALL
+        result.direction = SignalResultsEnum.SELL_ALL
         result.value = round(weighted_sell_indicator.iloc[-1], 2)
         return result
     if buy_signal:
-        result.decision = SignalResultsEnum.BUY_ALL
+        result.direction = SignalResultsEnum.BUY_ALL
         result.value = round(weighted_arbitrage_indicator.iloc[-1], 2)
         return result
-    result.decision = SignalResultsEnum.AMBIGUOUS
+    result.direction = SignalResultsEnum.AMBIGUOUS
     return result

@@ -4,11 +4,10 @@ import pytz
 import asyncpg
 from asyncpg.pool import Pool
 from typing import List
-from utils.mocks.ticks import generate_data
 from pydantic import parse_obj_as
-from utils.schemas.response_schemas import OHLCSchema, PricepointSchema
-from utils.schemas.dataflow_schemas import TickSchema
-from utils.schemas.request_schemas import DataRequestSchema
+from utils.schemas.response_schemas import OHLCSchema, PricepointSchema, SignalResponseSchema
+from utils.schemas.dataflow_schemas import TickSchema, SignalResultSchema
+from utils.schemas.request_schemas import DataRequestSchema, MarkersRequestSchema
 
 
 DEFAULT_DBNAME = 'livewater'
@@ -37,6 +36,28 @@ async def reset_db(dbname):
     await conn.close()
     conn = await init_connection(dbname)
     await init_ticks_table(conn)
+    await init_signals_table(conn)
+
+
+async def init_signals_table(conn):
+    SIGNALS_TABLE_SCHEMA = """signals (
+        timestamp TIMESTAMPTZ NOT NULL,
+        source_id VARCHAR(70), -- third-party signal ID
+        session_id INTEGER, -- session id associated with the tick
+        label VARCHAR(50), -- asset name or other string identifier if N/A
+        direction VARCHAR(50),
+        value DOUBLE PRECISION,
+        primitives JSONB
+    )"""
+    await conn.execute(f"CREATE TABLE IF NOT EXISTS {SIGNALS_TABLE_SCHEMA};")
+    try:
+        await conn.execute("SELECT create_hypertable('signals', 'timestamp');")
+        print('created signals hypertable')
+    except asyncpg.exceptions.UnknownPostgresError:
+        pass
+
+    await conn.execute("CREATE UNIQUE INDEX IF NOT EXISTS unique_signals \
+        ON signals(timestamp, source_id, session_id, label);")
 
 
 async def init_ticks_table(conn):
@@ -53,7 +74,7 @@ async def init_ticks_table(conn):
     await conn.execute(f"CREATE TABLE IF NOT EXISTS {TICKS_TABLE_SCHEMA};")
     try:
         await conn.execute("SELECT create_hypertable('ticks', 'timestamp');")
-        print('created hypertable')
+        print('created ticks hypertable')
     except asyncpg.exceptions.UnknownPostgresError:
         pass
 
@@ -70,6 +91,7 @@ async def init_db(dbname=DEFAULT_DBNAME):
     await conn.close()
     conn = await init_connection(dbname)
     await init_ticks_table(conn)
+    await init_signals_table(conn)
 
 
 async def get_pool(dbname=DEFAULT_DBNAME) -> asyncpg.pool.Pool:
@@ -111,9 +133,30 @@ async def get_prices(session_id, request_params: DataRequestSchema, pool: Pool) 
             request_params.from_datetime,
             request_params.to_datetime
         )
-        res = list(await conn.fetch(query, *params))
-        print(res[-1])
         return parse_obj_as(List[PricepointSchema], list(await conn.fetch(query, *params)))
+
+
+async def get_signals(session_id, request_params: MarkersRequestSchema, request):
+    pool: Pool = request.app['TIMESCALE_POOL']
+    if not request_params.to_datetime:
+        request_params.to_datetime = datetime.now()
+
+    async with pool.acquire() as conn:
+        query = """
+        SELECT
+            *
+        FROM signals
+        WHERE session_id = $1
+        and timestamp BETWEEN $2 and $3
+        ORDER BY timestamp ASC;
+        """
+        params = (
+            session_id,
+            request_params.from_datetime,
+            request_params.to_datetime
+        )
+        result = await conn.fetch(query, *params)
+        return parse_obj_as(List[SignalResponseSchema], list(result))
 
 
 async def get_terminal_data(session_id, request_params: DataRequestSchema, request):
@@ -175,6 +218,34 @@ async def mock_get_terminal_data(session_id, request_params: DataRequestSchema, 
         data.append(ohlc)
         from_dt = from_dt + period
     return data
+
+
+async def write_signals(
+    session_id,
+    pool,
+    signals: List[SignalResultSchema]
+) -> None:
+    prepared_signals = []
+    for signal in signals:
+        values = (
+            signal.timestamp,
+            session_id,
+            signal.direction,
+            signal.value,
+            signal.primitives.json()
+        )
+        prepared_signals.append(values)
+    async with pool.acquire() as conn:
+        try:
+            await conn.executemany('''
+                INSERT INTO signals(timestamp, session_id, direction, value, primitives)
+                VALUES ($1, $2, $3, $4, $5)
+                ON CONFLICT (timestamp, source_id, session_id, label) DO UPDATE
+                SET value=EXCLUDED.value,
+                    primitives=EXCLUDED.primitives;
+            ''', prepared_signals)
+        except asyncpg.exceptions.UniqueViolationError:
+            pass
 
 
 async def write_ticks(session_id, data_type, label, ticks: List[TickSchema], pool):

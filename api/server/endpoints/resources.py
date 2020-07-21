@@ -54,15 +54,12 @@ class ResourcesView(web.View, CorsViewMixin):
         response = []
         try:
             raw_data = await self.request.json()
-            print(raw_data)
             incoming = self.schema(**raw_data)
-            print(incoming)
             async with db.transaction():
                 await self.model.create(**incoming.private_dict())
                 async for s in self.model.query.order_by(self.model.id).gino.iterate():
                     response.append(self.schema.from_orm(s).dict())
         except Exception as e:
-            print(e)
             raise web.HTTPBadRequest
         return web.json_response(response)
 

@@ -3,7 +3,7 @@ import asyncio
 from datetime import datetime, timedelta
 from janus import Queue
 from dbmodels.strategy_models import StrategySchema
-from utils.schemas.dataflow_schemas import ProcessTaskSchema
+from utils.schemas.dataflow_schemas import ProcessTaskSchema, SignalResultSchema
 from utils.schemas.request_schemas import DataRequestSchema
 from utils.schemas.response_schemas import PricepointSchema
 from utils.timeseries.constants import DATA_TYPES
@@ -39,7 +39,8 @@ async def monitor_strategy_executor(pool, strategy: StrategySchema, in_queue: Qu
             if primary_data_coro in done and secondary_data_coro in done:
                 primary_data: List[PricepointSchema] = primary_data_coro.result()
                 secondary_data: List[PricepointSchema] = secondary_data_coro.result()
-                task.signals += [calculate_signal(primary_data, secondary_data)]
+                signal: SignalResultSchema = calculate_signal(primary_data, secondary_data)
+                task.signals += [signal]
             else:
                 for coro in done:
                     coro.cancel()

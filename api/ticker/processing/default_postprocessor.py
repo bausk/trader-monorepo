@@ -1,7 +1,7 @@
 import asyncio
 from dbmodels.strategy_models import StrategySchema
 from utils.schemas.dataflow_schemas import ProcessTaskSchema
-from utils.timeseries.timescale_utils import write_ticks
+from utils.timeseries.timescale_utils import write_signals, write_ticks
 from utils.timeseries.constants import DATA_TYPES
 
 
@@ -13,7 +13,13 @@ async def default_postprocessor(pool, strategy: StrategySchema, process_queue):
         task: ProcessTaskSchema = await process_queue.async_q.get()
         if task is None:
             return
-        t1 = t2 = None
+        ts = t1 = t2 = None
+        if len(task.signals) > 0:
+            ts = asyncio.create_task(write_signals(
+                session_id,
+                pool,
+                task.signals
+            ))
         if task.ticks_primary:
             t1 = asyncio.create_task(write_ticks(
                 session_id,
@@ -30,5 +36,5 @@ async def default_postprocessor(pool, strategy: StrategySchema, process_queue):
                 task.ticks_secondary,
                 pool
             ))
-        await asyncio.wait(set([x for x in [t1, t2] if x]), timeout=6)
+        await asyncio.wait(set([x for x in [ts, t1, t2] if x]), timeout=6)
         process_queue.async_q.task_done()

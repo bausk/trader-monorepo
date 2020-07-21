@@ -1,1 +1,1 @@
-ipython -i repl/timescale.py
+ipython --no-autoindent -i repl/timescale.py

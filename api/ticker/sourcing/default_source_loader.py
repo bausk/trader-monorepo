@@ -1,4 +1,5 @@
 import asyncio
+from datetime import datetime
 from dbmodels.source_models import ResourceSchema
 from utils.sources.live_sources import AbstractSource
 from utils.sources.select import LIVE_SOURCES
@@ -32,6 +33,7 @@ async def default_resource_loader(resource: ResourceSchema, queues_per_resource,
                     label_primary=primary_source.label if primary_source else None,
                     ticks_secondary=ticks_secondary,
                     label_secondary=secondary_source.label if secondary_source else None,
+                    timestamp=datetime.now()
                 )
                 queues = queues_per_resource[resource.id]
                 for q in queues:
