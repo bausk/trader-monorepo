@@ -61,6 +61,8 @@ function SessionChart({ session }) {
     const [ show, setShow ] = useState(false);
     const { sessionStore } = useStores();
     const period = sessionStore.period;
+
+    // Fetch initial data
     useEffect(() => {
         console.log('Running effect...');
         const params = {
@@ -70,11 +72,13 @@ function SessionChart({ session }) {
             data_type: 1
         }
         sessionStore.getData(session, params);
+        sessionStore.getMarkers(session);
     }, []);
+
     const isButtonEnabled = sessionStore.state === fetchStates.SUCCESS;
     const isAutorefreshEnabled = sessionStore.state !== fetchStates.IDLE;
     const isLoading = sessionStore.state === fetchStates.FETCHING;
-    console.log(sessionStore.state);
+
     const onRangeChanged = (a) => {
         if (a?.from && a?.to) {
             const params = {
@@ -121,6 +125,7 @@ function SessionChart({ session }) {
                     newAutorefreshData={sessionStore.newAutorefreshOhlc}
                     onRangeChanged={onRangeChanged}
                     period={period}
+                    markers={sessionStore.markers}
                 />
             }
         </Container>

@@ -7,6 +7,7 @@ const routes = {
     RESOURCES: '/resources',
     RESOURCE_DETAIL: (id) => `/resources/${id}`,
     SESSIONS_DATA: (id) => `/sessions/${id}`,
+    SESSION_MARKERS: (id) => `/sessions/${id}/markers`,
     STRATEGIES: '/strategies',
 }
 

@@ -1,14 +1,18 @@
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { useDebouncedCallback } from 'use-debounce';
 import { createChart } from 'lightweight-charts';
 import { DateTime } from "luxon";
 
 
-const LightweightChart = ({ dataType, newData, newAutorefreshData, onRangeChanged, period }) => {
+const LightweightChart = ({ dataType, markers, newData, newAutorefreshData, onRangeChanged, period }) => {
     const canvasRoot = useRef(null);
     const primarySeries = useRef(null);
+    const upperPrimitive = useRef(null);
+    const lowerPrimitive = useRef(null);
     const [ isFirstInit, setIsFirstInit ] = useState(true);
     const chr = useRef(null);
+
+    // Reacts to visible range change events
     const [ onChanged ] = useDebouncedCallback(() => {
         const logicalRange = chr.current.timeScale().getVisibleLogicalRange();
         const barsInfo = primarySeries.current.barsInLogicalRange(logicalRange);
@@ -23,6 +27,38 @@ const LightweightChart = ({ dataType, newData, newAutorefreshData, onRangeChange
             });
         }
     }, 1000);
+
+    const [ selectedMarker, setSelectedMarker ] = useState(null);
+    const [ selectedPrice, setSelectedPrice ] = useState(null);
+    const onMarkerClick = useCallback((param) => {
+        console.log(param.hoveredMarkerId);
+        console.log(param);
+        if (param.hoveredMarkerId) {
+            debugger;
+            const price = param.seriesPrices.values().next().value.close;
+            setSelectedMarker(param.hoveredMarkerId);
+            setSelectedPrice(price);
+        }
+    }, []);
+
+    const timeseriesToChart = useCallback((timeseries) => {
+        const amplifier = selectedPrice * 0.1
+        return { time: Date.parse(timeseries.timestamp)/1000, value: (timeseries.value * amplifier + selectedPrice) };
+    }, [selectedPrice]);
+    
+    // Draw primitives each time selected marker changes
+    useEffect(() => {
+        if (selectedMarker) {
+            const selectedMarkerData = markers[selectedMarker];
+            const upperData = selectedMarkerData.primitives[0]?.map(timeseriesToChart);
+            const lowerData = selectedMarkerData.primitives[1]?.map(timeseriesToChart);
+            upperPrimitive.current.setData(upperData);
+            lowerPrimitive.current.setData(lowerData);
+        }
+    }, [selectedMarker, markers, timeseriesToChart]);
+
+
+    // Runs once on chart initialization, does not put data on chart
     useEffect(() => {
         const chart = createChart(
             canvasRoot.current,
@@ -44,6 +80,16 @@ const LightweightChart = ({ dataType, newData, newAutorefreshData, onRangeChange
             series = chart.addLineSeries();
         }
         primarySeries.current = series;
+        upperPrimitive.current = chart.addLineSeries({
+            lineColor: 'rgba(200, 100, 100, 1)',
+            lineStyle: 0,
+            lineWidth: 1,
+        });
+        lowerPrimitive.current = chart.addLineSeries({
+            lineColor: 'rgba(100, 200, 200, 1)',
+            lineStyle: 0,
+            lineWidth: 1,
+        });
         // TODO: add are, document, or remove
         // const areaSeries = inputEl.current.addAreaSeries({
         //     topColor: 'rgba(21, 146, 230, 0.4)',
@@ -75,7 +121,7 @@ const LightweightChart = ({ dataType, newData, newAutorefreshData, onRangeChange
         //     { time: Date.parse("2019-04-13 02:13:00")/1000, open: 109.87, high: 114.69, low: 85.66, close: 111.26 },
         // ]);
         chr.current.timeScale().subscribeVisibleTimeRangeChange(onChanged);
-
+        chr.current.subscribeClick(onMarkerClick);
         return () => {
             chr.current.timeScale().unsubscribeVisibleTimeRangeChange(onChanged);
         }
@@ -96,6 +142,9 @@ const LightweightChart = ({ dataType, newData, newAutorefreshData, onRangeChange
         };
     };
 
+    // Reacts to arrival of new data on chart scroll.
+    // New data is cumulative, all further updates
+    // add up and nothing is deleted.
     useEffect(() => {
         if (newData?.length) {
             const parsed = (dataType === 'candlestick') ?
@@ -124,6 +173,9 @@ const LightweightChart = ({ dataType, newData, newAutorefreshData, onRangeChange
         }
     }, [newData, dataType]);
 
+    // Reacts to new recent-most data which are polled at an interval.
+    // Cumulative update, nothing is deleted.
+    // TODO: Fix this, it's currently broken for unknown reason.
     useEffect(() => {
         if (newAutorefreshData?.length) {
             const parsed = (dataType === 'candlestick') ?
@@ -133,6 +185,39 @@ const LightweightChart = ({ dataType, newData, newAutorefreshData, onRangeChange
         }
     }, [newAutorefreshData, dataType]);
 
+    // Reacts to changed markers. Not cumulative.
+    useEffect(() => {
+        const series = primarySeries.current;
+        const positions = {
+            BUY_ALL: 'belowBar',
+            SELL_ALL: 'belowBar',
+            AMBIGUOUS: 'inBar',
+            NO_DATA: 'belowBar'
+        };
+        const shapes = {
+            BUY_ALL: 'arrowUp',
+            SELL_ALL: 'arrowDown',
+            AMBIGUOUS: 'square',
+            NO_DATA: 'circle'
+        }
+        const colors = {
+            BUY_ALL: 'green',
+            SELL_ALL: 'red',
+            AMBIGUOUS: '#546e7a78',
+            NO_DATA: 'grey'
+        }
+        const preparedMarkers = Object.entries(markers).map(([ time, marker ]) => {
+            const direction = marker.direction;
+            return { 
+                time: parseInt(time),
+                id: time,
+                position: positions[direction],
+                color: colors[direction],
+                shape: shapes[direction],
+            };
+        });
+        preparedMarkers && series?.setMarkers(preparedMarkers);
+    }, [markers, primarySeries, chr]);
 
 
     return (

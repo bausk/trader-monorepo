@@ -18,8 +18,28 @@ class SessionStore {
     }
     @observable newOhlc = [];
     @observable newAutorefreshOhlc = [];
+    @observable markers = [];
     @observable state = fetchStates.IDLE;
     @observable period = 5;
+
+    getMarkers = flow(function* (element, params) {
+        const id = element?.id || element;
+        try {
+            const token = this.rootStore.authStore.accessToken;
+            const result = yield fetchBackend.get(b.SESSION_MARKERS(id), token, params);
+            this.markers = result.reduce((obj, marker) => {
+                const key = Date.parse(marker.timestamp) / 1000;
+                marker.primitives = JSON.parse(marker.primitives);
+                obj[key] = marker;
+                return obj;
+            }, {});
+        } catch (error) {
+            this.state = fetchStates.ERROR;
+            if (error.message === '401') {
+                yield this.rootStore.authStore.relogin();
+            }
+        }
+    }).bind(this);
 
     getData = flow(function* (element, params) {
         this.state = fetchStates.FETCHING;
