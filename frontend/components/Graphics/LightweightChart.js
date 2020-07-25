@@ -7,9 +7,12 @@ import { DateTime } from "luxon";
 const LightweightChart = ({ dataType, markers, newData, newAutorefreshData, onRangeChanged, period }) => {
     const canvasRoot = useRef(null);
     const primarySeries = useRef(null);
+    const secondarySeries = useRef(null);
     const upperPrimitive = useRef(null);
     const lowerPrimitive = useRef(null);
+    const mainIndicator = useRef(null);
     const [ isFirstInit, setIsFirstInit ] = useState(true);
+    const [ isFirstSecInit, setIsFirstSecInit ] = useState(true);
     const chr = useRef(null);
 
     // Reacts to visible range change events
@@ -31,10 +34,7 @@ const LightweightChart = ({ dataType, markers, newData, newAutorefreshData, onRa
     const [ selectedMarker, setSelectedMarker ] = useState(null);
     const [ selectedPrice, setSelectedPrice ] = useState(null);
     const onMarkerClick = useCallback((param) => {
-        console.log(param.hoveredMarkerId);
-        console.log(param);
         if (param.hoveredMarkerId) {
-            debugger;
             const price = param.seriesPrices.values().next().value.close;
             setSelectedMarker(param.hoveredMarkerId);
             setSelectedPrice(price);
@@ -42,7 +42,7 @@ const LightweightChart = ({ dataType, markers, newData, newAutorefreshData, onRa
     }, []);
 
     const timeseriesToChart = useCallback((timeseries) => {
-        const amplifier = selectedPrice * 0.1
+        const amplifier = 1
         return { time: Date.parse(timeseries.timestamp)/1000, value: (timeseries.value * amplifier + selectedPrice) };
     }, [selectedPrice]);
     
@@ -74,21 +74,26 @@ const LightweightChart = ({ dataType, markers, newData, newAutorefreshData, onRa
             },
         });
         let series;
+        let secondary;
         if (dataType === 'candlestick') {
             series = chart.addCandlestickSeries();
+            secondary = chart.addLineSeries();
         } else {
             series = chart.addLineSeries();
         }
         primarySeries.current = series;
+        secondarySeries.current = secondary;
         upperPrimitive.current = chart.addLineSeries({
             lineColor: 'rgba(200, 100, 100, 1)',
             lineStyle: 0,
             lineWidth: 1,
+            overlay: true,
         });
         lowerPrimitive.current = chart.addLineSeries({
             lineColor: 'rgba(100, 200, 200, 1)',
             lineStyle: 0,
             lineWidth: 1,
+            overlay: true,
         });
         // TODO: add are, document, or remove
         // const areaSeries = inputEl.current.addAreaSeries({

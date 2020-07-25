@@ -27,9 +27,10 @@ class SessionStore {
         try {
             const token = this.rootStore.authStore.accessToken;
             const result = yield fetchBackend.get(b.SESSION_MARKERS(id), token, params);
+            debugger;
             this.markers = result.reduce((obj, marker) => {
-                const key = Date.parse(marker.timestamp) / 1000;
-                marker.primitives = JSON.parse(marker.primitives);
+                const keying_value = marker.bucket_timestamp || marker.timestamp;
+                const key = Date.parse(keying_value) / 1000;
                 obj[key] = marker;
                 return obj;
             }, {});

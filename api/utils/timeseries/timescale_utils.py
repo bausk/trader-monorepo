@@ -1,12 +1,15 @@
 import os
 from datetime import datetime, timedelta
+from itertools import count
 import pytz
 import asyncpg
 from asyncpg.pool import Pool
 from typing import List
 from pydantic import parse_obj_as
-from utils.schemas.response_schemas import OHLCSchema, PricepointSchema, SignalResponseSchema
-from utils.schemas.dataflow_schemas import TickSchema, SignalResultSchema
+from parameters.enums import SignalResultsEnum
+from utils.timeseries.pandas_utils import resample_primitives
+from utils.schemas.response_schemas import OHLCSchema, PricepointSchema
+from utils.schemas.dataflow_schemas import TickSchema, SignalResultSchema, SignalsListSchema, PrimitivesSchema
 from utils.schemas.request_schemas import DataRequestSchema, MarkersRequestSchema
 
 
@@ -136,27 +139,90 @@ async def get_prices(session_id, request_params: DataRequestSchema, pool: Pool) 
         return parse_obj_as(List[PricepointSchema], list(await conn.fetch(query, *params)))
 
 
-async def get_signals(session_id, request_params: MarkersRequestSchema, request):
+signal_weights = {
+    SignalResultsEnum.NO_DATA: 0,
+    SignalResultsEnum.AMBIGUOUS: 1,
+    SignalResultsEnum.SELL_ALL: 2,
+    SignalResultsEnum.BUY_ALL: 2
+}
+
+
+def reduce_signals(signals: list, period: int) -> list:
+    result = {}
+    for signal in signals:
+        key_value = signal['bucket_timestamp']
+        new_wins = False
+        if (key_value not in result):
+            new_wins = True
+        else:
+            old_signal = result[key_value]
+            if signal_weights[signal['direction']] > signal_weights[old_signal['direction']]:
+                new_wins = True
+            elif signal_weights[signal['direction']] == signal_weights[old_signal['direction']] and signal['value'] >= old_signal['value']:
+                new_wins = True
+        if new_wins:
+            result[key_value] = signal
+    return list(filter(bool, [resample_primitives(result[x], period) for x in result]))
+
+
+async def get_reduced_signals(session_id, request_params: MarkersRequestSchema, request) -> SignalsListSchema:
     pool: Pool = request.app['TIMESCALE_POOL']
+    if not request_params.period:
+        raise Exception('Period not provided for reduced signals calculation!')
     if not request_params.to_datetime:
         request_params.to_datetime = datetime.now()
 
     async with pool.acquire() as conn:
         query = """
         SELECT
+            time_bucket($1, timestamp) AS bucket_timestamp,
             *
         FROM signals
-        WHERE session_id = $1
-        and timestamp BETWEEN $2 and $3
+        WHERE session_id = $2
+        and timestamp BETWEEN $3 and $4
         ORDER BY timestamp ASC;
         """
-        params = (
+        params = [
+            timedelta(minutes=request_params.period),
             session_id,
             request_params.from_datetime,
             request_params.to_datetime
-        )
+        ]
         result = await conn.fetch(query, *params)
-        return parse_obj_as(List[SignalResponseSchema], list(result))
+    reduced_result = reduce_signals(result, request_params.period)
+    return SignalsListSchema(__root__=reduced_result)
+
+
+async def get_signals(session_id, request_params: MarkersRequestSchema, request) -> SignalsListSchema:
+    pool: Pool = request.app['TIMESCALE_POOL']
+    if not request_params.to_datetime:
+        request_params.to_datetime = datetime.now()
+    fields = "*"
+    n = count(1)
+    params = []
+    if request_params.period:
+        params.append(timedelta(minutes=request_params.period))
+        fields = (
+            f"time_bucket(${next(n)}, timestamp) AS bucket_timestamp,"
+            f"*"
+        )
+
+    async with pool.acquire() as conn:
+        query = f"""
+        SELECT
+            {fields}
+        FROM signals
+        WHERE session_id = ${next(n)}
+        and timestamp BETWEEN ${next(n)} and ${next(n)}
+        ORDER BY timestamp ASC;
+        """
+        params.extend([
+            session_id,
+            request_params.from_datetime,
+            request_params.to_datetime
+        ])
+        result = await conn.fetch(query, *params)
+        return SignalsListSchema(__root__=list(result))
 
 
 async def get_terminal_data(session_id, request_params: DataRequestSchema, request):
@@ -232,7 +298,7 @@ async def write_signals(
             session_id,
             signal.direction,
             signal.value,
-            signal.primitives.json()
+            parse_obj_as(PrimitivesSchema, signal.primitives).json() if signal.primitives else None
         )
         prepared_signals.append(values)
     async with pool.acquire() as conn:

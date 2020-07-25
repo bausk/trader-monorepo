@@ -15,3 +15,4 @@ class DataRequestSchema(BaseModel):
 class MarkersRequestSchema(BaseModel):
     from_datetime: datetime
     to_datetime: Optional[datetime]
+    period: Optional[int]

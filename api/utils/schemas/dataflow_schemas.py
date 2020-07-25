@@ -1,5 +1,6 @@
+import json
 from datetime import datetime
-from pydantic import BaseModel
+from pydantic import BaseModel, validator, parse_obj_as
 from typing import Optional, List, Any, Dict, Union
 
 from parameters.enums import SignalResultsEnum
@@ -29,10 +30,27 @@ class PrimitivesSchema(BaseModel):
 
 
 class SignalResultSchema(BaseDataflowSchema):
-    direction: SignalResultsEnum
+    session_id: Optional[int]
     timestamp: datetime
+    bucket_timestamp: Optional[datetime]
+    direction: SignalResultsEnum
     value: Optional[float]
-    primitives: Optional[PrimitivesSchema]
+    primitives: Optional[List[List[TimeseriesSchema]]]
+
+    @validator('primitives', pre=True)
+    def deserialize_config(cls, v, values, **kwargs):
+        if v:
+            if isinstance(v, str):
+                return parse_obj_as(List[List[TimeseriesSchema]], json.loads(v))
+            elif isinstance(v, list):
+                return parse_obj_as(List[List[TimeseriesSchema]], v)
+            else:
+                return v
+        return None
+
+
+class SignalsListSchema(BaseModel):
+    __root__: List[SignalResultSchema]
 
 
 class ProcessTaskSchema(BaseDataflowSchema):

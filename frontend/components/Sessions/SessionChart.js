@@ -66,13 +66,16 @@ function SessionChart({ session }) {
     useEffect(() => {
         console.log('Running effect...');
         const params = {
-            period: period,
+            period,
             from_datetime: DateTime.utc().minus({hours: 3}).toISO(),
             label: 'btcusd',
             data_type: 1
         }
+        const markerParams = {
+            period,
+        }
         sessionStore.getData(session, params);
-        sessionStore.getMarkers(session);
+        sessionStore.getMarkers(session, markerParams);
     }, []);
 
     const isButtonEnabled = sessionStore.state === fetchStates.SUCCESS;

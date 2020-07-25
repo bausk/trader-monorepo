@@ -36,7 +36,11 @@ def check_is_good_for_signal(data):
     return True
 
 
-def calculate_signal(primary_data: List[PricepointSchema], secondary_data: List[PricepointSchema]) -> SignalResultSchema:
+def calculate_signal(
+    primary_data: List[PricepointSchema],
+    secondary_data: List[PricepointSchema]
+) -> SignalResultSchema:
+
     result = SignalResultSchema(
         direction=SignalResultsEnum.NO_DATA,
         value=0.0,
@@ -81,10 +85,10 @@ def calculate_signal(primary_data: List[PricepointSchema], secondary_data: List[
     sell_indicator = (sell_difference / pseudo_spread_secondary).dropna()
     sell_indicator.loc[sell_indicator > -0.8] = 0
     weighted_sell_indicator = sell_indicator.rolling(rolling_indicator_window).sum()
-    result.primitives = PrimitivesSchema(__root__=[
+    result.primitives = [
         [{'timestamp': x[0], 'value': x[1]} for x in weighted_arbitrage_indicator.items()],
         [{'timestamp': x[0], 'value': x[1]} for x in weighted_sell_indicator.items()],
-    ])
+    ]
 
     if len(weighted_arbitrage_indicator) == 0 or len(weighted_sell_indicator) == 0:
         return result
