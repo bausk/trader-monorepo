@@ -19,7 +19,7 @@
     "dotenv": "^8.2.0",
     "isomorphic-unfetch": "^3.0.0",
     "lightweight-charts": "3",
-    "lodash": "^4.17.15",
+    "lodash": "^4.17.19",
     "luxon": "^1.24.1",
     "mobx": "^5.15.4",
     "mobx-react": "^6.1.8",
