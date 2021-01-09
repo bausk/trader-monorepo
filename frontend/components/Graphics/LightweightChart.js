@@ -42,10 +42,30 @@ const LightweightChart = ({ dataType, markers, newData, newAutorefreshData, onRa
     }, []);
 
     const timeseriesToChart = useCallback((timeseries) => {
-        const amplifier = 1
+        const amplifier = selectedPrice * 0.1;
         return { time: Date.parse(timeseries.timestamp)/1000, value: (timeseries.value * amplifier + selectedPrice) };
     }, [selectedPrice]);
-    
+
+    const primitivesToMainIndicator = useCallback((primitives) => {
+        const buy = primitives[0];
+        const sell = primitives[1];
+        const hash = buy.reduce((acc, ts) => {
+            const time = Date.parse(ts.timestamp)/1000;
+            const color = ts.value > 0 ? 'rgba(105, 189, 231, 0.7)' : 'rgba(0, 0, 0, 0.2)';
+            acc[time] = { time, value: ts.value, color };
+            return acc;
+        }, {});
+        sell.forEach((ts) => {
+            const time = Date.parse(ts.timestamp)/1000;
+            const old = hash[time];
+            const color = ts.value < 0 ? 'rgba(245, 161, 67, 0.86)' : 'rgba(0, 0, 0, 0.2)';
+            if (!old || old.value <= Math.abs(ts.value)) {
+                hash[time] = { time, value: -ts.value, color };
+            }
+        });
+        return Object.values(hash);
+    }, []);
+
     // Draw primitives each time selected marker changes
     useEffect(() => {
         if (selectedMarker) {
@@ -58,6 +78,15 @@ const LightweightChart = ({ dataType, markers, newData, newAutorefreshData, onRa
     }, [selectedMarker, markers, timeseriesToChart]);
 
 
+    // Calculate and draw volumes each time selected marker changes
+    useEffect(() => {
+        if (selectedMarker) {
+            const selectedMarkerData = markers[selectedMarker];
+            const mainIndicatorData = primitivesToMainIndicator(selectedMarkerData.primitives);
+            mainIndicator.current.setData(mainIndicatorData);
+        }
+    }, [selectedMarker, markers, primitivesToMainIndicator]);
+    
     // Runs once on chart initialization, does not put data on chart
     useEffect(() => {
         const chart = createChart(
@@ -76,55 +105,48 @@ const LightweightChart = ({ dataType, markers, newData, newAutorefreshData, onRa
         let series;
         let secondary;
         if (dataType === 'candlestick') {
-            series = chart.addCandlestickSeries();
-            secondary = chart.addLineSeries();
+            series = chart.addCandlestickSeries({
+                priceScaleId: 'right',
+                scaleMargins: {
+                    top: 0.0,
+                    bottom: 0.3,
+                },
+            });
+            secondary = chart.addLineSeries({
+                priceScaleId: 'right'
+            });
         } else {
-            series = chart.addLineSeries();
+            series = chart.addLineSeries({
+                priceScaleId: 'right'
+            });
         }
         primarySeries.current = series;
         secondarySeries.current = secondary;
         upperPrimitive.current = chart.addLineSeries({
-            lineColor: 'rgba(200, 100, 100, 1)',
+            lineColor: 'rgba(10, 180, 0, 0.6)',
             lineStyle: 0,
-            lineWidth: 1,
-            overlay: true,
+            lineWidth: 2,
+            priceScaleId: 'left',
         });
         lowerPrimitive.current = chart.addLineSeries({
-            lineColor: 'rgba(100, 200, 200, 1)',
+            lineColor: 'rgba(160, 0, 0, 0.6)',
+            сolor: 'rgba(160, 0, 0, 0.6)',
             lineStyle: 0,
             lineWidth: 1,
-            overlay: true,
+            priceScaleId: 'left',
         });
-        // TODO: add are, document, or remove
-        // const areaSeries = inputEl.current.addAreaSeries({
-        //     topColor: 'rgba(21, 146, 230, 0.4)',
-        //     bottomColor: 'rgba(21, 146, 230, 0)',
-        //     lineColor: 'rgba(200, 100, 100, 1)',
-        //     lineStyle: 0,
-        //     lineWidth: 6,
-        //     crosshairMarkerVisible: false,
-        //     crosshairMarkerRadius: 0,
-        // });
-        // areaSeries.setData([
-        //     { time: Date.parse('2019-04-13 02:01:00')/1000, value: 120.01 },
-        //     { time: Date.parse('2019-04-13 02:03:00')/1000, value: 120.01 },
-        // ]);
-        // const candlestickSeries = inputEl.current.addCandlestickSeries();
-        // candlestickSeries.setData([
-        //     { time: Date.parse("2019-04-13 02:01:00")/1000, open: 141.77, high: 170.39, low: 120.25, close: 145.72 },
-        //     { time: Date.parse("2019-04-13 02:02:00")/1000, open: 145.72, high: 147.99, low: 100.11, close: 108.19 },
-        //     { time: Date.parse("2019-04-13 02:03:00")/1000, open: 108.19, high: 118.43, low: 74.22, close: 75.16 },
-        //     { time: Date.parse("2019-04-13 02:04:00")/1000, open: 75.16, high: 82.84, low: 36.16, close: 45.72 },
-        //     { time: Date.parse("2019-04-13 02:05:00")/1000, open: 45.12, high: 53.90, low: 45.12, close: 48.09 },
-        //     { time: Date.parse("2019-04-13 02:06:00")/1000, open: 60.71, high: 60.71, low: 53.39, close: 59.29 },
-        //     { time: Date.parse("2019-04-13 02:07:00")/1000, open: 68.26, high: 68.26, low: 59.04, close: 60.50 },
-        //     { time: Date.parse("2019-04-13 02:08:00")/1000, open: 67.71, high: 105.85, low: 66.67, close: 91.04 },
-        //     { time: Date.parse("2019-04-13 02:09:00")/1000, open: 91.04, high: 121.40, low: 82.70, close: 111.40 },
-        //     { time: Date.parse("2019-04-13 02:10:00")/1000, open: 111.51, high: 142.83, low: 103.34, close: 131.25 },
-        //     { time: Date.parse("2019-04-13 02:11:00")/1000, open: 131.33, high: 151.17, low: 77.68, close: 96.43 },
-        //     { time: Date.parse("2019-04-13 02:12:00")/1000, open: 106.33, high: 110.20, low: 90.39, close: 98.10 },
-        //     { time: Date.parse("2019-04-13 02:13:00")/1000, open: 109.87, high: 114.69, low: 85.66, close: 111.26 },
-        // ]);
+        mainIndicator.current = chart.addHistogramSeries({
+            color: '#26a69a',
+            lineWidth: 1,
+            priceFormat: {
+                type: 'volume',
+            },
+            overlay: true,
+            scaleMargins: {
+                top: 0.7,
+                bottom: 0.0,
+            },
+        });
         chr.current.timeScale().subscribeVisibleTimeRangeChange(onChanged);
         chr.current.subscribeClick(onMarkerClick);
         return () => {
@@ -196,21 +218,27 @@ const LightweightChart = ({ dataType, markers, newData, newAutorefreshData, onRa
         const positions = {
             BUY_ALL: 'belowBar',
             SELL_ALL: 'belowBar',
-            AMBIGUOUS: 'inBar',
+            AMBIGUOUS: 'belowBar',
             NO_DATA: 'belowBar'
         };
         const shapes = {
             BUY_ALL: 'arrowUp',
             SELL_ALL: 'arrowDown',
-            AMBIGUOUS: 'square',
+            AMBIGUOUS: 'circle',
             NO_DATA: 'circle'
-        }
+        };
         const colors = {
             BUY_ALL: 'green',
             SELL_ALL: 'red',
-            AMBIGUOUS: '#546e7a78',
+            AMBIGUOUS: '#546e7aaa',
             NO_DATA: 'grey'
-        }
+        };
+        const sizes = {
+            BUY_ALL: 1,
+            SELL_ALL: 1,
+            AMBIGUOUS: 0.2,
+            NO_DATA: 1
+        };
         const preparedMarkers = Object.entries(markers).map(([ time, marker ]) => {
             const direction = marker.direction;
             return { 
@@ -219,6 +247,7 @@ const LightweightChart = ({ dataType, markers, newData, newAutorefreshData, onRa
                 position: positions[direction],
                 color: colors[direction],
                 shape: shapes[direction],
+                size: sizes[direction],
             };
         });
         preparedMarkers && series?.setMarkers(preparedMarkers);
