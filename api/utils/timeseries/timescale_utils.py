@@ -172,6 +172,7 @@ async def get_reduced_signals(session_id, request_params: MarkersRequestSchema, 
     if not request_params.to_datetime:
         request_params.to_datetime = datetime.now()
 
+    reduced_result = []
     async with pool.acquire() as conn:
         query = """
         SELECT
@@ -188,8 +189,21 @@ async def get_reduced_signals(session_id, request_params: MarkersRequestSchema, 
             request_params.from_datetime,
             request_params.to_datetime
         ]
-        result = await conn.fetch(query, *params)
-    reduced_result = reduce_signals(result, request_params.period)
+        try:
+            async with conn.transaction():
+                current_timestamp = None
+                bucket = []
+                async for record in conn.cursor(query, *params):
+                    ts = record['bucket_timestamp']
+                    if ts == current_timestamp:
+                        bucket.append(record)
+                    else:
+                        reduced_result.extend(reduce_signals(bucket, request_params.period))
+                        bucket = []
+                        current_timestamp = ts
+        except Exception as e:
+            print(e)
+            raise e
     return SignalsListSchema(__root__=reduced_result)
 
 

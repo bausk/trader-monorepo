@@ -1,10 +1,12 @@
 import sys, traceback
 import json
+import asyncio
 from datetime import datetime, timedelta
 from aiohttp import web
-from aiohttp.web import Response
+from aiohttp.web import Response, StreamResponse
 from aiohttp_cors import CorsViewMixin, ResourceOptions
 from dbmodels.db import BaseModel
+from itertools import count
 from server.security import check_permission, Permissions
 from typing import Type, List
 from utils.schemas.request_schemas import DataRequestSchema, MarkersRequestSchema
@@ -49,7 +51,7 @@ class SignalsDataView(web.View, CorsViewMixin):
         await check_permission(self.request, Permissions.READ)
         try:
             session_id = int(self.request.match_info['id'])
-            from_datetime = datetime.now() - timedelta(hours=2)
+            from_datetime = datetime.now() - timedelta(hours=8)
             request_data: MarkersRequestSchema = self.schema(from_datetime=from_datetime, **self.request.query)
             if not request_data.period:
                 result = await get_signals(session_id, request_data, self.request)
