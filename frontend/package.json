@@ -52,6 +52,9 @@
     "rules": {
       "no-console": 0,
       "no-unused-vars": 1
+    },
+    "engines": {
+      "node": "15.x"
     }
   }
 }
