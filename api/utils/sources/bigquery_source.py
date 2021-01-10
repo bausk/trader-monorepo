@@ -11,7 +11,8 @@ credfile = decrypt_credentials(which=['./.secrets/keyring.json'])
 creds_json = json.loads(credfile[0])
 creds = service_account.Credentials.from_service_account_info(creds_json)
 bigquery_client = bigquery.Client(
-    credentials=creds, project=creds_json['project_id']
+    credentials=creds,
+    project=creds_json['project_id'],
 )
 
 

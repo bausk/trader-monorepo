@@ -10,9 +10,11 @@ import hashlib
 ENCRYPTED_PATH = './.encrypted'
 PLAINTEXT_SECRETS = {
     'production': [
+        './.secrets/keyring.json',
         './production.env',
     ],
     'staging': [
+        './.secrets/keyring.json',
         './staging.env',
     ],
     'development': [
@@ -22,9 +24,9 @@ PLAINTEXT_SECRETS = {
 }
 
 
-def get_name_digest(filename):
+def get_name_digest(env, filename):
     m = hashlib.shake_256()
-    m.update(filename.encode())
+    m.update(f"{env}||{filename}".encode())
     return m.hexdigest(32), m.hexdigest(4)
 
 
@@ -65,7 +67,7 @@ def decrypt_credentials(env=None, which=None):
         if which:
             if not any([fnmatch.fnmatch(file_to_decrypt, x) for x in which]):
                 continue
-        filekey, digest = get_name_digest(file_to_decrypt)
+        filekey, digest = get_name_digest(env, file_to_decrypt)
         path = Path(ENCRYPTED_PATH, filekey)
         try:
             fp = open(path, 'rb')
@@ -113,7 +115,7 @@ def replace_credentials(secret_key: str, env: str):
     path = Path(ENCRYPTED_PATH)
     files_to_encrypt = PLAINTEXT_SECRETS.get(env)
     for x, file_to_encrypt in enumerate(files_to_encrypt):
-        filekey, digest = get_name_digest(file_to_encrypt)
+        filekey, digest = get_name_digest(env, file_to_encrypt)
         path_from = Path(file_to_encrypt)
         path_to = Path(ENCRYPTED_PATH, filekey)
         fp = open(path_from, 'rb')
