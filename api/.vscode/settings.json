@@ -1,11 +1,11 @@
 {
-    "python.pythonPath": ".venv\\Scripts\\python.exe",
+    "python.pythonPath": "/home/bausk/.pyenv/versions/trader-api/bin/python",
     "python.linting.flake8Enabled": true,
-    "python.linting.mypyEnabled": false,
+    "python.linting.mypyEnabled": true,
     "python.linting.prospectorEnabled": false,
     "python.linting.enabled": true,
-    "python.linting.pylamaEnabled": false,
-    "python.linting.pylintEnabled": false,
+    "python.linting.pylamaEnabled": true,
+    "python.linting.pylintEnabled": true,
     "python.linting.flake8Args": [
         "--max-line-length=120",
         "--ignore=E402"

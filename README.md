@@ -21,3 +21,36 @@ Not yet, but probably yes somewhere in 2020Q3. This project isn't even in alpha,
 before it can have any public attention.
 
 Currently it's basically a very flaky hypothesis proving testbed with no compatibility in any direction.
+
+## Installation
+
+Clone the monorepo.
+
+
+
+```
+sudo apt install libpq-dev python3-dev
+```
+
+## Local Development
+
+This assumes you want to have a local virtualenv matching the dockerized environment for ease of VS Code usage, etc.
+
+Get your Python and Node.js development environments ready up to the point of a pyenv virtualenv available and active and yarn installed.
+
+For `api`:
+
+```
+pyenv virtualenv 3.9.1 trader-api
+sudo apt install libpq-dev python3-dev
+sudo apt-get install python3-psycopg2
+poetry install
+```
+
+For `frontend`:
+
+Install nvm, node, and yarn, then in `/frontend`:
+
+```
+yarn install
+```
