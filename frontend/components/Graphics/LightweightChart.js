@@ -68,7 +68,7 @@ const LightweightChart = ({ dataType, markers, newData, newAutorefreshData, onRa
 
     // Draw primitives each time selected marker changes
     useEffect(() => {
-        if (selectedMarker) {
+        if (markers && selectedMarker) {
             const selectedMarkerData = markers[selectedMarker];
             const upperData = selectedMarkerData.primitives[0]?.map(timeseriesToChart);
             const lowerData = selectedMarkerData.primitives[1]?.map(timeseriesToChart);
@@ -80,7 +80,7 @@ const LightweightChart = ({ dataType, markers, newData, newAutorefreshData, onRa
 
     // Calculate and draw volumes each time selected marker changes
     useEffect(() => {
-        if (selectedMarker) {
+        if (markers && selectedMarker) {
             const selectedMarkerData = markers[selectedMarker];
             const mainIndicatorData = primitivesToMainIndicator(selectedMarkerData.primitives);
             mainIndicator.current.setData(mainIndicatorData);
@@ -239,7 +239,7 @@ const LightweightChart = ({ dataType, markers, newData, newAutorefreshData, onRa
             AMBIGUOUS: 0.2,
             NO_DATA: 1
         };
-        const preparedMarkers = Object.entries(markers).map(([ time, marker ]) => {
+        const preparedMarkers = markers && Object.entries(markers).map(([ time, marker ]) => {
             const direction = marker.direction;
             return { 
                 time: parseInt(time),
