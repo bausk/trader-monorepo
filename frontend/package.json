@@ -1,5 +1,5 @@
 {
-  "name": "nextjs-auth0-example",
+  "name": "trader-frontend",
   "scripts": {
     "dev": "node --inspect=0.0.0.0:9229 server.js",
     "build": "next build",
@@ -55,6 +55,6 @@
     }
   },
   "engines": {
-    "node": "15.x"
+    "node": "10.x"
   }
 }

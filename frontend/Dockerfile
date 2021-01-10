@@ -3,7 +3,7 @@ FROM node:10.16.0
 WORKDIR /app
 
 COPY package*.json ./
-# RUN yarn build
+RUN yarn install
 
 COPY . /app
 EXPOSE 3000
