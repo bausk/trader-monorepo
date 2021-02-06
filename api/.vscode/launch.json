@@ -36,6 +36,7 @@
             "type": "python",
             "request": "attach",
             "port": 5680,
+            "subProcess": true,
             "host": "localhost",
             "pathMappings": [
                 {
