@@ -8,7 +8,7 @@ from typing import Type
 from server.endpoints.routedef import routes
 
 
-@routes.view('/resources')
+@routes.view("/resources")
 class ResourcesView(web.View, CorsViewMixin):
     cors_config = {
         "*": ResourceOptions(
@@ -42,9 +42,12 @@ class ResourcesView(web.View, CorsViewMixin):
                 )
             ).load(
                 secondary_backtest_source_model=secondary_backtest_source.on(
-                    secondary_backtest_source.id == self.model.secondary_backtest_source_id
+                    secondary_backtest_source.id
+                    == self.model.secondary_backtest_source_id
                 )
-            ).order_by(self.model.id).gino.iterate():
+            ).order_by(
+                self.model.id
+            ).gino.iterate():
                 validated = self.schema.from_orm(s)
                 response.append(validated.dict())
         return web.json_response(response)

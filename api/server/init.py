@@ -19,4 +19,3 @@ def setup_scheduler(app, scheduler):
 
 def setup_routes(app, routes):
     return app
-

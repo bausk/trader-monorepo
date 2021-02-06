@@ -13,17 +13,18 @@ from .source_models import ResourceSchema
 
 
 class StrategyModel(db.Model):
-    __tablename__ = 'strategies'
+    __tablename__ = "strategies"
 
     id = db.Column(db.Integer(), primary_key=True)
-    name = db.Column(db.Unicode(), default='Unnamed')
-    typename = db.Column(db.Enum(
-        StrategyTypesEnum,
-        values_callable=lambda x: [e.value for e in x]
-    ))
-    live_session_id = db.Column(db.Integer, db.ForeignKey('live_sessions.id'), nullable=True)
-    resource_id = db.Column(db.Integer, db.ForeignKey('resources.id'), nullable=True)
-    config_json = db.Column(db.Unicode(), default='{}')
+    name = db.Column(db.Unicode(), default="Unnamed")
+    typename = db.Column(
+        db.Enum(StrategyTypesEnum, values_callable=lambda x: [e.value for e in x])
+    )
+    live_session_id = db.Column(
+        db.Integer, db.ForeignKey("live_sessions.id"), nullable=True
+    )
+    resource_id = db.Column(db.Integer, db.ForeignKey("resources.id"), nullable=True)
+    config_json = db.Column(db.Unicode(), default="{}")
 
 
 class StrategySchema(Privatable):
@@ -32,7 +33,7 @@ class StrategySchema(Privatable):
         orm_mode = True
 
     id: Optional[int]
-    name: str = 'Default'
+    name: str = "Default"
     typename: StrategyTypesEnum
     live_session_id: Optional[int]
     live_session_model: Optional[LiveSessionSchema]
@@ -40,7 +41,7 @@ class StrategySchema(Privatable):
     resource_model: Optional[ResourceSchema]
     config_json: Optional[LiveParamsSchema]
 
-    @validator('config_json', pre=True)
+    @validator("config_json", pre=True)
     def deserialize_config(cls, v, values, **kwargs):
         if v:
             if isinstance(v, str):
@@ -50,5 +51,5 @@ class StrategySchema(Privatable):
 
     def dict(self, *args, **kwargs):
         result = super().dict(*args, **kwargs)
-        result['config_json'] = json.dumps(result['config_json'])
+        result["config_json"] = json.dumps(result["config_json"])
         return result

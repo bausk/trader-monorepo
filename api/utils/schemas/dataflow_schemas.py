@@ -37,7 +37,7 @@ class SignalResultSchema(BaseDataflowSchema):
     value: Optional[float]
     primitives: Optional[List[List[TimeseriesSchema]]]
 
-    @validator('primitives', pre=True)
+    @validator("primitives", pre=True)
     def deserialize_config(cls, v, values, **kwargs):
         if v:
             if isinstance(v, str):

@@ -10,16 +10,16 @@ from .strategy_params_models import BacktestParamsSchema, LiveParamsSchema
 
 
 class BacktestSessionModel(db.Model):
-    __tablename__ = 'backtest_sessions'
+    __tablename__ = "backtest_sessions"
     id = db.Column(db.Integer(), primary_key=True)
 
-    strategy_id = db.Column(db.Integer, db.ForeignKey('strategies.id'))
+    strategy_id = db.Column(db.Integer, db.ForeignKey("strategies.id"))
     created_at = db.Column(db.DateTime(), nullable=True)
-    config_json = db.Column(db.Unicode(), default='{}')
+    config_json = db.Column(db.Unicode(), default="{}")
 
 
 class LiveSessionModel(db.Model):
-    __tablename__ = 'live_sessions'
+    __tablename__ = "live_sessions"
     id = db.Column(db.Integer(), primary_key=True)
     start_datetime = db.Column(db.DateTime(), nullable=True)
     end_datetime = db.Column(db.DateTime(), nullable=True)
@@ -40,7 +40,7 @@ class BacktestSessionSchema(Privatable):
     end_datetime: Optional[datetime]
     config_json: Optional[BacktestParamsSchema]
 
-    @validator('config_json', pre=True)
+    @validator("config_json", pre=True)
     def deserialize_config(cls, v, values, **kwargs):
         if v:
             if isinstance(v, str):
@@ -50,7 +50,7 @@ class BacktestSessionSchema(Privatable):
 
     def dict(self, *args, **kwargs):
         result = super().dict(*args, **kwargs)
-        result['config_json'] = json.dumps(result['config_json'])
+        result["config_json"] = json.dumps(result["config_json"])
         return result
 
 
@@ -63,7 +63,7 @@ class LiveSessionSchema(Privatable):
     end_datetime: Optional[datetime]
     config_json: Optional[LiveParamsSchema]
 
-    @validator('config_json', pre=True)
+    @validator("config_json", pre=True)
     def deserialize_config(cls, v, values, **kwargs):
         if v:
             if isinstance(v, str):
@@ -73,5 +73,5 @@ class LiveSessionSchema(Privatable):
 
     def dict(self, *args, **kwargs):
         result = super().dict(*args, **kwargs)
-        result['config_json'] = json.dumps(result['config_json'])
+        result["config_json"] = json.dumps(result["config_json"])
         return result

@@ -15,20 +15,19 @@ class AbstractSource:
 
     @classmethod
     async def list_availability_intervals(
-        cls,
-        interval: int,
-        table_fullname: str,
-        limit: int = 100
+        cls, interval: int, table_fullname: str, limit: int = 100
     ) -> list:
-        raise NotImplementedError('Implement get_availability_intervals')
+        raise NotImplementedError("Implement get_availability_intervals")
 
     @classmethod
     async def get_latest(cls):
-        raise NotImplementedError('Implement get_availability_intervals')
+        raise NotImplementedError("Implement get_availability_intervals")
 
     @classmethod
-    async def list_data_in_interval(cls, table_fullname: str, start: Type[datetime], end: Type[datetime]) -> list:
-        raise NotImplementedError('Implement list_data_in_interval')
+    async def list_data_in_interval(
+        cls, table_fullname: str, start: Type[datetime], end: Type[datetime]
+    ) -> list:
+        raise NotImplementedError("Implement list_data_in_interval")
 
     @classmethod
     def deduplicate(cls, ticks_chunk: List[TickSchema]) -> list:

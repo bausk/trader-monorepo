@@ -45,7 +45,7 @@ class Ticker:
         await self.start_ticker()
 
     async def start_ticker(self):
-        print('init DB')
+        print("init DB")
         self.timeseries_connection_pool = await get_pool()
         self.scheduler = await aiojobs.create_scheduler()
         tick_count = 0
@@ -66,27 +66,37 @@ class Ticker:
         primary_backtest_source = Source.alias()
         secondary_backtest_source = Source.alias()
         async with db.transaction():
-            query = ResourceModel.load(
-                strategy=StrategyModel.on(
-                    ResourceModel.id == StrategyModel.resource_id
+            query = (
+                ResourceModel.load(
+                    strategy=StrategyModel.on(
+                        ResourceModel.id == StrategyModel.resource_id
+                    )
                 )
-            ).load(
-                primary_live_source_model=primary_live_source.on(
-                    primary_live_source.id == ResourceModel.primary_live_source_id
+                .load(
+                    primary_live_source_model=primary_live_source.on(
+                        primary_live_source.id == ResourceModel.primary_live_source_id
+                    )
                 )
-            ).load(
-                secondary_live_source_model=secondary_live_source.on(
-                    secondary_live_source.id == ResourceModel.secondary_live_source_id
+                .load(
+                    secondary_live_source_model=secondary_live_source.on(
+                        secondary_live_source.id
+                        == ResourceModel.secondary_live_source_id
+                    )
                 )
-            ).load(
-                primary_backtest_source_model=primary_backtest_source.on(
-                    primary_backtest_source.id == ResourceModel.primary_backtest_source_id
+                .load(
+                    primary_backtest_source_model=primary_backtest_source.on(
+                        primary_backtest_source.id
+                        == ResourceModel.primary_backtest_source_id
+                    )
                 )
-            ).load(
-                secondary_backtest_source_model=secondary_backtest_source.on(
-                    secondary_backtest_source.id == ResourceModel.secondary_backtest_source_id
+                .load(
+                    secondary_backtest_source_model=secondary_backtest_source.on(
+                        secondary_backtest_source.id
+                        == ResourceModel.secondary_backtest_source_id
+                    )
                 )
-            ).where(StrategyModel.live_session_id.isnot(None))
+                .where(StrategyModel.live_session_id.isnot(None))
+            )
             resources_list = await query.gino.all()
             resources_hash = {}
             unique_resources = []
@@ -106,14 +116,14 @@ class Ticker:
                 x for x in self.strategy_queues if x not in active_strategies
             ]
             for x in inactive_strategies:
-                print(f'stopping inactive strategy {x}')
+                print(f"stopping inactive strategy {x}")
                 await self.stop_strategy(x)
 
             schedulers_without_active_strategy = [
                 x for x in self.resource_schedulers if x not in active_resources
             ]
             for x in schedulers_without_active_strategy:
-                print(f'stopping inactive resource {x}')
+                print(f"stopping inactive resource {x}")
                 await self.stop_resource(x)
 
             for _, strategy in active_strategies.items():
@@ -136,34 +146,40 @@ class Ticker:
     async def stop_resource(self, resource_id: int):
         scheduler = self.resource_schedulers[resource_id]
         if scheduler.closed:
-            print(f'Deleting scheduler {resource_id}')
+            print(f"Deleting scheduler {resource_id}")
             del self.resource_schedulers[resource_id]
         else:
-            print(f'Closing scheduler {resource_id}')
+            print(f"Closing scheduler {resource_id}")
             await scheduler.close()
 
-    async def ensure_started_resource(self, resource: Type[ResourceSchema]):
+    async def ensure_started_resource(self, resource: ResourceSchema):
         res_id = resource.id
         active_scheduler = self.resource_schedulers.get(res_id)
         if active_scheduler and active_scheduler.closed:
-            print(f'Deleting closed executor {res_id}')
+            print(f"Deleting closed executor {res_id}")
             active_scheduler = None
             del self.resource_schedulers[res_id]
         if not active_scheduler:
-            print(f'Activating executor {res_id}')
+            print(f"Activating executor {res_id}")
             scheduler: aiojobs.Scheduler = await aiojobs.create_scheduler()
-            session = self.app['PERSISTENT_SESSION']
-            await scheduler.spawn(default_resource_loader(resource, self.queues_per_resource, session))
+            session = self.app["PERSISTENT_SESSION"]
+            await scheduler.spawn(
+                default_resource_loader(resource, self.queues_per_resource, session)
+            )
             self.resource_schedulers[res_id] = scheduler
 
-    async def ensure_started_strategy(self, strategy: Type[StrategyModel]):
+    async def ensure_started_strategy(self, strategy: StrategyModel):
         if not self.strategy_queues.get(strategy.id):
             source_q = Queue()
             processing_q = Queue()
-            await self.scheduler.spawn(monitor_strategy_executor(
-                self.timeseries_connection_pool,
-                strategy,
-                source_q,
-                processing_q))
-            await self.scheduler.spawn(default_postprocessor(self.timeseries_connection_pool, strategy, processing_q))
+            await self.scheduler.spawn(
+                monitor_strategy_executor(
+                    self.timeseries_connection_pool, strategy, source_q, processing_q
+                )
+            )
+            await self.scheduler.spawn(
+                default_postprocessor(
+                    self.timeseries_connection_pool, strategy, processing_q
+                )
+            )
             self.strategy_queues[strategy.id] = source_q

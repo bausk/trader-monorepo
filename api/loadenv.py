@@ -9,6 +9,5 @@ os.chdir(project_dir)
 
 
 # Load development vars
-env_path = Path('.') / '.env'
+env_path = Path(".") / ".env"
 load_dotenv(dotenv_path=env_path)
-

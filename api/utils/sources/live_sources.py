@@ -5,7 +5,7 @@ from .abstract_source import AbstractSource
 
 class LiveKunaSource(AbstractSource):
     latest_endpoint = "https://kuna.io/api/v2/trades?market={currency}"
-    label = 'btcuah'
+    label = "btcuah"
     config = dict(currency="btcuah")
 
     def format_endpoint(self):
@@ -15,10 +15,10 @@ class LiveKunaSource(AbstractSource):
         trades = []
         for result in in_data:
             trade = TickSchema(
-                price=result['price'],
-                volume=result['volume'],
-                funds=result['funds'],
-                timestamp=result['created_at'],
+                price=result["price"],
+                volume=result["volume"],
+                funds=result["funds"],
+                timestamp=result["created_at"],
             )
             trades.append(trade)
         return self.deduplicate(trades)
@@ -30,20 +30,16 @@ class LiveKunaSource(AbstractSource):
 
 class LiveCryptowatchSource(AbstractSource):
     latest_endpoint = "https://api.cryptowat.ch/markets/gdax/{currency}/trades?limit={limit}&since={after}"
-    label = 'btcusd'
-    config = dict(
-        currency="btcusd",
-        limit=100,
-        after=timedelta(minutes=2)
-    )
+    label = "btcusd"
+    config = dict(currency="btcusd", limit=100, after=timedelta(minutes=2))
 
     def format_endpoint(self):
-        after = int((datetime.utcnow() - self.config['after']).timestamp())
-        return self.latest_endpoint.format(**{**self.config, 'after': after})
+        after = int((datetime.utcnow() - self.config["after"]).timestamp())
+        return self.latest_endpoint.format(**{**self.config, "after": after})
 
     def to_trades(self, in_data):
         trades = []
-        data = in_data['result']
+        data = in_data["result"]
         for result in data:
             trade = TickSchema(
                 price=result[2],
@@ -61,7 +57,7 @@ class LiveCryptowatchSource(AbstractSource):
 
 class LiveCoinbaseSource(AbstractSource):
     latest_endpoint = "https://api.pro.coinbase.com/products/{currency}/trades"
-    label = 'btcusd'
+    label = "btcusd"
     config = dict(
         currency="BTC-USD",
     )
@@ -73,10 +69,10 @@ class LiveCoinbaseSource(AbstractSource):
         trades = []
         for result in in_data:
             trade = TickSchema(
-                price=result['price'],
-                volume=result['size'],
-                funds=float(result['price']) * float(result['size']),
-                timestamp=result['time'],
+                price=result["price"],
+                volume=result["size"],
+                funds=float(result["price"]) * float(result["size"]),
+                timestamp=result["time"],
             )
             trades.append(trade)
         return self.deduplicate(trades)

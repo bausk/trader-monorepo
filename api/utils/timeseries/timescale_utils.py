@@ -9,22 +9,29 @@ from pydantic import parse_obj_as
 from parameters.enums import SignalResultsEnum
 from utils.timeseries.pandas_utils import resample_primitives
 from utils.schemas.response_schemas import OHLCSchema, PricepointSchema
-from utils.schemas.dataflow_schemas import TickSchema, SignalResultSchema, SignalsListSchema, PrimitivesSchema
+from utils.schemas.dataflow_schemas import (
+    TickSchema,
+    SignalResultSchema,
+    SignalsListSchema,
+    PrimitivesSchema,
+)
 from utils.schemas.request_schemas import DataRequestSchema, MarkersRequestSchema
 
 
-DEFAULT_DBNAME = 'livewater'
+DEFAULT_DBNAME = "livewater"
 
 
 async def pool_context(app):
-    app['TIMESCALE_POOL'] = pool = await get_pool(DEFAULT_DBNAME)
+    app["TIMESCALE_POOL"] = pool = await get_pool(DEFAULT_DBNAME)
     yield
     await pool.close()
 
 
 def get_url():
-    url = os.environ.get('TIMESCALEDB_URL')
-    assert url, "Time-series DB URL must be specified in TIMESCALEDB_URL environment variable"
+    url = os.environ.get("TIMESCALEDB_URL")
+    assert (
+        url
+    ), "Time-series DB URL must be specified in TIMESCALEDB_URL environment variable"
     return url
 
 
@@ -55,12 +62,14 @@ async def init_signals_table(conn):
     await conn.execute(f"CREATE TABLE IF NOT EXISTS {SIGNALS_TABLE_SCHEMA};")
     try:
         await conn.execute("SELECT create_hypertable('signals', 'timestamp');")
-        print('created signals hypertable')
+        print("created signals hypertable")
     except asyncpg.exceptions.UnknownPostgresError:
         pass
 
-    await conn.execute("CREATE UNIQUE INDEX IF NOT EXISTS unique_signals \
-        ON signals(timestamp, source_id, session_id, label);")
+    await conn.execute(
+        "CREATE UNIQUE INDEX IF NOT EXISTS unique_signals \
+        ON signals(timestamp, source_id, session_id, label);"
+    )
 
 
 async def init_ticks_table(conn):
@@ -77,12 +86,14 @@ async def init_ticks_table(conn):
     await conn.execute(f"CREATE TABLE IF NOT EXISTS {TICKS_TABLE_SCHEMA};")
     try:
         await conn.execute("SELECT create_hypertable('ticks', 'timestamp');")
-        print('created ticks hypertable')
+        print("created ticks hypertable")
     except asyncpg.exceptions.UnknownPostgresError:
         pass
 
-    await conn.execute("CREATE UNIQUE INDEX IF NOT EXISTS unique_ticks \
-        ON ticks(timestamp, source_id, session_id, data_type, label, funds);")
+    await conn.execute(
+        "CREATE UNIQUE INDEX IF NOT EXISTS unique_ticks \
+        ON ticks(timestamp, source_id, session_id, data_type, label, funds);"
+    )
 
 
 async def init_db(dbname=DEFAULT_DBNAME):
@@ -101,15 +112,16 @@ async def get_pool(dbname=DEFAULT_DBNAME) -> asyncpg.pool.Pool:
     await init_db(dbname)
     try:
         return await asyncpg.create_pool(
-            f"{get_url()}{dbname}",
-            max_inactive_connection_lifetime=10
+            f"{get_url()}{dbname}", max_inactive_connection_lifetime=10
         )
     except Exception as e:
-        print('Failed to start up connection pool')
+        print("Failed to start up connection pool")
         raise e
 
 
-async def get_prices(session_id, request_params: DataRequestSchema, pool: Pool) -> List[PricepointSchema]:
+async def get_prices(
+    session_id, request_params: DataRequestSchema, pool: Pool
+) -> List[PricepointSchema]:
     period = timedelta(minutes=request_params.period)
     if not request_params.to_datetime:
         request_params.to_datetime = datetime.now()
@@ -134,41 +146,52 @@ async def get_prices(session_id, request_params: DataRequestSchema, pool: Pool) 
             request_params.label,
             request_params.data_type,
             request_params.from_datetime,
-            request_params.to_datetime
+            request_params.to_datetime,
         )
-        return parse_obj_as(List[PricepointSchema], list(await conn.fetch(query, *params)))
+        return parse_obj_as(
+            List[PricepointSchema], list(await conn.fetch(query, *params))
+        )
 
 
 signal_weights = {
     SignalResultsEnum.NO_DATA: 0,
     SignalResultsEnum.AMBIGUOUS: 1,
     SignalResultsEnum.SELL_ALL: 2,
-    SignalResultsEnum.BUY_ALL: 2
+    SignalResultsEnum.BUY_ALL: 2,
 }
 
 
 def reduce_signals(signals: list, period: int) -> list:
     result = {}
     for signal in signals:
-        key_value = signal['bucket_timestamp']
+        key_value = signal["bucket_timestamp"]
         new_wins = False
-        if (key_value not in result):
+        if key_value not in result:
             new_wins = True
         else:
             old_signal = result[key_value]
-            if signal_weights[signal['direction']] > signal_weights[old_signal['direction']]:
+            if (
+                signal_weights[signal["direction"]]
+                > signal_weights[old_signal["direction"]]
+            ):
                 new_wins = True
-            elif signal_weights[signal['direction']] == signal_weights[old_signal['direction']] and signal['value'] >= old_signal['value']:
+            elif (
+                signal_weights[signal["direction"]]
+                == signal_weights[old_signal["direction"]]
+                and signal["value"] >= old_signal["value"]
+            ):
                 new_wins = True
         if new_wins:
             result[key_value] = signal
     return list(filter(bool, [resample_primitives(result[x], period) for x in result]))
 
 
-async def get_reduced_signals(session_id, request_params: MarkersRequestSchema, request) -> SignalsListSchema:
-    pool: Pool = request.app['TIMESCALE_POOL']
+async def get_reduced_signals(
+    session_id, request_params: MarkersRequestSchema, request
+) -> SignalsListSchema:
+    pool: Pool = request.app["TIMESCALE_POOL"]
     if not request_params.period:
-        raise Exception('Period not provided for reduced signals calculation!')
+        raise Exception("Period not provided for reduced signals calculation!")
     if not request_params.to_datetime:
         request_params.to_datetime = datetime.now()
 
@@ -187,18 +210,20 @@ async def get_reduced_signals(session_id, request_params: MarkersRequestSchema, 
             timedelta(minutes=request_params.period),
             session_id,
             request_params.from_datetime,
-            request_params.to_datetime
+            request_params.to_datetime,
         ]
         try:
             async with conn.transaction():
                 current_timestamp = None
                 bucket = []
                 async for record in conn.cursor(query, *params):
-                    ts = record['bucket_timestamp']
+                    ts = record["bucket_timestamp"]
                     if ts == current_timestamp:
                         bucket.append(record)
                     else:
-                        reduced_result.extend(reduce_signals(bucket, request_params.period))
+                        reduced_result.extend(
+                            reduce_signals(bucket, request_params.period)
+                        )
                         bucket = []
                         current_timestamp = ts
         except Exception as e:
@@ -207,8 +232,10 @@ async def get_reduced_signals(session_id, request_params: MarkersRequestSchema, 
     return SignalsListSchema(__root__=reduced_result)
 
 
-async def get_signals(session_id, request_params: MarkersRequestSchema, request) -> SignalsListSchema:
-    pool: Pool = request.app['TIMESCALE_POOL']
+async def get_signals(
+    session_id, request_params: MarkersRequestSchema, request
+) -> SignalsListSchema:
+    pool: Pool = request.app["TIMESCALE_POOL"]
     if not request_params.to_datetime:
         request_params.to_datetime = datetime.now()
     fields = "*"
@@ -216,10 +243,7 @@ async def get_signals(session_id, request_params: MarkersRequestSchema, request)
     params = []
     if request_params.period:
         params.append(timedelta(minutes=request_params.period))
-        fields = (
-            f"time_bucket(${next(n)}, timestamp) AS bucket_timestamp,"
-            f"*"
-        )
+        fields = f"time_bucket(${next(n)}, timestamp) AS bucket_timestamp," f"*"
 
     async with pool.acquire() as conn:
         query = f"""
@@ -230,17 +254,15 @@ async def get_signals(session_id, request_params: MarkersRequestSchema, request)
         and timestamp BETWEEN ${next(n)} and ${next(n)}
         ORDER BY timestamp ASC;
         """
-        params.extend([
-            session_id,
-            request_params.from_datetime,
-            request_params.to_datetime
-        ])
+        params.extend(
+            [session_id, request_params.from_datetime, request_params.to_datetime]
+        )
         result = await conn.fetch(query, *params)
         return SignalsListSchema(__root__=list(result))
 
 
 async def get_terminal_data(session_id, request_params: DataRequestSchema, request):
-    pool: Pool = request.app['TIMESCALE_POOL']
+    pool: Pool = request.app["TIMESCALE_POOL"]
     if not request_params.to_datetime:
         request_params.to_datetime = datetime.now()
     period = timedelta(minutes=request_params.period)
@@ -269,7 +291,7 @@ async def get_terminal_data(session_id, request_params: DataRequestSchema, reque
             request_params.label,
             request_params.data_type,
             request_params.from_datetime,
-            request_params.to_datetime
+            request_params.to_datetime,
         )
         return parse_obj_as(List[OHLCSchema], list(await conn.fetch(query, *params)))
 
@@ -278,7 +300,9 @@ def ceil_dt(dt, delta):
     return dt + (datetime.min - dt) % delta
 
 
-async def mock_get_terminal_data(session_id, request_params: DataRequestSchema, request):
+async def mock_get_terminal_data(
+    session_id, request_params: DataRequestSchema, request
+):
     if not request_params.to_datetime:
         request_params.to_datetime = datetime.now()
     period = timedelta(minutes=request_params.period)
@@ -300,11 +324,7 @@ async def mock_get_terminal_data(session_id, request_params: DataRequestSchema, 
     return data
 
 
-async def write_signals(
-    session_id,
-    pool,
-    signals: List[SignalResultSchema]
-) -> None:
+async def write_signals(session_id, pool, signals: List[SignalResultSchema]) -> None:
     prepared_signals = []
     for signal in signals:
         values = (
@@ -312,18 +332,23 @@ async def write_signals(
             session_id,
             signal.direction,
             signal.value,
-            parse_obj_as(PrimitivesSchema, signal.primitives).json() if signal.primitives else None
+            parse_obj_as(PrimitivesSchema, signal.primitives).json()
+            if signal.primitives
+            else None,
         )
         prepared_signals.append(values)
     async with pool.acquire() as conn:
         try:
-            await conn.executemany('''
+            await conn.executemany(
+                """
                 INSERT INTO signals(timestamp, session_id, direction, value, primitives)
                 VALUES ($1, $2, $3, $4, $5)
                 ON CONFLICT (timestamp, source_id, session_id, label) DO UPDATE
                 SET value=EXCLUDED.value,
                     primitives=EXCLUDED.primitives;
-            ''', prepared_signals)
+            """,
+                prepared_signals,
+            )
         except asyncpg.exceptions.UniqueViolationError:
             pass
 
@@ -339,18 +364,21 @@ async def write_ticks(session_id, data_type, label, ticks: List[TickSchema], poo
             label,
             tick.price,
             tick.volume,
-            tick.funds
+            tick.funds,
         )
         prepared_ticks.append(values)
 
     async with pool.acquire() as conn:
         try:
-            await conn.executemany('''
+            await conn.executemany(
+                """
                 INSERT INTO ticks(timestamp, session_id, data_type, label, price, volume, funds)
                 VALUES ($1, $2, $3, $4, $5, $6, $7)
                 ON CONFLICT (timestamp, source_id, session_id, data_type, label, funds) DO UPDATE
                 SET price=EXCLUDED.price,
                     volume=EXCLUDED.volume;
-            ''', prepared_ticks)
+            """,
+                prepared_ticks,
+            )
         except asyncpg.exceptions.UniqueViolationError:
             pass

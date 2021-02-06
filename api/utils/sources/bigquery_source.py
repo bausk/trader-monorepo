@@ -7,12 +7,12 @@ from secrets_management.manage import decrypt_credentials
 from .abstract_source import AbstractSource
 
 
-credfile = decrypt_credentials(which=['./.secrets/keyring.json'])
+credfile = decrypt_credentials(which=["./.secrets/keyring.json"])
 creds_json = json.loads(credfile[0])
 creds = service_account.Credentials.from_service_account_info(creds_json)
 bigquery_client = bigquery.Client(
     credentials=creds,
-    project=creds_json['project_id'],
+    project=creds_json["project_id"],
 )
 
 
@@ -79,18 +79,24 @@ def exec_query(query, client, **kwargs) -> bigquery.table.RowIterator:
 
 class BigquerySource(AbstractSource):
     @classmethod
-    async def list_availability_intervals(cls, interval: int, table_fullname: str, limit: int=100) -> list:
+    async def list_availability_intervals(
+        cls, interval: int, table_fullname: str, limit: int = 100
+    ) -> list:
         sql_query = sql_query_get_intervals_2.format(
             interval=interval,
             table_fullname=table_fullname,
             limit=limit,
         )
         loop = asyncio.get_running_loop()
-        bigquery_result = await loop.run_in_executor(None, exec_query, sql_query, bigquery_client)
+        bigquery_result = await loop.run_in_executor(
+            None, exec_query, sql_query, bigquery_client
+        )
         return bigquery_result
 
     @classmethod
-    async def list_data_in_interval(cls, table_fullname: str, start: str, end: str, limit: int = 100) -> list:
+    async def list_data_in_interval(
+        cls, table_fullname: str, start: str, end: str, limit: int = 100
+    ) -> list:
         job_config = bigquery.QueryJobConfig(
             query_parameters=[
                 bigquery.ScalarQueryParameter("start", "TIMESTAMP", start),
@@ -109,7 +115,7 @@ class BigquerySource(AbstractSource):
                 sql_query,
                 bigquery_client,
                 job_config=job_config,
-            )
+            ),
         )
         result = []
         for res in bigquery_result:

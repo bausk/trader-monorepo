@@ -8,33 +8,35 @@ from utils.timeseries.constants import DATA_TYPES
 async def default_postprocessor(pool, strategy: StrategySchema, process_queue):
     session_id = strategy.live_session_id
     if not session_id:
-        raise Exception("Data integrity loss: no session ID available during postprocessor start")
+        raise Exception(
+            "Data integrity loss: no session ID available during postprocessor start"
+        )
     while True:
         task: ProcessTaskSchema = await process_queue.async_q.get()
         if task is None:
             return
         ts = t1 = t2 = None
         if len(task.signals) > 0:
-            ts = asyncio.create_task(write_signals(
-                session_id,
-                pool,
-                task.signals
-            ))
+            ts = asyncio.create_task(write_signals(session_id, pool, task.signals))
         if task.ticks_primary:
-            t1 = asyncio.create_task(write_ticks(
-                session_id,
-                DATA_TYPES.ticks_primary,
-                task.label_primary,
-                task.ticks_primary,
-                pool
-            ))
+            t1 = asyncio.create_task(
+                write_ticks(
+                    session_id,
+                    DATA_TYPES.ticks_primary,
+                    task.label_primary,
+                    task.ticks_primary,
+                    pool,
+                )
+            )
         if task.ticks_secondary:
-            t2 = asyncio.create_task(write_ticks(
-                session_id,
-                DATA_TYPES.ticks_secondary,
-                task.label_secondary,
-                task.ticks_secondary,
-                pool
-            ))
+            t2 = asyncio.create_task(
+                write_ticks(
+                    session_id,
+                    DATA_TYPES.ticks_secondary,
+                    task.label_secondary,
+                    task.ticks_secondary,
+                    pool,
+                )
+            )
         await asyncio.wait(set([x for x in [ts, t1, t2] if x]), timeout=6)
         process_queue.async_q.task_done()

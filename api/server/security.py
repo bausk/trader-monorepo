@@ -6,7 +6,7 @@ import os
 import json
 
 
-JWT_ALGORITHM = 'RS256'
+JWT_ALGORITHM = "RS256"
 
 
 async def get_jwks(AUTH0_DOMAIN):
@@ -26,16 +26,20 @@ class PermissionDenied(Exception):
 
 async def get_middleware():
     params = {}
-    AUTH0_DOMAIN = os.environ.get('AUTH0_DOMAIN')
-    API_AUDIENCE = os.environ.get('API_AUDIENCE')
-    assert AUTH0_DOMAIN, "Auth0 server must be specified in AUTH0_DOMAIN environment variable"
-    assert API_AUDIENCE, "Auth0 audience must be specified in API_AUDIENCE environment variable"
+    AUTH0_DOMAIN = os.environ.get("AUTH0_DOMAIN")
+    API_AUDIENCE = os.environ.get("API_AUDIENCE")
+    assert (
+        AUTH0_DOMAIN
+    ), "Auth0 server must be specified in AUTH0_DOMAIN environment variable"
+    assert (
+        API_AUDIENCE
+    ), "Auth0 audience must be specified in API_AUDIENCE environment variable"
 
     # Fetch public key on startup
-    params['JWKS'] = await get_jwks(AUTH0_DOMAIN)
+    params["JWKS"] = await get_jwks(AUTH0_DOMAIN)
 
     async def validate_header(unverified_header):
-        JWKS = params['JWKS']
+        JWKS = params["JWKS"]
         for _ in range(4):
             try:
                 for key in JWKS["keys"]:
@@ -45,7 +49,7 @@ async def get_middleware():
                             "kid": key["kid"],
                             "use": key["use"],
                             "n": key["n"],
-                            "e": key["e"]
+                            "e": key["e"],
                         }
                     else:
                         raise PublicKeyError()
@@ -59,7 +63,7 @@ async def get_middleware():
     async def auth_middleware(request, handler):
         request.user = None
         try:
-            token = request.headers.get('authorization', None).split(' ')[1]
+            token = request.headers.get("authorization", None).split(" ")[1]
             unverified_header = jwt.get_unverified_header(token)
         except:
             return await handler(request)
@@ -74,11 +78,18 @@ async def get_middleware():
                     issuer=f"https://{AUTH0_DOMAIN}/",
                 )
             except jwt.ExpiredSignatureError:
-                return web.json_response({'message': 'token is expired'}, status=401)
+                return web.json_response({"message": "token is expired"}, status=401)
             except (jwt.InvalidAudienceError, jwt.InvalidIssuerError):
-                return web.json_response({'message': 'Incorrect claims, please check the audience and issuer'}, status=401)
+                return web.json_response(
+                    {
+                        "message": "Incorrect claims, please check the audience and issuer"
+                    },
+                    status=401,
+                )
             except Exception:
-                return web.json_response({'message': 'Unable to parse authentication token.'}, status=401)
+                return web.json_response(
+                    {"message": "Unable to parse authentication token."}, status=401
+                )
 
             request.user = payload
         return await handler(request)
@@ -87,17 +98,17 @@ async def get_middleware():
 
 
 class Permissions:
-    READ = 'read:live'
-    READ_LIVE = 'read:live'
-    READ_HISTORY = 'read:history'
-    WRITE_OBJECTS = 'read:live'
-    WRITE_LIVE = 'write:live'
-    WRITE_HISTORY = 'write:history'
+    READ = "read:live"
+    READ_LIVE = "read:live"
+    READ_HISTORY = "read:history"
+    WRITE_OBJECTS = "read:live"
+    WRITE_LIVE = "write:live"
+    WRITE_HISTORY = "write:history"
 
 
 async def check_permission(req: Request, permission) -> None:
     try:
-        user_permissions = req.user['permissions']
+        user_permissions = req.user["permissions"]
         if permission in user_permissions:
             return
     except:

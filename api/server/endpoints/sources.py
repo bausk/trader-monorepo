@@ -11,7 +11,7 @@ from utils.sources.select import LIVE_SOURCES
 from server.endpoints.routedef import routes
 
 
-@routes.view('/sources')
+@routes.view("/sources")
 class SourcesView(web.View, CorsViewMixin):
     cors_config = {
         "*": ResourceOptions(
@@ -58,7 +58,7 @@ class SourcesView(web.View, CorsViewMixin):
         return web.json_response(response)
 
 
-@routes.view(r'/sources/{id:\d+}/stats')
+@routes.view(r"/sources/{id:\d+}/stats")
 class SourcesStatsView(web.View, CorsViewMixin):
     cors_config = {
         "*": ResourceOptions(
@@ -71,18 +71,17 @@ class SourcesStatsView(web.View, CorsViewMixin):
 
     async def get(self: web.View) -> Response:
         await check_permission(self.request, Permissions.READ)
-        source_id = int(self.request.match_info['id'])
+        source_id = int(self.request.match_info["id"])
         async with db.transaction():
             source = await Source.get(source_id)
         source_model = self.schema.from_orm(source)
         source_config = json.loads(source_model.config_json)
-        table_fullname = source_config['table_name']
+        table_fullname = source_config["table_name"]
         if not table_fullname:
             raise web.HTTPConflict(text="table_name not defined in source config")
         source_executor: AbstractSource = LIVE_SOURCES[source_model.typename]
         availability_intervals = await source_executor.list_availability_intervals(
-            interval=3600,
-            table_fullname=table_fullname
+            interval=3600, table_fullname=table_fullname
         )
         source_model.available_intervals = []
         for res in availability_intervals:
@@ -90,7 +89,7 @@ class SourcesStatsView(web.View, CorsViewMixin):
         return web.json_response(body=source_model.json())
 
 
-@routes.view(r'/sources/{id:\d+}/interval')
+@routes.view(r"/sources/{id:\d+}/interval")
 class SourcesIntervalView(web.View, CorsViewMixin):
     cors_config = {
         "*": ResourceOptions(
@@ -103,20 +102,20 @@ class SourcesIntervalView(web.View, CorsViewMixin):
 
     async def get(self: web.View) -> Response:
         await check_permission(self.request, Permissions.READ)
-        source_id = int(self.request.match_info['id'])
+        source_id = int(self.request.match_info["id"])
         async with db.transaction():
             source = await Source.get(source_id)
         source_model = self.schema.from_orm(source)
         source_config = json.loads(source_model.config_json)
-        table_fullname = source_config['table_name']
+        table_fullname = source_config["table_name"]
         if not table_fullname:
             raise web.HTTPConflict(text="table_name not defined in source config")
         print(self.request.query)
         source_executor: AbstractSource = LIVE_SOURCES[source_model.typename]
         res = await source_executor.list_data_in_interval(
             table_fullname=table_fullname,
-            start=self.request.query.get('start'),
-            end=self.request.query.get('end'),
+            start=self.request.query.get("start"),
+            end=self.request.query.get("end"),
         )
         source_model.data = res
         return web.json_response(body=source_model.json())

@@ -6,24 +6,36 @@ from utils.sources.select import LIVE_SOURCES
 from utils.schemas.dataflow_schemas import ProcessTaskSchema
 
 
-async def default_resource_loader(resource: ResourceSchema, queues_per_resource, session, is_live=True):
+async def default_resource_loader(
+    resource: ResourceSchema, queues_per_resource, session, is_live=True
+):
     # TODO: get cycle period from resource config
     sleep_seconds = 8
     primary_source = None
     if resource.primary_live_source_model:
-        primary_source: AbstractSource = LIVE_SOURCES.get(resource.primary_live_source_model.typename)(session)
+        primary_source: AbstractSource = LIVE_SOURCES.get(
+            resource.primary_live_source_model.typename
+        )(session)
     secondary_source = None
     if resource.secondary_live_source_model:
-        secondary_source: AbstractSource = LIVE_SOURCES.get(resource.secondary_live_source_model.typename)(session)
+        secondary_source: AbstractSource = LIVE_SOURCES.get(
+            resource.secondary_live_source_model.typename
+        )(session)
 
     async def no_result():
         return None
 
     while True:
         print("[source tick]")
-        primary_result = asyncio.create_task(primary_source.get_latest() if primary_source else no_result())
-        secondary_result = asyncio.create_task(secondary_source.get_latest() if secondary_source else no_result())
-        done, pending = await asyncio.wait({primary_result, secondary_result}, timeout=4)
+        primary_result = asyncio.create_task(
+            primary_source.get_latest() if primary_source else no_result()
+        )
+        secondary_result = asyncio.create_task(
+            secondary_source.get_latest() if secondary_source else no_result()
+        )
+        done, pending = await asyncio.wait(
+            {primary_result, secondary_result}, timeout=4
+        )
         if primary_result in done and secondary_result in done:
             try:
                 ticks_primary = primary_result.result()
@@ -32,14 +44,16 @@ async def default_resource_loader(resource: ResourceSchema, queues_per_resource,
                     ticks_primary=ticks_primary,
                     label_primary=primary_source.label if primary_source else None,
                     ticks_secondary=ticks_secondary,
-                    label_secondary=secondary_source.label if secondary_source else None,
-                    timestamp=datetime.now()
+                    label_secondary=secondary_source.label
+                    if secondary_source
+                    else None,
+                    timestamp=datetime.now(),
                 )
                 queues = queues_per_resource[resource.id]
                 for q in queues:
                     await q.async_q.put(task)
             except Exception as e:
-                print('Source fetch failed:')
+                print("Source fetch failed:")
                 print(e)
         else:
             for coro in done:

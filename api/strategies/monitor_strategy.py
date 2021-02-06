@@ -11,7 +11,9 @@ from utils.timeseries.timescale_utils import get_prices
 from .monitor_strategy_signal import calculate_signal
 
 
-async def monitor_strategy_executor(pool, strategy: StrategySchema, in_queue: Queue, out_queue: Queue) -> None:
+async def monitor_strategy_executor(
+    pool, strategy: StrategySchema, in_queue: Queue, out_queue: Queue
+) -> None:
     while True:
         task: ProcessTaskSchema = await in_queue.async_q.get()
         # TODO: # 1. Error management
@@ -33,13 +35,21 @@ async def monitor_strategy_executor(pool, strategy: StrategySchema, in_queue: Qu
                 label=task.label_secondary,
                 data_type=DATA_TYPES.ticks_secondary,
             )
-            primary_data_coro = asyncio.create_task(get_prices(session_id, primary_params, pool))
-            secondary_data_coro = asyncio.create_task(get_prices(session_id, secondary_params, pool))
-            done, pending = await asyncio.wait({primary_data_coro, secondary_data_coro}, timeout=4)
+            primary_data_coro = asyncio.create_task(
+                get_prices(session_id, primary_params, pool)
+            )
+            secondary_data_coro = asyncio.create_task(
+                get_prices(session_id, secondary_params, pool)
+            )
+            done, pending = await asyncio.wait(
+                {primary_data_coro, secondary_data_coro}, timeout=4
+            )
             if primary_data_coro in done and secondary_data_coro in done:
                 primary_data: List[PricepointSchema] = primary_data_coro.result()
                 secondary_data: List[PricepointSchema] = secondary_data_coro.result()
-                signal: SignalResultSchema = calculate_signal(primary_data, secondary_data)
+                signal: SignalResultSchema = calculate_signal(
+                    primary_data, secondary_data
+                )
                 task.signals += [signal]
             else:
                 for coro in done:
