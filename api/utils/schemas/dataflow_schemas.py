@@ -1,17 +1,16 @@
-import json
 from datetime import datetime
-from pydantic import BaseModel, validator, parse_obj_as
-from typing import Optional, List, Any, Dict, Union
+from pydantic import BaseModel
+from typing import Optional, List, Dict, Union
 
-from parameters.enums import SignalResultsEnum
+from parameters.enums import IndicatorsEnum, SignalResultsEnum
 
 
-class BaseDataflowSchema(BaseModel):
+class ValidatedAssignmentSchema(BaseModel):
     class Config:
         validate_assignment = True
 
 
-class TickSchema(BaseDataflowSchema):
+class TickSchema(ValidatedAssignmentSchema):
     price: float
     source_id: Optional[int]
     timestamp: datetime
@@ -25,40 +24,26 @@ class TimeseriesSchema(BaseModel):
     value: float
 
 
-class PrimitivesSchema(BaseModel):
-    __root__: List[List[TimeseriesSchema]]
+class IndicatorSchema(BaseModel):
+    label: IndicatorsEnum
+    indicator: List[TimeseriesSchema]
 
 
-class SignalResultSchema(BaseDataflowSchema):
-    session_id: Optional[int]
-    timestamp: datetime
-    bucket_timestamp: Optional[datetime]
+class SignalSchema(ValidatedAssignmentSchema):
+    timestamp: Optional[datetime]
     direction: SignalResultsEnum
     value: Optional[float]
-    primitives: Optional[List[List[TimeseriesSchema]]]
-
-    @validator("primitives", pre=True)
-    def deserialize_config(cls, v, values, **kwargs):
-        if v:
-            if isinstance(v, str):
-                return parse_obj_as(List[List[TimeseriesSchema]], json.loads(v))
-            elif isinstance(v, list):
-                return parse_obj_as(List[List[TimeseriesSchema]], v)
-            else:
-                return v
-        return None
+    traceback: Optional[Union[Dict, List]]
 
 
-class SignalsListSchema(BaseModel):
-    __root__: List[SignalResultSchema]
+class CalculationSchema(BaseModel):
+    indicators: List[IndicatorSchema]
+    signal: SignalSchema
 
 
-class ProcessTaskSchema(BaseDataflowSchema):
+class SourceFetchResultSchema(ValidatedAssignmentSchema):
     timestamp: datetime
     ticks_primary: Optional[List[TickSchema]]
     label_primary: Optional[str]
     ticks_secondary: Optional[List[TickSchema]]
     label_secondary: Optional[str]
-    signals: List[SignalResultSchema] = []
-    orders: Optional[List[dict]] = []
-    symbols: Optional[List[dict]] = []

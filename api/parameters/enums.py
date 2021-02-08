@@ -25,3 +25,8 @@ class SignalResultsEnum(str, enum.Enum):
     SELL_ALL = "SELL_ALL"
     AMBIGUOUS = "AMBIGUOUS"
     NO_DATA = "NO_DATA"
+
+
+class IndicatorsEnum(str, enum.Enum):
+    buy_probability_line = "buy_probability_line"
+    sell_probability_line = "sell_probability_line"

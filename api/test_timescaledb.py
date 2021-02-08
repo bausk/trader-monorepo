@@ -9,7 +9,7 @@ from timeit import default_timer as timer
 from secrets_management.manage import decrypt_credentials, load_credentials
 from utils.formatting import format_int
 from utils.mocks.ticks import generate_data
-from utils.timeseries.timescale_utils import init_db, init_connection
+from utils.timescaledb.tsdb_manage import init_db, init_connection
 
 
 print("Loading development env...")

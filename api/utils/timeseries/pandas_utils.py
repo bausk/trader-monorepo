@@ -1,24 +1,25 @@
-import json
+import logging
 from datetime import timedelta
 import pandas as pd
 
-from utils.schemas.dataflow_schemas import SignalResultSchema, PrimitivesSchema
+
+logger = logging.getLogger(__name__)
 
 
-def resample_primitives(signal: dict, period: int) -> SignalResultSchema:
+def resample_primitives(primitives: list, period: int) -> list:
     try:
-        primitives = PrimitivesSchema(__root__=json.loads(signal["primitives"]))
+        resampled = []
+        for primitive in primitives:
+            series = pd.Series(primitive["value"], index=primitive["timestamp"])
+            series = (
+                series.resample(timedelta(minutes=period), base=0)
+                .max()
+                .fillna(method="ffill")
+            )
+            series = [{"timestamp": x, "value": y} for x, y in series.items()]
+            resampled.append(series)
+        return resampled
     except Exception as e:
-        return None
-    resampled = []
-    for primitive in primitives.__root__:
-        idx, vals = zip(*((x.timestamp, x.value) for x in primitive))
-        series = pd.Series(vals, index=idx)
-        series = (
-            series.resample(timedelta(minutes=period), base=0)
-            .max()
-            .fillna(method="ffill")
-        )
-        series = [{"timestamp": x, "value": y} for x, y in series.items()]
-        resampled.append(series)
-    return SignalResultSchema(**{**signal, "primitives": resampled})
+        logger.error("resample_primitives received unexpected primitives")
+        logger.error(e)
+        return []

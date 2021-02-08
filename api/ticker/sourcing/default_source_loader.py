@@ -1,9 +1,13 @@
 import asyncio
+import logging
 from datetime import datetime
 from dbmodels.source_models import ResourceSchema
 from utils.sources.live_sources import AbstractSource
 from utils.sources.select import LIVE_SOURCES
-from utils.schemas.dataflow_schemas import ProcessTaskSchema
+from utils.schemas.dataflow_schemas import SourceFetchResultSchema
+
+
+logger = logging.getLogger(__name__)
 
 
 async def default_resource_loader(
@@ -26,7 +30,7 @@ async def default_resource_loader(
         return None
 
     while True:
-        print("[source tick]")
+        logger.info("[source tick]")
         primary_result = asyncio.create_task(
             primary_source.get_latest() if primary_source else no_result()
         )
@@ -40,7 +44,7 @@ async def default_resource_loader(
             try:
                 ticks_primary = primary_result.result()
                 ticks_secondary = secondary_result.result()
-                task = ProcessTaskSchema(
+                task = SourceFetchResultSchema(
                     ticks_primary=ticks_primary,
                     label_primary=primary_source.label if primary_source else None,
                     ticks_secondary=ticks_secondary,
@@ -53,8 +57,8 @@ async def default_resource_loader(
                 for q in queues:
                     await q.async_q.put(task)
             except Exception as e:
-                print("Source fetch failed:")
-                print(e)
+                logger.info("Source fetch raised an exception")
+                logger.info(e)
         else:
             for coro in done:
                 coro.cancel()

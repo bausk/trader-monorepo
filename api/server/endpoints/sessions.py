@@ -1,18 +1,16 @@
-import sys, traceback
+import sys
+import traceback
 import json
-import asyncio
 from datetime import datetime, timedelta
 from aiohttp import web
-from aiohttp.web import Response, StreamResponse
+from aiohttp.web import Response
 from aiohttp_cors import CorsViewMixin, ResourceOptions
 from dbmodels.db import BaseModel
-from itertools import count
 from server.security import check_permission, Permissions
 from typing import Type, List
 from utils.schemas.request_schemas import DataRequestSchema, MarkersRequestSchema
-from utils.schemas.dataflow_schemas import SignalsListSchema
-from utils.schemas.response_schemas import OHLCSchema
-from utils.timeseries.timescale_utils import (
+from utils.schemas.response_schemas import OHLCSchema, SignalResultSchema
+from utils.timescaledb.tsdb_read import (
     get_terminal_data,
     get_signals,
     get_reduced_signals,
@@ -64,9 +62,11 @@ class SignalsDataView(web.View, CorsViewMixin):
                 from_datetime=from_datetime, **self.request.query
             )
             if not request_data.period:
-                result = await get_signals(session_id, request_data, self.request)
+                result: SignalResultSchema = await get_signals(
+                    session_id, request_data, self.request
+                )
             else:
-                result = await get_reduced_signals(
+                result: SignalResultSchema = await get_reduced_signals(
                     session_id, request_data, self.request
                 )
             return web.json_response(body=result.json())

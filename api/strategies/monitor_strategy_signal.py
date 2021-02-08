@@ -1,20 +1,13 @@
 from typing import List
-import asyncio
 from datetime import datetime, timedelta
-from janus import Queue
 import pandas as pd
 
-from dbmodels.strategy_models import StrategySchema
 from utils.schemas.dataflow_schemas import (
-    ProcessTaskSchema,
-    SignalResultSchema,
-    PrimitivesSchema,
+    IndicatorSchema,
+    SignalSchema,
 )
-from utils.schemas.request_schemas import DataRequestSchema
-from utils.schemas.response_schemas import PricepointSchema
-from utils.timeseries.constants import DATA_TYPES
-from parameters.enums import SignalResultsEnum
-from utils.timeseries.timescale_utils import get_prices
+from utils.schemas.response_schemas import InputMarketDataSchema, PricepointSchema
+from parameters.enums import IndicatorsEnum, SignalResultsEnum
 
 
 def calculate_valid_timedelta(data: List[PricepointSchema]) -> timedelta:
@@ -40,30 +33,24 @@ def check_is_good_for_signal(data):
     return True
 
 
-def calculate_signal(
-    primary_data: List[PricepointSchema], secondary_data: List[PricepointSchema]
-) -> SignalResultSchema:
+def calculate_indicators(
+    market_data: List[InputMarketDataSchema],
+) -> List[IndicatorSchema]:
+    """calculate_indicator:
+    Transform streams of market data into an list of indicators calculated from that data.
+    Returns two indicators, one for buy and one for sell/close position.
+    """
 
-    result = SignalResultSchema(
-        direction=SignalResultsEnum.NO_DATA,
-        value=0.0,
-        timestamp=datetime.now(),
-        primitives=[],
-    )
-    if not all(
-        [
-            check_is_good_for_signal(primary_data),
-            check_is_good_for_signal(secondary_data),
-        ]
-    ):
-        return result
+    no_op = IndicatorSchema(indicator=[])
+    if not all(map(check_is_good_for_signal, market_data)):
+        return [no_op, no_op]
 
     min_ask_bid_ratio = 0.0035
-    signal_threshold_buy: int = 8
-    signal_threshold_sell: int = -5
     disregard_bars_count: int = 10
     rolling_indicator_window: str = "180s"
 
+    primary_data = market_data[0]
+    secondary_data = market_data[0]
     # Convert Pydantic lists to dataframes
     primary_dataframe = pd.DataFrame([x.dict() for x in primary_data])
     primary_dataframe["Time"] = pd.to_datetime(primary_dataframe.time, unit="s")
@@ -90,7 +77,7 @@ def calculate_signal(
     # Disregard noise values (x < 1.5)
     arbitrage_indicator.loc[arbitrage_indicator < 1.5] = 0
 
-    weighted_arbitrage_indicator = arbitrage_indicator.rolling(
+    rolling_buy_indicator: pd.Series = arbitrage_indicator.rolling(
         rolling_indicator_window
     ).sum()
     sell_difference = (primary_dataframe["price"] * coefficients) - secondary_dataframe[
@@ -98,26 +85,61 @@ def calculate_signal(
     ]
     sell_indicator = (sell_difference / pseudo_spread_secondary).dropna()
     sell_indicator.loc[sell_indicator > -0.8] = 0
-    weighted_sell_indicator = sell_indicator.rolling(rolling_indicator_window).sum()
-    result.primitives = [
-        [
-            {"timestamp": x[0], "value": x[1]}
-            for x in weighted_arbitrage_indicator.items()
+    rolling_sell_indicator: pd.Series = sell_indicator.rolling(
+        rolling_indicator_window
+    ).sum()
+    buy_indicator = IndicatorSchema(
+        label=IndicatorsEnum.buy_indicator,
+        indicator=[
+            dict(timestamp=x, value=y) for x, y in rolling_buy_indicator.items()
         ],
-        [{"timestamp": x[0], "value": x[1]} for x in weighted_sell_indicator.items()],
-    ]
+    )
+    sell_indicator = IndicatorSchema(
+        label=IndicatorsEnum.sell_indicator,
+        indicator=[
+            dict(timestamp=x, value=y) for x, y in rolling_sell_indicator.items()
+        ],
+    )
+    return [buy_indicator, sell_indicator]
 
-    if len(weighted_arbitrage_indicator) == 0 or len(weighted_sell_indicator) == 0:
-        return result
-    sell_signal = weighted_sell_indicator.iloc[-1].item() < signal_threshold_sell
-    buy_signal = weighted_arbitrage_indicator.iloc[-1].item() > signal_threshold_buy
+
+def calculate_signal(indicators: List[IndicatorSchema]) -> SignalSchema:
+
+    signal_threshold_buy: int = 8
+    signal_threshold_sell: int = -5
+    ts = datetime.now()
+
+    no_op = SignalSchema(
+        timestamp=ts,
+        direction=SignalResultsEnum.NO_DATA,
+        value=0.0,
+    )
+
+    if any(len(i.indicator) == 0 for i in indicators):
+        return no_op
+    buy = indicators[0].indicator[-1]
+    sell = indicators[1].indicator[-1]
+    sell_signal = sell.value < signal_threshold_sell
+    buy_signal = buy.value > signal_threshold_buy
+    traceback = [buy.dict(), sell.dict()]
     if sell_signal:
-        result.direction = SignalResultsEnum.SELL_ALL
-        result.value = round(weighted_sell_indicator.iloc[-1], 2)
-        return result
+        return SignalSchema(
+            timestamp=ts,
+            direction=SignalResultsEnum.SELL_ALL,
+            value=round(sell.value, 2),
+            traceback=traceback,
+        )
     if buy_signal:
-        result.direction = SignalResultsEnum.BUY_ALL
-        result.value = round(weighted_arbitrage_indicator.iloc[-1], 2)
-        return result
-    result.direction = SignalResultsEnum.AMBIGUOUS
-    return result
+        return SignalSchema(
+            timestamp=ts,
+            direction=SignalResultsEnum.BUY_ALL,
+            value=round(buy.value, 2),
+            traceback=traceback,
+        )
+
+    return SignalSchema(
+        timestamp=ts,
+        direction=SignalResultsEnum.AMBIGUOUS,
+        value=0.0,
+        traceback=traceback,
+    )

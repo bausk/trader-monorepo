@@ -1,16 +1,17 @@
-import sys, traceback
+import sys
+from ticker.processing.process_ticks import write_ticks_to_session_store
+import traceback
 import asyncio
 import aiojobs
 from aiojobs._job import Job
 from janus import Queue
-from typing import Type
 
 from dbmodels.db import db, StrategyModel
 from dbmodels.strategy_models import StrategySchema
 from dbmodels.source_models import ResourceModel, ResourceSchema, Source
 from parameters.enums import StrategiesEnum
 from strategies.monitor_strategy import monitor_strategy_executor
-from utils.timeseries.timescale_utils import get_pool
+from utils.timescaledb.tsdb_manage import get_pool
 
 from .processing.default_postprocessor import default_postprocessor
 from .sourcing.default_source_loader import default_resource_loader
@@ -38,6 +39,7 @@ class Ticker:
         self.active_schedulers = {}
         self.resource_schedulers = {}
         self.strategy_queues = {}
+        self.ticks_awaiting_processing_queues = {}
         self.queues_per_resource = {}
 
     async def run(self, app):
@@ -133,7 +135,7 @@ class Ticker:
             for resource_id, strategy_list in resources_hash.items():
                 self.queues_per_resource[resource_id] = [
                     self.strategy_queues[s.id] for s in strategy_list
-                ]
+                ] + [self.ticks_awaiting_processing_queues[s.id] for s in strategy_list]
 
             for _, resource in active_resources.items():
                 await self.ensure_started_resource(resource)
@@ -141,7 +143,10 @@ class Ticker:
     async def stop_strategy(self, x):
         queue = self.strategy_queues[x]
         await queue.async_q.put(None)
+        queue = self.ticks_awaiting_processing_queues[x]
+        await queue.async_q.put(None)
         del self.strategy_queues[x]
+        del self.ticks_awaiting_processing_queues[x]
 
     async def stop_resource(self, resource_id: int):
         scheduler = self.resource_schedulers[resource_id]
@@ -171,10 +176,16 @@ class Ticker:
     async def ensure_started_strategy(self, strategy: StrategyModel):
         if not self.strategy_queues.get(strategy.id):
             source_q = Queue()
+            ticks_to_write_q = Queue()
             processing_q = Queue()
             await self.scheduler.spawn(
                 monitor_strategy_executor(
                     self.timeseries_connection_pool, strategy, source_q, processing_q
+                )
+            )
+            await self.scheduler.spawn(
+                write_ticks_to_session_store(
+                    self.timeseries_connection_pool, strategy, ticks_to_write_q
                 )
             )
             await self.scheduler.spawn(
@@ -183,3 +194,4 @@ class Ticker:
                 )
             )
             self.strategy_queues[strategy.id] = source_q
+            self.ticks_awaiting_processing_queues[strategy.id] = ticks_to_write_q

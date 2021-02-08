@@ -5,7 +5,7 @@ import asyncio
 from dbmodels.db import init_middleware
 from server.security import get_middleware
 from server.routes import routes
-from utils.timeseries.timescale_utils import pool_context
+from utils.timescaledb.tsdb_manage import pool_context
 
 # Load encrypted config
 from secrets_management.manage import (

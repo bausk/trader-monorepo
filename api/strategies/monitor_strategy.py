@@ -1,21 +1,31 @@
 from typing import List
+import logging
 import asyncio
 from datetime import datetime, timedelta
 from janus import Queue
 from dbmodels.strategy_models import StrategySchema
-from utils.schemas.dataflow_schemas import ProcessTaskSchema, SignalResultSchema
+from utils.schemas.dataflow_schemas import (
+    CalculationSchema,
+    IndicatorSchema,
+    SignalSchema,
+    SourceFetchResultSchema,
+)
 from utils.schemas.request_schemas import DataRequestSchema
-from utils.schemas.response_schemas import PricepointSchema
+from utils.schemas.response_schemas import InputMarketDataSchema, PricepointSchema
 from utils.timeseries.constants import DATA_TYPES
-from utils.timeseries.timescale_utils import get_prices
-from .monitor_strategy_signal import calculate_signal
+from utils.timescaledb.tsdb_read import get_prices
+from .monitor_strategy_signal import calculate_indicators, calculate_signal
+
+
+logger = logging.getLogger(__name__)
 
 
 async def monitor_strategy_executor(
     pool, strategy: StrategySchema, in_queue: Queue, out_queue: Queue
 ) -> None:
     while True:
-        task: ProcessTaskSchema = await in_queue.async_q.get()
+        source_result: SourceFetchResultSchema = await in_queue.async_q.get()
+        indicators = signal = None
         # TODO: # 1. Error management
         # 2. Refactor strategy executor: make tools to get data without cruft
         # 3. Refactor executor: pass data to postprocessing without relying on strategy
@@ -26,13 +36,13 @@ async def monitor_strategy_executor(
             primary_params = DataRequestSchema(
                 from_datetime=from_datetime,
                 period=1,
-                label=task.label_primary,
+                label=source_result.label_primary,
                 data_type=DATA_TYPES.ticks_primary,
             )
             secondary_params = DataRequestSchema(
                 from_datetime=from_datetime,
                 period=1,
-                label=task.label_secondary,
+                label=source_result.label_secondary,
                 data_type=DATA_TYPES.ticks_secondary,
             )
             primary_data_coro = asyncio.create_task(
@@ -47,18 +57,26 @@ async def monitor_strategy_executor(
             if primary_data_coro in done and secondary_data_coro in done:
                 primary_data: List[PricepointSchema] = primary_data_coro.result()
                 secondary_data: List[PricepointSchema] = secondary_data_coro.result()
-                signal: SignalResultSchema = calculate_signal(
-                    primary_data, secondary_data
+                primary_market_data = InputMarketDataSchema(ticks=primary_data)
+                secondary_market_data = InputMarketDataSchema(ticks=secondary_data)
+                indicators: List[IndicatorSchema] = calculate_indicators(
+                    [
+                        primary_market_data,
+                        secondary_market_data,
+                    ]
                 )
-                task.signals += [signal]
+                signal: SignalSchema = calculate_signal(indicators)
             else:
                 for coro in done:
                     coro.cancel()
                 for coro in pending:
                     coro.cancel()
         except Exception as e:
-            print(e)
-        await out_queue.async_q.put(task)
+            logger.error("Strategy execution failed")
+            logger.error(e)
+        await out_queue.async_q.put(
+            CalculationSchema(indicators=indicators, signal=signal)
+        )
         in_queue.async_q.task_done()
-        if task is None:
+        if source_result is None:
             return
