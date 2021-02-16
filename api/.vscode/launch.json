@@ -24,6 +24,7 @@
             "request": "attach",
             "port": 5678,
             "host": "localhost",
+            "justMyCode": false,
             "pathMappings": [
                 {
                     "localRoot": "${workspaceFolder}",
@@ -38,12 +39,28 @@
             "port": 5680,
             "subProcess": true,
             "host": "localhost",
+            "justMyCode": false,            
             "pathMappings": [
                 {
                     "localRoot": "${workspaceFolder}",
                     "remoteRoot": "/code"
                 }
             ]
-        }
+        },
+        {
+            "name": "Python: debug backtester",
+            "type": "python",
+            "request": "attach",
+            "port": 5681,
+            "subProcess": true,
+            "host": "localhost",
+            "justMyCode": false,            
+            "pathMappings": [
+                {
+                    "localRoot": "${workspaceFolder}",
+                    "remoteRoot": "/code"
+                }
+            ]
+        }        
     ]
 }
