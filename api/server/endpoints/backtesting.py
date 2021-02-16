@@ -35,7 +35,7 @@ class BacktestSessionView(web.View, CorsViewMixin):
     schema: Type[BaseModel] = BacktestSessionSchema
 
     async def post(self: web.View) -> Response:
-        await check_permission(self.request, Permissions.WRITE_LIVE)
+        await check_permission(self.request, Permissions.READ_HISTORY)
         raw_data = await self.request.json()
         # Only strategy_id is expected in test BacktestSessionSchema
         incoming: BacktestSessionSchema = self.schema(**raw_data)
