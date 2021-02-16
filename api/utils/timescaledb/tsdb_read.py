@@ -10,6 +10,7 @@ from utils.schemas.response_schemas import (
     OHLCSchema,
     PricepointSchema,
     SignalResultSchema,
+    SignalsListSchema,
 )
 from utils.schemas.request_schemas import DataRequestSchema, MarkersRequestSchema
 
@@ -86,14 +87,14 @@ def reduce_signals(signals: list, period: int) -> list:
 
 async def get_reduced_signals(
     session_id, request_params: MarkersRequestSchema, request
-) -> List[SignalResultSchema]:
+) -> SignalsListSchema:
     pool: Pool = request.app["TIMESCALE_POOL"]
     if not request_params.period:
         raise Exception("Period not provided for reduced signals calculation!")
     if not request_params.to_datetime:
         request_params.to_datetime = datetime.now()
 
-    reduced_result = []
+    reduced_result: List[SignalResultSchema] = []
     async with pool.acquire() as conn:
         query = """
         SELECT
@@ -127,12 +128,12 @@ async def get_reduced_signals(
         except Exception as e:
             print(e)
             raise e
-    return parse_obj_as(List[SignalResultSchema], list(reduced_result))
+    return parse_obj_as(SignalsListSchema, list(reduced_result))
 
 
 async def get_signals(
     session_id, request_params: MarkersRequestSchema, request
-) -> List[SignalResultSchema]:
+) -> SignalsListSchema:
     pool: Pool = request.app["TIMESCALE_POOL"]
     if not request_params.to_datetime:
         request_params.to_datetime = datetime.now()
@@ -155,8 +156,8 @@ async def get_signals(
         params.extend(
             [session_id, request_params.from_datetime, request_params.to_datetime]
         )
-        result = await conn.fetch(query, *params)
-        return parse_obj_as(List[SignalResultSchema], list(result))
+        result: SignalResultSchema = await conn.fetch(query, *params)
+        return parse_obj_as(SignalsListSchema, list(result))
 
 
 async def get_terminal_data(session_id, request_params: DataRequestSchema, request):

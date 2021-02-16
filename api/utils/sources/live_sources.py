@@ -23,7 +23,7 @@ class LiveKunaSource(AbstractSource):
             trades.append(trade)
         return self.deduplicate(trades)
 
-    async def get_latest(self):
+    async def get_latest(self, current_datetime):
         async with self.session.get(self.format_endpoint()) as resp:
             return self.to_trades(await resp.json())
 
@@ -50,7 +50,7 @@ class LiveCryptowatchSource(AbstractSource):
             trades.append(trade)
         return self.deduplicate(trades)
 
-    async def get_latest(self):
+    async def get_latest(self, current_datetime):
         async with self.session.get(self.format_endpoint()) as resp:
             return self.to_trades(await resp.json())
 
@@ -77,6 +77,6 @@ class LiveCoinbaseSource(AbstractSource):
             trades.append(trade)
         return self.deduplicate(trades)
 
-    async def get_latest(self):
+    async def get_latest(self, current_datetime):
         async with self.session.get(self.format_endpoint()) as resp:
             return self.to_trades(await resp.json())

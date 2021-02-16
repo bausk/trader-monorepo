@@ -110,7 +110,6 @@ class SourcesIntervalView(web.View, CorsViewMixin):
         table_fullname = source_config["table_name"]
         if not table_fullname:
             raise web.HTTPConflict(text="table_name not defined in source config")
-        print(self.request.query)
         source_executor: AbstractSource = LIVE_SOURCES[source_model.typename]
         res = await source_executor.list_data_in_interval(
             table_fullname=table_fullname,

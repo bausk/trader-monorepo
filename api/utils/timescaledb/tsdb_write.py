@@ -13,7 +13,9 @@ from utils.schemas.dataflow_schemas import (
 logger = logging.getLogger(__name__)
 
 
-async def write_indicators(pool, session_id, indicators: List[IndicatorSchema]) -> None:
+async def write_indicators(
+    pool, session_id: int, indicators: List[IndicatorSchema]
+) -> None:
     for indicator in indicators:
         indicator_tuples = []
         for datapoint in indicator.indicator:
@@ -40,7 +42,7 @@ async def write_indicators(pool, session_id, indicators: List[IndicatorSchema]) 
                 pass
 
 
-async def write_signals(session_id, pool, signals: List[SignalSchema]) -> None:
+async def write_signals(pool, session_id: int, signals: List[SignalSchema]) -> None:
     prepared_signals = []
     for signal in signals:
         values = (

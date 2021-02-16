@@ -58,3 +58,7 @@ class SignalResultSchema(BaseModel):
             else:
                 return v
         return None
+
+
+class SignalsListSchema(BaseModel):
+    __root__: List[SignalResultSchema]

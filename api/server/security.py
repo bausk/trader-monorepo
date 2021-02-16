@@ -65,7 +65,7 @@ async def get_middleware():
         try:
             token = request.headers.get("authorization", None).split(" ")[1]
             unverified_header = jwt.get_unverified_header(token)
-        except:
+        except Exception:
             return await handler(request)
         rsa_key = await validate_header(unverified_header)
         if rsa_key:
@@ -111,6 +111,6 @@ async def check_permission(req: Request, permission) -> None:
         user_permissions = req.user["permissions"]
         if permission in user_permissions:
             return
-    except:
+    except Exception:
         pass
     raise web.HTTPUnauthorized

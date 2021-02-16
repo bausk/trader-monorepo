@@ -1,4 +1,5 @@
 import sys
+from ticker.timing import live_timer, tick_timer
 from ticker.processing.process_ticks import write_ticks_to_session_store
 import traceback
 import asyncio
@@ -12,10 +13,10 @@ from dbmodels.source_models import ResourceModel, ResourceSchema, Source
 from parameters.enums import StrategiesEnum
 from strategies.monitor_strategy import monitor_strategy_executor
 from utils.timescaledb.tsdb_manage import get_pool
+from utils.sources.select import select_live_sources
 
-from .processing.default_postprocessor import default_postprocessor
-from .sourcing.default_source_loader import default_resource_loader
-
+from ticker.processing.default_postprocessor import default_postprocessor
+from ticker.sourcing.default_source_loader import default_sources_loader
 
 STRATEGY_EXECUTORS = {
     StrategiesEnum.monitor: monitor_strategy_executor,
@@ -134,8 +135,8 @@ class Ticker:
             # Reschedule strategy queues to update data in resources
             for resource_id, strategy_list in resources_hash.items():
                 self.queues_per_resource[resource_id] = [
-                    self.strategy_queues[s.id] for s in strategy_list
-                ] + [self.ticks_awaiting_processing_queues[s.id] for s in strategy_list]
+                    self.ticks_awaiting_processing_queues[s.id] for s in strategy_list
+                ]
 
             for _, resource in active_resources.items():
                 await self.ensure_started_resource(resource)
@@ -168,29 +169,40 @@ class Ticker:
             print(f"Activating executor {res_id}")
             scheduler: aiojobs.Scheduler = await aiojobs.create_scheduler()
             session = self.app["PERSISTENT_SESSION"]
+            sources = select_live_sources(resource=resource)
+            queues = self.queues_per_resource[resource.id]
+            timer = tick_timer(live_timer(), 8)
             await scheduler.spawn(
-                default_resource_loader(resource, self.queues_per_resource, session)
+                default_sources_loader(sources, queues, session, timer)
             )
             self.resource_schedulers[res_id] = scheduler
 
     async def ensure_started_strategy(self, strategy: StrategyModel):
         if not self.strategy_queues.get(strategy.id):
-            source_q = Queue()
             ticks_to_write_q = Queue()
+            source_q = Queue()
             processing_q = Queue()
             await self.scheduler.spawn(
-                monitor_strategy_executor(
-                    self.timeseries_connection_pool, strategy, source_q, processing_q
+                write_ticks_to_session_store(
+                    self.timeseries_connection_pool,
+                    strategy.live_session_id,
+                    ticks_to_write_q,
+                    source_q,
                 )
             )
             await self.scheduler.spawn(
-                write_ticks_to_session_store(
-                    self.timeseries_connection_pool, strategy, ticks_to_write_q
+                monitor_strategy_executor(
+                    self.timeseries_connection_pool,
+                    strategy.live_session_id,
+                    source_q,
+                    processing_q,
                 )
             )
             await self.scheduler.spawn(
                 default_postprocessor(
-                    self.timeseries_connection_pool, strategy, processing_q
+                    self.timeseries_connection_pool,
+                    strategy.live_session_id,
+                    processing_q,
                 )
             )
             self.strategy_queues[strategy.id] = source_q

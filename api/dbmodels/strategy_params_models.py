@@ -12,11 +12,10 @@ class BacktestParamsSchema(Privatable):
         arbitrary_types_allowed = True
 
     strategy_name: str
-    start_at: Optional[Union[datetime, date]]
-    finish_at: Optional[Union[datetime, date]]
     tick_frequency: Optional[int]
 
 
+# TODO: CURRENTLY NOT IN USE AT ALL
 class LiveParamsSchema(Privatable):
     class Config:
         arbitrary_types_allowed = True

@@ -25,7 +25,7 @@ class TimeseriesSchema(BaseModel):
 
 
 class IndicatorSchema(BaseModel):
-    label: IndicatorsEnum
+    label: str
     indicator: List[TimeseriesSchema]
 
 
@@ -41,9 +41,12 @@ class CalculationSchema(BaseModel):
     signal: SignalSchema
 
 
+class SourceFetchSchema(BaseModel):
+    ticks: List[TickSchema]
+    label: str
+    data_type: Optional[int]
+
+
 class SourceFetchResultSchema(ValidatedAssignmentSchema):
     timestamp: datetime
-    ticks_primary: Optional[List[TickSchema]]
-    label_primary: Optional[str]
-    ticks_secondary: Optional[List[TickSchema]]
-    label_secondary: Optional[str]
+    ticks: List[SourceFetchSchema]

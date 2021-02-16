@@ -9,7 +9,7 @@ from dbmodels.db import BaseModel
 from server.security import check_permission, Permissions
 from typing import Type, List
 from utils.schemas.request_schemas import DataRequestSchema, MarkersRequestSchema
-from utils.schemas.response_schemas import OHLCSchema, SignalResultSchema
+from utils.schemas.response_schemas import OHLCSchema, SignalsListSchema
 from utils.timescaledb.tsdb_read import (
     get_terminal_data,
     get_signals,
@@ -62,11 +62,11 @@ class SignalsDataView(web.View, CorsViewMixin):
                 from_datetime=from_datetime, **self.request.query
             )
             if not request_data.period:
-                result: SignalResultSchema = await get_signals(
+                result: SignalsListSchema = await get_signals(
                     session_id, request_data, self.request
                 )
             else:
-                result: SignalResultSchema = await get_reduced_signals(
+                result: SignalsListSchema = await get_reduced_signals(
                     session_id, request_data, self.request
                 )
             return web.json_response(body=result.json())

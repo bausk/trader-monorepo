@@ -49,7 +49,7 @@ async def init_signals_table(conn):
     )"""
     await conn.execute(f"CREATE TABLE IF NOT EXISTS {SCHEMA};")
     try:
-        await conn.execute("SELECT create_hypertable('{NAME}', 'timestamp');")
+        await conn.execute(f"SELECT create_hypertable('{NAME}', 'timestamp');")
         logger.info(f"Created hypertable: {NAME}")
     except asyncpg.exceptions.UnknownPostgresError:
         logger.info(f"Hypertable not created, assuming exists: {NAME}")
@@ -71,7 +71,7 @@ async def init_indicators_table(conn):
     )"""
     await conn.execute(f"CREATE TABLE IF NOT EXISTS {SCHEMA};")
     try:
-        await conn.execute("SELECT create_hypertable('{NAME}', 'timestamp');")
+        await conn.execute(f"SELECT create_hypertable('{NAME}', 'timestamp');")
         logger.info(f"Created hypertable: {NAME}")
     except asyncpg.exceptions.UnknownPostgresError:
         logger.info(f"Hypertable not created, assuming exists: {NAME}")
@@ -95,7 +95,7 @@ async def init_ticks_table(conn):
     )"""
     await conn.execute(f"CREATE TABLE IF NOT EXISTS {SCHEMA};")
     try:
-        await conn.execute("SELECT create_hypertable('{NAME}', 'timestamp');")
+        await conn.execute(f"SELECT create_hypertable('{NAME}', 'timestamp');")
         logger.info(f"Created hypertable: {NAME}")
     except asyncpg.exceptions.UnknownPostgresError:
         logger.info(f"Hypertable not created, assuming exists: {NAME}")

@@ -23,6 +23,7 @@ services:
       # - 5000:5000
       - 5678:5678
       - 5680:5680
+      - 5681:5681
     links:
       - postgres
       - timescaledb

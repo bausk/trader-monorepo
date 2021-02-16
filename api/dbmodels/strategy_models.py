@@ -1,15 +1,14 @@
 import json
-from typing import List, Optional, Tuple, Union, Any, Type
-from pydantic import validator, ValidationError
-from datetime import datetime
+from typing import Optional
+from pydantic import validator
 
 from parameters.enums import StrategyTypesEnum
 
 from .common_models import Privatable
-from .db import db
-from .strategy_params_models import BacktestParamsSchema, LiveParamsSchema
+from .strategy_params_models import LiveParamsSchema
 from .session_models import LiveSessionSchema
 from .source_models import ResourceSchema
+from dbmodels.db_init import db
 
 
 class StrategyModel(db.Model):

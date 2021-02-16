@@ -8,7 +8,7 @@ class AbstractSource:
     Interface for source of data selectable and viewable from frontend.
     """
 
-    def __init__(self, session, config=None):
+    def __init__(self, session=None, config=None):
         self.session = session
         if config:
             self.config = config
@@ -20,7 +20,7 @@ class AbstractSource:
         raise NotImplementedError("Implement get_availability_intervals")
 
     @classmethod
-    async def get_latest(cls):
+    async def get_latest(cls, current_datetime=None, interval=None) -> List[TickSchema]:
         raise NotImplementedError("Implement get_availability_intervals")
 
     @classmethod

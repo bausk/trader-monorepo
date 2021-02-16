@@ -1,69 +1,58 @@
 import asyncio
 import logging
-from datetime import datetime
-from dbmodels.source_models import ResourceSchema
+from typing import List, AsyncGenerator
+from utils.timeseries.constants import DATA_TYPES
 from utils.sources.live_sources import AbstractSource
-from utils.sources.select import LIVE_SOURCES
-from utils.schemas.dataflow_schemas import SourceFetchResultSchema
+from utils.schemas.dataflow_schemas import SourceFetchResultSchema, SourceFetchSchema
 
 
 logger = logging.getLogger(__name__)
 
 
-async def default_resource_loader(
-    resource: ResourceSchema, queues_per_resource, session, is_live=True
+async def default_sources_loader(
+    sources: List[AbstractSource],
+    queues,
+    session,
+    tick_timer: AsyncGenerator,
 ):
-    # TODO: get cycle period from resource config
-    sleep_seconds = 8
-    primary_source = None
-    if resource.primary_live_source_model:
-        primary_source: AbstractSource = LIVE_SOURCES.get(
-            resource.primary_live_source_model.typename
-        )(session)
-    secondary_source = None
-    if resource.secondary_live_source_model:
-        secondary_source: AbstractSource = LIVE_SOURCES.get(
-            resource.secondary_live_source_model.typename
-        )(session)
+    """Default sources loader consumes an async tick timer generator.
+    In its cycle, it calls get_latest on a list of sources
+    and produces the resulting lists of ticks into queues to be consumed by strategies and/or postprocessors.
+    Sources loader can terminate in two possible ways:
+    -- on generator exhaustion (when running a backtest), or
+    -- when it is closed externally by a scheduler (when running live).
+    """
 
-    async def no_result():
-        return None
+    for source in sources:
+        source.session = session
 
-    while True:
-        logger.info("[source tick]")
-        primary_result = asyncio.create_task(
-            primary_source.get_latest() if primary_source else no_result()
-        )
-        secondary_result = asyncio.create_task(
-            secondary_source.get_latest() if secondary_source else no_result()
-        )
-        done, pending = await asyncio.wait(
-            {primary_result, secondary_result}, timeout=4
-        )
-        if primary_result in done and secondary_result in done:
-            try:
-                ticks_primary = primary_result.result()
-                ticks_secondary = secondary_result.result()
-                task = SourceFetchResultSchema(
-                    ticks_primary=ticks_primary,
-                    label_primary=primary_source.label if primary_source else None,
-                    ticks_secondary=ticks_secondary,
-                    label_secondary=secondary_source.label
-                    if secondary_source
-                    else None,
-                    timestamp=datetime.now(),
+    async for current_datetime in tick_timer:
+        result_tasks = [
+            asyncio.create_task(x.get_latest(current_datetime)) for x in sources
+        ]
+        results = await asyncio.wait_for(asyncio.gather(*result_tasks), timeout=4)
+        data_types = [DATA_TYPES.ticks_primary, DATA_TYPES.ticks_secondary]
+        # Only generate ticks if all sources succeeded
+        # if all(x in done for x in result_tasks):
+        try:
+            ticks_results: List[SourceFetchSchema] = []
+            for task, source, data_type in zip(results, sources, data_types):
+                ticks_result = SourceFetchSchema(
+                    ticks=task,
+                    label=source.label,
+                    data_type=data_type,
                 )
-                queues = queues_per_resource[resource.id]
-                for q in queues:
-                    await q.async_q.put(task)
-            except Exception as e:
-                logger.info("Source fetch raised an exception")
-                logger.info(e)
-        else:
-            for coro in done:
-                coro.cancel()
-            for coro in pending:
-                coro.cancel()
-
-        # TODO: wrap the above into concurrent wait so that total cycle time doesn't depend on network response time
-        await asyncio.sleep(sleep_seconds)
+                ticks_results.append(ticks_result)
+            fetch_result = SourceFetchResultSchema(
+                ticks=ticks_results,
+                timestamp=current_datetime,
+            )
+            for q in queues:
+                await q.async_q.put(fetch_result)
+        except Exception as e:
+            logger.info("Source fetch raised an exception")
+            logger.info(e)
+    print("sources loader: exit")
+    for q in queues:
+        print("queue exit")
+        await q.async_q.put(None)

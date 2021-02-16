@@ -1,24 +1,21 @@
 import os
-from gino.ext.aiohttp import Gino
 
-
-db = Gino()
-
-from .common_models import BaseModel
-from .source_models import (
+from .db_init import db
+from dbmodels.common_models import BaseModel
+from dbmodels.source_models import (
     Source,
     SourceSchema,
     SourceSchemaWithStats,
     ResourceModel,
     ResourceSchema,
 )
-from .strategy_models import StrategyModel, StrategySchema, StrategyTypesEnum
-from .session_models import (
+from dbmodels.session_models import (
     BacktestSessionModel,
     LiveSessionModel,
     BacktestSessionSchema,
     LiveSessionSchema,
 )
+from dbmodels.strategy_models import StrategyModel, StrategySchema, StrategyTypesEnum
 
 
 def get_url():

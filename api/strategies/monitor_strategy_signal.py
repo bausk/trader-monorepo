@@ -41,8 +41,8 @@ def calculate_indicators(
     Returns two indicators, one for buy and one for sell/close position.
     """
 
-    no_op = IndicatorSchema(indicator=[])
-    if not all(map(check_is_good_for_signal, market_data)):
+    no_op = IndicatorSchema(label="None", indicator=[])
+    if not all(map(lambda x: check_is_good_for_signal(x.ticks), market_data)):
         return [no_op, no_op]
 
     min_ask_bid_ratio = 0.0035

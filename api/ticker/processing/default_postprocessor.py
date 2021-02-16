@@ -1,25 +1,23 @@
 import asyncio
-from dbmodels.strategy_models import StrategySchema
-from utils.schemas.dataflow_schemas import SourceFetchResultSchema
+from utils.schemas.dataflow_schemas import CalculationSchema
 from utils.timescaledb.tsdb_write import write_signals, write_indicators
 
 
-async def default_postprocessor(pool, strategy: StrategySchema, process_queue):
-    session_id = strategy.live_session_id
+async def default_postprocessor(pool, session_id: int, process_queue):
     if not session_id:
         raise Exception(
             "Data integrity loss: no session ID available during signal postprocessing"
         )
     while True:
-        task: SourceFetchResultSchema = await process_queue.async_q.get()
-        if task is None:
-            return
-        if len(task.signals) > 0:
-            signals_task = asyncio.create_task(
-                write_indicators(session_id, pool, task.signals)
-            )
-            indicators_task = asyncio.create_task(
-                write_signals(session_id, pool, task.signals)
-            )
-            await asyncio.wait(set([signals_task, indicators_task]), timeout=6)
+        task: CalculationSchema = await process_queue.async_q.get()
         process_queue.async_q.task_done()
+        if task is None:
+            print("postprocessor exit")
+            return
+        signals_task = asyncio.create_task(
+            write_indicators(pool, session_id, task.indicators)
+        )
+        indicators_task = asyncio.create_task(
+            write_signals(pool, session_id, [task.signal])
+        )
+        await asyncio.wait(set([signals_task, indicators_task]), timeout=6)

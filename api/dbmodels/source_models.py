@@ -3,8 +3,7 @@ from datetime import datetime
 
 from parameters.enums import SourcesEnum
 from .common_models import Privatable
-from .db import db
-from .session_models import LiveSessionSchema
+from dbmodels.db_init import db
 
 
 class Source(db.Model):

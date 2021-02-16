@@ -1,12 +1,11 @@
-import enum
 import json
-from typing import List, Optional, Tuple, Union, Any, Type
-from pydantic import validator, ValidationError
+from typing import Optional
+from pydantic import validator
 from datetime import datetime
 
-from .common_models import Privatable
-from .db import db
-from .strategy_params_models import BacktestParamsSchema, LiveParamsSchema
+from dbmodels.db_init import db
+from dbmodels.common_models import Privatable
+from dbmodels.strategy_params_models import LiveParamsSchema
 
 
 class BacktestSessionModel(db.Model):
@@ -14,8 +13,10 @@ class BacktestSessionModel(db.Model):
     id = db.Column(db.Integer(), primary_key=True)
 
     strategy_id = db.Column(db.Integer, db.ForeignKey("strategies.id"))
-    created_at = db.Column(db.DateTime(), nullable=True)
+    start_datetime = db.Column(db.DateTime(), nullable=True)
+    end_datetime = db.Column(db.DateTime(), nullable=True)
     config_json = db.Column(db.Unicode(), default="{}")
+    backtest_type = db.Column(db.Unicode(), default="")
 
 
 class LiveSessionModel(db.Model):
@@ -33,24 +34,24 @@ class BacktestSessionSchema(Privatable):
         orm_mode = True
 
     id: Optional[int]
-    strategy_id: Optional[int]
-    strategy: Optional[int]
-    created_at: Optional[datetime]
+    strategy_id: int
     start_datetime: Optional[datetime]
     end_datetime: Optional[datetime]
-    config_json: Optional[BacktestParamsSchema]
+    config_json: Optional[dict]
+    backtest_type: Optional[str]
 
     @validator("config_json", pre=True)
     def deserialize_config(cls, v, values, **kwargs):
         if v:
             if isinstance(v, str):
-                return BacktestParamsSchema(**json.loads(v))
-            return BacktestParamsSchema(**v)
+                return json.loads(v)
+            return v
         return None
 
     def dict(self, *args, **kwargs):
         result = super().dict(*args, **kwargs)
-        result["config_json"] = json.dumps(result["config_json"])
+        if "config_json" in result:
+            result["config_json"] = json.dumps(result["config_json"])
         return result
 
 
