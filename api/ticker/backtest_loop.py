@@ -22,11 +22,11 @@ async def backtest(timer, backtest_session, strategy):
     processing_q = Queue()
     coros = [
         default_sources_loader(sources, [ticks_to_write_q], session, timer),
-        monitor_strategy_executor(
-            timeseries_connection_pool, backtest_session.id, source_q, processing_q
-        ),
         write_ticks_to_session_store(
             timeseries_connection_pool, backtest_session.id, ticks_to_write_q, source_q
+        ),
+        monitor_strategy_executor(
+            timeseries_connection_pool, backtest_session.id, source_q, processing_q
         ),
         default_postprocessor(
             timeseries_connection_pool, backtest_session.id, processing_q

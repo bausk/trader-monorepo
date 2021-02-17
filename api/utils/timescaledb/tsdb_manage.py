@@ -56,7 +56,7 @@ async def init_signals_table(conn):
 
     await conn.execute(
         f"CREATE UNIQUE INDEX IF NOT EXISTS unique_{NAME} \
-        ON {NAME}(timestamp, session_id, label);"
+        ON {NAME}(session_id, label, timestamp);"
     )
 
 
@@ -102,7 +102,11 @@ async def init_ticks_table(conn):
 
     await conn.execute(
         f"CREATE UNIQUE INDEX IF NOT EXISTS unique_{NAME} \
-        ON {NAME}(timestamp, session_id, data_type, label, funds);"
+        ON {NAME}(timestamp, session_id, data_type, label);"
+    )
+    await conn.execute(
+        f"CREATE INDEX IF NOT EXISTS get_prices_{NAME} \
+        ON {NAME}(session_id, label, data_type, timestamp);"
     )
 
 

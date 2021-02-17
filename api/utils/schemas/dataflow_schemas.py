@@ -33,7 +33,7 @@ class SignalSchema(ValidatedAssignmentSchema):
     timestamp: Optional[datetime]
     direction: SignalResultsEnum
     value: Optional[float]
-    traceback: Optional[Union[Dict, List]]
+    traceback: Optional[Union[List, Dict]]
 
 
 class CalculationSchema(BaseModel):

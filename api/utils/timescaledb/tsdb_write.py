@@ -1,3 +1,4 @@
+import json
 import logging
 import pytz
 import asyncpg
@@ -50,7 +51,7 @@ async def write_signals(pool, session_id: int, signals: List[SignalSchema]) -> N
             session_id,
             signal.direction,
             signal.value,
-            signal.traceback,
+            json.dumps(signal.traceback),
         )
         prepared_signals.append(values)
     async with pool.acquire() as conn:
@@ -91,9 +92,10 @@ async def write_ticks(session_id, data_type, label, ticks: List[TickSchema], poo
                 """
                 INSERT INTO ticks(timestamp, session_id, data_type, label, price, volume, funds)
                 VALUES ($1, $2, $3, $4, $5, $6, $7)
-                ON CONFLICT (timestamp, session_id, data_type, label, funds) DO UPDATE
+                ON CONFLICT (timestamp, session_id, data_type, label) DO UPDATE
                 SET price=EXCLUDED.price,
-                    volume=EXCLUDED.volume;
+                    volume=EXCLUDED.volume,
+                    funds=EXCLUDED.funds;
             """,
                 prepared_ticks,
             )

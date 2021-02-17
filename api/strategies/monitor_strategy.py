@@ -34,11 +34,12 @@ async def monitor_strategy_executor(
             return
 
         try:
-            from_datetime = datetime.today() - timedelta(hours=2)
+            from_datetime = source_result.timestamp - timedelta(hours=2)
             tasks = []
             for tick_source in source_result.ticks:
                 params = DataRequestSchema(
                     from_datetime=from_datetime,
+                    to_datetime=source_result.timestamp,
                     period=1,
                     label=tick_source.label,
                     data_type=tick_source.data_type,
@@ -53,7 +54,7 @@ async def monitor_strategy_executor(
                     market_data = InputMarketDataSchema(ticks=data_from_db)
                     market_inputs.append(market_data)
                 indicators: List[IndicatorSchema] = calculate_indicators(market_inputs)
-                signal: SignalSchema = calculate_signal(indicators)
+                signal: SignalSchema = calculate_signal(indicators, source_result.timestamp)
                 await out_queue.async_q.put(
                     CalculationSchema(indicators=indicators, signal=signal)
                 )

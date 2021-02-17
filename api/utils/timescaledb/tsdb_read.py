@@ -21,7 +21,9 @@ logger = logging.getLogger(__name__)
 async def get_prices(
     session_id, request_params: DataRequestSchema, pool: Pool
 ) -> List[PricepointSchema]:
-    period = timedelta(minutes=request_params.period)
+    """Get prices.
+
+    """
     if not request_params.to_datetime:
         request_params.to_datetime = datetime.now()
     async with pool.acquire() as conn:
@@ -40,16 +42,15 @@ async def get_prices(
         ORDER BY time ASC;
         """
         params = (
-            period,
+            timedelta(minutes=request_params.period),
             session_id,
             request_params.label,
             request_params.data_type,
             request_params.from_datetime,
             request_params.to_datetime,
         )
-        return parse_obj_as(
-            List[PricepointSchema], list(await conn.fetch(query, *params))
-        )
+        result = list(await conn.fetch(query, *params))
+        return parse_obj_as(List[PricepointSchema], result)
 
 
 signal_weights = {

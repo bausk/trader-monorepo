@@ -49,8 +49,8 @@ def calculate_indicators(
     disregard_bars_count: int = 10
     rolling_indicator_window: str = "180s"
 
-    primary_data = market_data[0]
-    secondary_data = market_data[0]
+    primary_data = market_data[0].ticks
+    secondary_data = market_data[1].ticks
     # Convert Pydantic lists to dataframes
     primary_dataframe = pd.DataFrame([x.dict() for x in primary_data])
     primary_dataframe["Time"] = pd.to_datetime(primary_dataframe.time, unit="s")
@@ -89,13 +89,13 @@ def calculate_indicators(
         rolling_indicator_window
     ).sum()
     buy_indicator = IndicatorSchema(
-        label=IndicatorsEnum.buy_indicator,
+        label=IndicatorsEnum.buy_probability_line,
         indicator=[
             dict(timestamp=x, value=y) for x, y in rolling_buy_indicator.items()
         ],
     )
     sell_indicator = IndicatorSchema(
-        label=IndicatorsEnum.sell_indicator,
+        label=IndicatorsEnum.sell_probability_line,
         indicator=[
             dict(timestamp=x, value=y) for x, y in rolling_sell_indicator.items()
         ],
@@ -103,11 +103,10 @@ def calculate_indicators(
     return [buy_indicator, sell_indicator]
 
 
-def calculate_signal(indicators: List[IndicatorSchema]) -> SignalSchema:
+def calculate_signal(indicators: List[IndicatorSchema], ts: datetime) -> SignalSchema:
 
     signal_threshold_buy: int = 8
     signal_threshold_sell: int = -5
-    ts = datetime.now()
 
     no_op = SignalSchema(
         timestamp=ts,
@@ -121,7 +120,7 @@ def calculate_signal(indicators: List[IndicatorSchema]) -> SignalSchema:
     sell = indicators[1].indicator[-1]
     sell_signal = sell.value < signal_threshold_sell
     buy_signal = buy.value > signal_threshold_buy
-    traceback = [buy.dict(), sell.dict()]
+    traceback = [buy.json(), sell.json()]
     if sell_signal:
         return SignalSchema(
             timestamp=ts,
