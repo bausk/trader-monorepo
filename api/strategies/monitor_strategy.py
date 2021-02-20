@@ -1,8 +1,9 @@
 from typing import List
 import logging
 import asyncio
-from datetime import datetime, timedelta
+from datetime import timedelta
 from janus import Queue
+from parameters.enums import SessionDatasetNames
 from utils.schemas.dataflow_schemas import (
     CalculationSchema,
     IndicatorSchema,
@@ -19,7 +20,11 @@ logger = logging.getLogger(__name__)
 
 
 async def monitor_strategy_executor(
-    pool, session_id: int, in_queue: Queue, out_queue: Queue
+    dataset_name: SessionDatasetNames,
+    pool,
+    session_id: int,
+    in_queue: Queue,
+    out_queue: Queue,
 ) -> None:
     print(f"Session ID: {session_id}")
     while True:
@@ -44,7 +49,9 @@ async def monitor_strategy_executor(
                     label=tick_source.label,
                     data_type=tick_source.data_type,
                 )
-                task = asyncio.create_task(get_prices(session_id, params, pool))
+                task = asyncio.create_task(
+                    get_prices(dataset_name, session_id, params, pool)
+                )
                 tasks.append(task)
             done, pending = await asyncio.wait({*tasks}, timeout=4)
             if all(x in done for x in tasks):
@@ -54,7 +61,9 @@ async def monitor_strategy_executor(
                     market_data = InputMarketDataSchema(ticks=data_from_db)
                     market_inputs.append(market_data)
                 indicators: List[IndicatorSchema] = calculate_indicators(market_inputs)
-                signal: SignalSchema = calculate_signal(indicators, source_result.timestamp)
+                signal: SignalSchema = calculate_signal(
+                    indicators, source_result.timestamp
+                )
                 await out_queue.async_q.put(
                     CalculationSchema(indicators=indicators, signal=signal)
                 )

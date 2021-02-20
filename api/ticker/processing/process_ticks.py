@@ -1,4 +1,5 @@
 import asyncio
+from parameters.enums import SessionDatasetNames
 from janus import Queue
 from utils.schemas.dataflow_schemas import SourceFetchResultSchema
 from utils.timescaledb.tsdb_write import (
@@ -7,6 +8,7 @@ from utils.timescaledb.tsdb_write import (
 
 
 async def write_ticks_to_session_store(
+    dataset_name: SessionDatasetNames,
     pool,
     session_id: int,
     ticks_queue: Queue,
@@ -27,6 +29,7 @@ async def write_ticks_to_session_store(
         for ticks_result in task.ticks:
             tick_task = asyncio.create_task(
                 write_ticks(
+                    dataset_name,
                     session_id,
                     ticks_result.data_type,
                     ticks_result.label,

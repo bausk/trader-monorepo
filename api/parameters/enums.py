@@ -30,3 +30,14 @@ class SignalResultsEnum(str, enum.Enum):
 class IndicatorsEnum(str, enum.Enum):
     buy_probability_line = "buy_probability_line"
     sell_probability_line = "sell_probability_line"
+
+
+class BacktestTypesEnum(str, enum.Enum):
+    test = "test"
+    bigquery = "bigquery"
+
+
+class SessionDatasetNames(str, enum.Enum):
+    test = "test"
+    backtest = "backtest"
+    live = "live"

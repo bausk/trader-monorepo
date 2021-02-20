@@ -1,9 +1,12 @@
 import asyncio
+from parameters.enums import SessionDatasetNames
 from utils.schemas.dataflow_schemas import CalculationSchema
 from utils.timescaledb.tsdb_write import write_signals, write_indicators
 
 
-async def default_postprocessor(pool, session_id: int, process_queue):
+async def default_postprocessor(
+    dataset_name: SessionDatasetNames, pool, session_id: int, process_queue
+):
     if not session_id:
         raise Exception(
             "Data integrity loss: no session ID available during signal postprocessing"
@@ -15,9 +18,9 @@ async def default_postprocessor(pool, session_id: int, process_queue):
             print("postprocessor exit")
             return
         signals_task = asyncio.create_task(
-            write_indicators(pool, session_id, task.indicators)
+            write_indicators(dataset_name, pool, session_id, task.indicators)
         )
         indicators_task = asyncio.create_task(
-            write_signals(pool, session_id, [task.signal])
+            write_signals(dataset_name, pool, session_id, [task.signal])
         )
         await asyncio.wait(set([signals_task, indicators_task]), timeout=6)

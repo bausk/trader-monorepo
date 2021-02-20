@@ -29,16 +29,31 @@ async def init_connection(dbname):
 async def reset_db(dbname):
     conn = await asyncpg.connect(f"{get_url()}template1")
     await conn.execute(f"DROP DATABASE IF EXISTS {dbname};")
-    await conn.execute(f"CREATE DATABASE {dbname};")
+    await conn.close()
+    await init_db(dbname)
+
+
+async def init_db(dbname=DEFAULT_DBNAME):
+    conn = await asyncpg.connect(f"{get_url()}template1")
+    try:
+        await conn.execute(f"CREATE DATABASE {dbname};")
+    except asyncpg.exceptions.DuplicateDatabaseError:
+        pass
     await conn.close()
     conn = await init_connection(dbname)
-    await init_ticks_table(conn)
-    await init_indicators_table(conn)
-    await init_signals_table(conn)
+    await init_ticks_table(conn, "live")
+    await init_ticks_table(conn, "test")
+    await init_ticks_table(conn, "backtest")
+    await init_signals_table(conn, "live")
+    await init_signals_table(conn, "test")
+    await init_signals_table(conn, "backtest")
+    await init_indicators_table(conn, "live")
+    await init_indicators_table(conn, "test")
+    await init_indicators_table(conn, "backtest")
 
 
-async def init_signals_table(conn):
-    NAME = "signals"
+async def init_signals_table(conn, dataset_name):
+    NAME = f"{dataset_name}_signals"
     SCHEMA = f"""{NAME} (
         timestamp TIMESTAMPTZ NOT NULL,
         session_id INTEGER, -- ID of session to which signal belongs
@@ -60,8 +75,8 @@ async def init_signals_table(conn):
     )
 
 
-async def init_indicators_table(conn):
-    NAME = "indicators"
+async def init_indicators_table(conn, dataset_name):
+    NAME = f"{dataset_name}_indicators"
     SCHEMA = f"""{NAME} (
         timestamp TIMESTAMPTZ NOT NULL,
         session_id INTEGER NOT NULL, -- ID of session to which indicator belongs
@@ -82,8 +97,8 @@ async def init_indicators_table(conn):
     )
 
 
-async def init_ticks_table(conn):
-    NAME = "ticks"
+async def init_ticks_table(conn, dataset_name):
+    NAME = f"{dataset_name}_ticks"
     SCHEMA = f"""{NAME} (
         timestamp TIMESTAMPTZ NOT NULL,
         session_id INTEGER, -- session id associated with the tick
@@ -108,19 +123,6 @@ async def init_ticks_table(conn):
         f"CREATE INDEX IF NOT EXISTS get_prices_{NAME} \
         ON {NAME}(session_id, label, data_type, timestamp);"
     )
-
-
-async def init_db(dbname=DEFAULT_DBNAME):
-    conn = await asyncpg.connect(f"{get_url()}template1")
-    try:
-        await conn.execute(f"CREATE DATABASE {dbname};")
-    except asyncpg.exceptions.DuplicateDatabaseError:
-        pass
-    await conn.close()
-    conn = await init_connection(dbname)
-    await init_ticks_table(conn)
-    await init_signals_table(conn)
-    await init_indicators_table(conn)
 
 
 async def get_pool(dbname=DEFAULT_DBNAME) -> asyncpg.pool.Pool:

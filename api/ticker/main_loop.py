@@ -10,7 +10,7 @@ from janus import Queue
 from dbmodels.db import db, StrategyModel
 from dbmodels.strategy_models import StrategySchema
 from dbmodels.source_models import ResourceModel, ResourceSchema, Source
-from parameters.enums import StrategiesEnum
+from parameters.enums import SessionDatasetNames, StrategiesEnum
 from strategies.monitor_strategy import monitor_strategy_executor
 from utils.timescaledb.tsdb_manage import get_pool
 from utils.sources.select import select_live_sources
@@ -182,8 +182,10 @@ class Ticker:
             ticks_to_write_q = Queue()
             source_q = Queue()
             processing_q = Queue()
+            dataset_name = SessionDatasetNames.live
             await self.scheduler.spawn(
                 write_ticks_to_session_store(
+                    dataset_name,
                     self.timeseries_connection_pool,
                     strategy.live_session_id,
                     ticks_to_write_q,
@@ -192,6 +194,7 @@ class Ticker:
             )
             await self.scheduler.spawn(
                 monitor_strategy_executor(
+                    dataset_name,
                     self.timeseries_connection_pool,
                     strategy.live_session_id,
                     source_q,
@@ -200,6 +203,7 @@ class Ticker:
             )
             await self.scheduler.spawn(
                 default_postprocessor(
+                    dataset_name,
                     self.timeseries_connection_pool,
                     strategy.live_session_id,
                     processing_q,

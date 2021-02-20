@@ -4,7 +4,7 @@ from itertools import count
 from asyncpg.pool import Pool
 from typing import List
 from pydantic import parse_obj_as
-from parameters.enums import SignalResultsEnum
+from parameters.enums import SessionDatasetNames, SignalResultsEnum
 from utils.timeseries.pandas_utils import resample_primitives
 from utils.schemas.response_schemas import (
     OHLCSchema,
@@ -19,21 +19,22 @@ logger = logging.getLogger(__name__)
 
 
 async def get_prices(
-    session_id, request_params: DataRequestSchema, pool: Pool
+    dataset_name: SessionDatasetNames,
+    session_id,
+    request_params: DataRequestSchema,
+    pool: Pool,
 ) -> List[PricepointSchema]:
-    """Get prices.
-
-    """
+    """Get prices."""
     if not request_params.to_datetime:
         request_params.to_datetime = datetime.now()
     async with pool.acquire() as conn:
-        query = """
+        query = f"""
         SELECT
             -- time_bucket_gapfill($1, timestamp, now() - INTERVAL '2 hours', now()) AS time,
             time_bucket_gapfill($1, timestamp) AS time,
             locf(avg(price)) as price,
             sum(volume) as volume
-        FROM ticks
+        FROM {dataset_name}_ticks
         WHERE session_id = $2
         and label = $3
         and data_type = $4
@@ -87,7 +88,10 @@ def reduce_signals(signals: list, period: int) -> list:
 
 
 async def get_reduced_signals(
-    session_id, request_params: MarkersRequestSchema, request
+    dataset_name: SessionDatasetNames,
+    session_id,
+    request_params: MarkersRequestSchema,
+    request,
 ) -> SignalsListSchema:
     pool: Pool = request.app["TIMESCALE_POOL"]
     if not request_params.period:
@@ -97,11 +101,11 @@ async def get_reduced_signals(
 
     reduced_result: List[SignalResultSchema] = []
     async with pool.acquire() as conn:
-        query = """
+        query = f"""
         SELECT
             time_bucket($1, timestamp) AS bucket_timestamp,
             *
-        FROM signals
+        FROM {dataset_name}_signals
         WHERE session_id = $2
         and timestamp BETWEEN $3 and $4
         ORDER BY timestamp ASC;
@@ -133,7 +137,10 @@ async def get_reduced_signals(
 
 
 async def get_signals(
-    session_id, request_params: MarkersRequestSchema, request
+    dataset_name: SessionDatasetNames,
+    session_id,
+    request_params: MarkersRequestSchema,
+    request,
 ) -> SignalsListSchema:
     pool: Pool = request.app["TIMESCALE_POOL"]
     if not request_params.to_datetime:
@@ -149,7 +156,7 @@ async def get_signals(
         query = f"""
         SELECT
             {fields}
-        FROM signals
+        FROM {dataset_name}_signals
         WHERE session_id = ${next(n)}
         and timestamp BETWEEN ${next(n)} and ${next(n)}
         ORDER BY timestamp ASC;
@@ -161,7 +168,12 @@ async def get_signals(
         return parse_obj_as(SignalsListSchema, list(result))
 
 
-async def get_terminal_data(session_id, request_params: DataRequestSchema, request):
+async def get_terminal_data(
+    dataset_name: SessionDatasetNames,
+    session_id,
+    request_params: DataRequestSchema,
+    request,
+):
     pool: Pool = request.app["TIMESCALE_POOL"]
     if not request_params.to_datetime:
         request_params.to_datetime = datetime.now()
@@ -169,7 +181,7 @@ async def get_terminal_data(session_id, request_params: DataRequestSchema, reque
 
     # TODO: Peg to and from datetimes to period breakpoints
     async with pool.acquire() as conn:
-        query = """
+        query = f"""
         SELECT
             time_bucket($1, timestamp) AS time,
             first(price, timestamp) as open,
@@ -177,7 +189,7 @@ async def get_terminal_data(session_id, request_params: DataRequestSchema, reque
             min(price) as low,
             last(price, timestamp) as close,
             sum(volume) as volume
-        FROM ticks
+        FROM {dataset_name}_ticks
         WHERE session_id = $2
         and label = $3
         and data_type = $4

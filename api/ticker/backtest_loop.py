@@ -1,4 +1,5 @@
 import asyncio
+from parameters.enums import SessionDatasetNames
 import aiohttp
 
 from janus import Queue
@@ -20,16 +21,32 @@ async def backtest(timer, backtest_session, strategy):
     source_q = Queue()
     ticks_to_write_q = Queue()
     processing_q = Queue()
+    dataset_name = (
+        SessionDatasetNames.test
+        if backtest_session.backtest_type == "test"
+        else SessionDatasetNames.backtest
+    )
     coros = [
         default_sources_loader(sources, [ticks_to_write_q], session, timer),
         write_ticks_to_session_store(
-            timeseries_connection_pool, backtest_session.id, ticks_to_write_q, source_q
+            dataset_name,
+            timeseries_connection_pool,
+            backtest_session.id,
+            ticks_to_write_q,
+            source_q,
         ),
         monitor_strategy_executor(
-            timeseries_connection_pool, backtest_session.id, source_q, processing_q
+            dataset_name,
+            timeseries_connection_pool,
+            backtest_session.id,
+            source_q,
+            processing_q,
         ),
         default_postprocessor(
-            timeseries_connection_pool, backtest_session.id, processing_q
+            dataset_name,
+            timeseries_connection_pool,
+            backtest_session.id,
+            processing_q,
         ),
     ]
     tasks = [asyncio.create_task(x) for x in coros]

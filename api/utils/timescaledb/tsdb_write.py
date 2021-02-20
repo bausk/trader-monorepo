@@ -3,6 +3,7 @@ import logging
 import pytz
 import asyncpg
 from typing import List
+from parameters.enums import SessionDatasetNames
 from utils.schemas.dataflow_schemas import (
     IndicatorSchema,
     SignalSchema,
@@ -15,7 +16,10 @@ logger = logging.getLogger(__name__)
 
 
 async def write_indicators(
-    pool, session_id: int, indicators: List[IndicatorSchema]
+    dataset_name: SessionDatasetNames,
+    pool,
+    session_id: int,
+    indicators: List[IndicatorSchema],
 ) -> None:
     for indicator in indicators:
         indicator_tuples = []
@@ -31,8 +35,8 @@ async def write_indicators(
         async with pool.acquire() as conn:
             try:
                 await conn.executemany(
-                    """
-                    INSERT INTO indicators(timestamp, session_id, label, value)
+                    f"""
+                    INSERT INTO {dataset_name}_indicators(timestamp, session_id, label, value)
                     VALUES ($1, $2, $3, $4)
                     ON CONFLICT (timestamp, session_id, label) DO UPDATE
                     SET value=EXCLUDED.value;
@@ -43,7 +47,12 @@ async def write_indicators(
                 pass
 
 
-async def write_signals(pool, session_id: int, signals: List[SignalSchema]) -> None:
+async def write_signals(
+    dataset_name: SessionDatasetNames,
+    pool,
+    session_id: int,
+    signals: List[SignalSchema],
+) -> None:
     prepared_signals = []
     for signal in signals:
         values = (
@@ -57,8 +66,8 @@ async def write_signals(pool, session_id: int, signals: List[SignalSchema]) -> N
     async with pool.acquire() as conn:
         try:
             await conn.executemany(
-                """
-                INSERT INTO signals(timestamp, session_id, direction, value, traceback)
+                f"""
+                INSERT INTO {dataset_name}_signals(timestamp, session_id, direction, value, traceback)
                 VALUES ($1, $2, $3, $4, $5)
                 ON CONFLICT (timestamp, session_id, label) DO UPDATE
                 SET value=EXCLUDED.value,
@@ -71,7 +80,14 @@ async def write_signals(pool, session_id: int, signals: List[SignalSchema]) -> N
             logger.warning("UniqueViolationError on signals write to TimescaleDB")
 
 
-async def write_ticks(session_id, data_type, label, ticks: List[TickSchema], pool):
+async def write_ticks(
+    dataset_name: SessionDatasetNames,
+    session_id,
+    data_type,
+    label,
+    ticks: List[TickSchema],
+    pool,
+):
     prepared_ticks = []
     for tick in ticks:
         timestamp = tick.timestamp.replace(tzinfo=pytz.UTC)
@@ -89,8 +105,8 @@ async def write_ticks(session_id, data_type, label, ticks: List[TickSchema], poo
     async with pool.acquire() as conn:
         try:
             await conn.executemany(
-                """
-                INSERT INTO ticks(timestamp, session_id, data_type, label, price, volume, funds)
+                f"""
+                INSERT INTO {dataset_name}_ticks(timestamp, session_id, data_type, label, price, volume, funds)
                 VALUES ($1, $2, $3, $4, $5, $6, $7)
                 ON CONFLICT (timestamp, session_id, data_type, label) DO UPDATE
                 SET price=EXCLUDED.price,
