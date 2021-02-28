@@ -1,11 +1,15 @@
 import asyncio
-from parameters.enums import SessionDatasetNames
+from dbmodels.strategy_models import StrategySchema
+from dbmodels.session_models import BacktestSessionSchema
+from parameters.enums import BacktestTypesEnum, SessionDatasetNames
 import aiohttp
 
 from janus import Queue
 
 
-async def backtest(timer, backtest_session, strategy):
+async def backtest(
+    timer, backtest_session: BacktestSessionSchema, strategy: StrategySchema
+) -> None:
     from strategies.monitor_strategy import monitor_strategy_executor
     from utils.timescaledb.tsdb_manage import get_pool
     from utils.sources.select import select_backtest_sources
@@ -14,7 +18,6 @@ async def backtest(timer, backtest_session, strategy):
     from ticker.sourcing.default_source_loader import default_sources_loader
 
     timeseries_connection_pool = await get_pool()
-    # scheduler: aiojobs.Scheduler = await aiojobs.create_scheduler()
     session = aiohttp.ClientSession()
     sources = select_backtest_sources(backtest_session)
 
@@ -23,7 +26,7 @@ async def backtest(timer, backtest_session, strategy):
     processing_q = Queue()
     dataset_name = (
         SessionDatasetNames.test
-        if backtest_session.backtest_type == "test"
+        if backtest_session.backtest_type == BacktestTypesEnum.test
         else SessionDatasetNames.backtest
     )
     coros = [
@@ -35,6 +38,7 @@ async def backtest(timer, backtest_session, strategy):
             ticks_to_write_q,
             source_q,
         ),
+        # Todo: execute actual strategy instead of monitor strategy
         monitor_strategy_executor(
             dataset_name,
             timeseries_connection_pool,

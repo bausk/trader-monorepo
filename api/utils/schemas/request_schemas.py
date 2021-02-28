@@ -10,6 +10,7 @@ class DataRequestSchema(BaseModel):
     period: int
     label: str = "btcusd"
     data_type: int = DATA_TYPES.ticks_primary
+    session_id: int
 
 
 class MarkersRequestSchema(BaseModel):

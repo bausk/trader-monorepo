@@ -1,4 +1,7 @@
-from datetime import datetime
+from dbmodels.session_models import (
+    BacktestSessionInputSchema,
+    BacktestSessionSourceModel,
+)
 from aiohttp import web
 from aiohttp.web import Response
 from aiohttp_cors import CorsViewMixin, ResourceOptions
@@ -11,7 +14,7 @@ from dbmodels.db import (
     BacktestSessionSchema,
     BaseModel,
 )
-
+from dbmodels.source_models import Source
 from utils.processing.processor import start_subprocess_and_listen
 from server.endpoints.routedef import routes
 from server.utils.streaming import create_streaming_response
@@ -37,16 +40,38 @@ class BacktestSessionView(web.View, CorsViewMixin):
     async def post(self: web.View) -> Response:
         await check_permission(self.request, Permissions.READ_HISTORY)
         raw_data = await self.request.json()
-        # Only strategy_id is expected in test BacktestSessionSchema
-        incoming: BacktestSessionSchema = self.schema(**raw_data)
+        incoming: BacktestSessionInputSchema = BacktestSessionInputSchema(**raw_data)
+
         async with db.transaction():
             new_session_model = await BacktestSessionModel.create(
-                **incoming.private_dict()
+                **incoming.private_dict(without=["sources_ids"])
             )
-            session = self.schema.from_orm(new_session_model)
-            session.backtest_type = "test"
+            if incoming.sources_ids:
+                for order, source_id in enumerate(incoming.sources_ids):
+                    await BacktestSessionSourceModel.create(
+                        backtest_session_id=new_session_model.id,
+                        source_id=source_id,
+                        order=order + 1,
+                    )
+            query = (
+                BacktestSessionModel.outerjoin(BacktestSessionSourceModel)
+                .outerjoin(Source)
+                .select()
+            )
+            session_with_sources = (
+                await query.where(BacktestSessionModel.id == new_session_model.id)
+                .gino.load(
+                    BacktestSessionModel.distinct(BacktestSessionModel.id).load(
+                        add_source=Source.distinct(Source.id)
+                    )
+                )
+                .all()
+            )
+            session = self.schema.from_orm(session_with_sources[0])
             session.config_json = {"tick_duration_seconds": 8}
-            strategy = await StrategyModel.get(BacktestSessionModel.strategy_id)
+            strategy = await StrategyModel.get(
+                BacktestSessionModel.strategy_id == session.strategy_id
+            )
             try:
                 iterator = start_subprocess_and_listen(backtest, session, strategy)
                 return await create_streaming_response(self.request, iterator)

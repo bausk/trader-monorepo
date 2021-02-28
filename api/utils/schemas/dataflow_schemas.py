@@ -2,7 +2,7 @@ from datetime import datetime
 from pydantic import BaseModel
 from typing import Optional, List, Dict, Union
 
-from parameters.enums import IndicatorsEnum, SignalResultsEnum
+from parameters.enums import SignalResultsEnum
 
 
 class ValidatedAssignmentSchema(BaseModel):

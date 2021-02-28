@@ -4,6 +4,9 @@ from aiohttp import web
 import jwt
 import os
 import json
+from secrets_management.manage import (
+    get_environment,
+)
 
 
 JWT_ALGORITHM = "RS256"
@@ -64,6 +67,12 @@ async def get_middleware():
         request.user = None
         try:
             token = request.headers.get("authorization", None).split(" ")[1]
+            if token == "TEST" and get_environment() == "development":
+                request.user = {
+                    "name": "Test",
+                    "permissions": ["read:live", "read:history"],
+                }
+                return await handler(request)
             unverified_header = jwt.get_unverified_header(token)
         except Exception:
             return await handler(request)

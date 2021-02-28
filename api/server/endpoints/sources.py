@@ -1,4 +1,5 @@
 import json
+from server.services.sources_db import source_create, source_delete, sources_get
 from aiohttp import web
 from aiohttp.web import Response
 from aiohttp_cors import CorsViewMixin, ResourceOptions
@@ -24,37 +25,29 @@ class SourcesView(web.View, CorsViewMixin):
 
     async def get(self: web.View) -> Response:
         await check_permission(self.request, Permissions.READ)
-        response = []
-        async with db.transaction():
-            async for s in Source.query.order_by(Source.id).gino.iterate():
-                validated = self.schema.from_orm(s)
-                response.append(validated.dict())
+        response = [x.dict() for x in await sources_get()]
         return web.json_response(response)
 
     async def post(self: web.View) -> Response:
         await check_permission(self.request, Permissions.WRITE_OBJECTS)
-        response = []
         try:
             raw_data = await self.request.json()
             incoming = self.schema(**raw_data)
-            async with db.transaction():
-                await Source.create(**incoming.private_dict())
-                async for s in Source.query.order_by(Source.id).gino.iterate():
-                    response.append(self.schema.from_orm(s).dict())
-        except Exception:
+            response = [x.dict() for x in await source_create(incoming)]
+        except Exception as e:
+            print(e)
             raise web.HTTPBadRequest
         return web.json_response(response)
 
     async def delete(self: web.View) -> Response:
         await check_permission(self.request, Permissions.WRITE_OBJECTS)
-        raw_data = await self.request.json()
-        incoming = self.schema(**raw_data)
-        response = []
-        async with db.transaction():
-            await Source.delete.where(Source.id == incoming.id).gino.status()
-            async for s in Source.query.order_by(Source.id).gino.iterate():
-                validated = self.schema.from_orm(s)
-                response.append(validated.dict())
+        try:
+            raw_data = await self.request.json()
+            incoming = self.schema(**raw_data)
+            response = [x.dict() for x in await source_delete(incoming)]
+        except Exception as e:
+            print(e)
+            raise web.HTTPBadRequest
         return web.json_response(response)
 
 

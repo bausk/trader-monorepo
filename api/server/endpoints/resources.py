@@ -1,7 +1,12 @@
 from aiohttp import web
 from aiohttp.web import Response
 from aiohttp_cors import CorsViewMixin, ResourceOptions
-from dbmodels.db import db, Source, ResourceModel, ResourceSchema, BaseModel
+from dbmodels.db import db, ResourceModel, ResourceSchema, BaseModel
+from server.services.resources_db import (
+    resource_create,
+    resource_delete,
+    resources_get_with_sources,
+)
 from server.security import check_permission, Permissions
 from typing import Type
 
@@ -22,58 +27,27 @@ class ResourcesView(web.View, CorsViewMixin):
 
     async def get(self: web.View) -> Response:
         await check_permission(self.request, Permissions.READ)
-        response = []
-        primary_live_source = Source.alias()
-        secondary_live_source = Source.alias()
-        primary_backtest_source = Source.alias()
-        secondary_backtest_source = Source.alias()
-        async with db.transaction():
-            async for s in self.model.load(
-                primary_live_source_model=primary_live_source.on(
-                    primary_live_source.id == self.model.primary_live_source_id
-                )
-            ).load(
-                secondary_live_source_model=secondary_live_source.on(
-                    secondary_live_source.id == self.model.secondary_live_source_id
-                )
-            ).load(
-                primary_backtest_source_model=primary_backtest_source.on(
-                    primary_backtest_source.id == self.model.primary_backtest_source_id
-                )
-            ).load(
-                secondary_backtest_source_model=secondary_backtest_source.on(
-                    secondary_backtest_source.id
-                    == self.model.secondary_backtest_source_id
-                )
-            ).order_by(
-                self.model.id
-            ).gino.iterate():
-                validated = self.schema.from_orm(s)
-                response.append(validated.dict())
+        response = [x.dict() for x in await resources_get_with_sources()]
         return web.json_response(response)
 
     async def post(self: web.View) -> Response:
         await check_permission(self.request, Permissions.WRITE_OBJECTS)
-        response = []
         try:
             raw_data = await self.request.json()
             incoming = self.schema(**raw_data)
-            async with db.transaction():
-                await self.model.create(**incoming.private_dict())
-                async for s in self.model.query.order_by(self.model.id).gino.iterate():
-                    response.append(self.schema.from_orm(s).dict())
+            response = [x.dict() for x in await resource_create(incoming)]
         except Exception as e:
+            print(e)
             raise web.HTTPBadRequest
         return web.json_response(response)
 
     async def delete(self: web.View) -> Response:
         await check_permission(self.request, Permissions.WRITE_OBJECTS)
-        raw_data = await self.request.json()
-        incoming = self.schema(**raw_data)
-        response = []
-        async with db.transaction():
-            await self.model.delete.where(self.model.id == incoming.id).gino.status()
-            async for s in self.model.query.order_by(self.model.id).gino.iterate():
-                validated = self.schema.from_orm(s)
-                response.append(validated.dict())
+        try:
+            raw_data = await self.request.json()
+            incoming = self.schema(**raw_data)
+            response = [x.dict() for x in await resource_delete(incoming)]
+        except Exception as e:
+            print(e)
+            raise web.HTTPBadRequest
         return web.json_response(response)
