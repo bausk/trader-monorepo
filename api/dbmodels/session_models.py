@@ -1,11 +1,13 @@
 import json
-from typing import Optional
+from parameters.enums import BacktestTypesEnum
+from typing import List, Optional
 from pydantic import validator
 from datetime import datetime
 
 from dbmodels.db_init import db
 from dbmodels.common_models import Privatable
 from dbmodels.strategy_params_models import LiveParamsSchema
+from dbmodels.source_models import SourceSchema
 
 
 class BacktestSessionModel(db.Model):
@@ -18,6 +20,26 @@ class BacktestSessionModel(db.Model):
     config_json = db.Column(db.Unicode(), default="{}")
     backtest_type = db.Column(db.Unicode(), default="")
 
+    def __init__(self, **kw):
+        super().__init__(**kw)
+        self._sources = set()
+
+    @property
+    def backtest_sources(self):
+        return self._sources
+
+    def add_source(self, source):
+        self._sources.add(source)
+
+
+class BacktestSessionSourceModel(db.Model):
+    __tablename__ = "backtest_sessions_sources"
+    backtest_session_id = db.Column(
+        db.Integer, db.ForeignKey("backtest_sessions.id"), primary_key=True
+    )
+    source_id = db.Column(db.Integer, db.ForeignKey("sources.id"), primary_key=True)
+    order = db.Column(db.Integer, nullable=False)
+
 
 class LiveSessionModel(db.Model):
     __tablename__ = "live_sessions"
@@ -29,16 +51,12 @@ class LiveSessionModel(db.Model):
     config_json = db.Column(db.Unicode(), default="{}")
 
 
-class BacktestSessionSchema(Privatable):
-    class Config:
-        orm_mode = True
-
-    id: Optional[int]
+class BaseBacktestSessionSchema(Privatable):
+    start_datetime: datetime
+    end_datetime: datetime
     strategy_id: int
-    start_datetime: Optional[datetime]
-    end_datetime: Optional[datetime]
-    config_json: Optional[dict]
-    backtest_type: Optional[str]
+    config_json: dict = {}
+    backtest_type: BacktestTypesEnum = BacktestTypesEnum.test
 
     @validator("config_json", pre=True)
     def deserialize_config(cls, v, values, **kwargs):
@@ -53,6 +71,18 @@ class BacktestSessionSchema(Privatable):
         if "config_json" in result:
             result["config_json"] = json.dumps(result["config_json"])
         return result
+
+
+class BacktestSessionInputSchema(BaseBacktestSessionSchema):
+    sources_ids: Optional[List[int]]
+
+
+class BacktestSessionSchema(BaseBacktestSessionSchema):
+    class Config:
+        orm_mode = True
+
+    id: int
+    backtest_sources: List[SourceSchema]
 
 
 class LiveSessionSchema(Privatable):

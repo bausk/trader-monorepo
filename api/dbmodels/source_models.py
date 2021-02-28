@@ -13,6 +13,9 @@ class Source(db.Model):
     name = db.Column(db.Unicode(), default="Unnamed")
     typename = db.Column(db.Unicode(), nullable=False)
     config_json = db.Column(db.Unicode(), default="{}")
+    cache_session_id = db.Column(
+        db.Integer, db.ForeignKey("backtest_sessions.id"), nullable=True
+    )
 
 
 class SourceSchema(Privatable):
@@ -24,6 +27,7 @@ class SourceSchema(Privatable):
     name: str = "Unnamed"
     typename: SourcesEnum
     config_json: Optional[str]
+    cache_session_id: Optional[int]
 
 
 class ResourceModel(db.Model):
