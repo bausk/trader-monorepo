@@ -1,3 +1,5 @@
+import json
+from pydantic import validator
 from typing import List, Optional, Tuple, Union
 from datetime import datetime
 
@@ -13,9 +15,6 @@ class Source(db.Model):
     name = db.Column(db.Unicode(), default="Unnamed")
     typename = db.Column(db.Unicode(), nullable=False)
     config_json = db.Column(db.Unicode(), default="{}")
-    cache_session_id = db.Column(
-        db.Integer, db.ForeignKey("backtest_sessions.id"), nullable=True
-    )
 
 
 class SourceSchema(Privatable):
@@ -26,8 +25,22 @@ class SourceSchema(Privatable):
     id: Optional[int]
     name: str = "Unnamed"
     typename: SourcesEnum
-    config_json: Optional[str]
-    cache_session_id: Optional[int]
+    config_json: dict = {}
+
+    @validator("config_json", pre=True)
+    def deserialize_config(cls, v, values, **kwargs):
+        if v:
+            if isinstance(v, str):
+                return json.loads(v)
+            return v
+        return None
+
+    def dict(self, *args, **kwargs):
+        result = super().dict(*args, **kwargs)
+        if "config_json" in result:
+            result["config_json"] = json.dumps(result["config_json"])
+        return result
+
 
 
 class ResourceModel(db.Model):

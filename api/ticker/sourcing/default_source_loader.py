@@ -23,21 +23,14 @@ async def default_sources_loader(
     -- when it is closed externally by a scheduler (when running live).
     """
 
-    # Check if a source has been cached already and doesn't need to write new ticks
-    cached_sessions = [source.cache_session_id for source in sources]
-    is_cached = all(cached_sessions)
-
     for source in sources:
         source.session = session
 
     async for current_datetime in tick_timer:
-        if is_cached:
-            results = [[], []]
-        else:
-            result_tasks = [
-                asyncio.create_task(x.get_latest(current_datetime)) for x in sources
-            ]
-            results = await asyncio.wait_for(asyncio.gather(*result_tasks), timeout=4)
+        result_tasks = [
+            asyncio.create_task(x.get_latest(current_datetime)) for x in sources
+        ]
+        results = await asyncio.wait_for(asyncio.gather(*result_tasks), timeout=4)
 
         # TODO: This is redundant and should be specified in source config
         data_types = [DATA_TYPES.ticks_primary, DATA_TYPES.ticks_secondary]
@@ -47,9 +40,13 @@ async def default_sources_loader(
         try:
             ticks_results: List[SourceFetchSchema] = []
             for result, source, data_type in zip(results, sources, data_types):
+                source_label = source.config.get(
+                    "label", getattr(source, "label", None)
+                )
+                assert source_label is not None
                 ticks_result = SourceFetchSchema(
                     ticks=result,
-                    label=source.label,
+                    label=source_label,
                     data_type=data_type,
                 )
                 ticks_results.append(ticks_result)
@@ -64,5 +61,4 @@ async def default_sources_loader(
             logger.info(e)
     print("sources loader: exit")
     for q in queues:
-        print("queue exit")
         await q.async_q.put(None)

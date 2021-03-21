@@ -1,8 +1,15 @@
-from functools import partial
 import asyncio
 import json
+
+from datetime import datetime
+from functools import partial
+from typing import List
+from time import sleep
+from utils.profiling.timer import Timer
+from utils.schemas.dataflow_schemas import TickSchema
 from google.oauth2 import service_account
 from google.cloud import bigquery
+from utils.async_primitives import async_wrap_iter
 from secrets_management.manage import decrypt_credentials
 from .abstract_source import AbstractSource
 
@@ -41,6 +48,7 @@ with
   queried_at,
   TIMESTAMP_ADD(queried_at, INTERVAL {interval} SECOND) as queried_end
   from `{table_fullname}`
+  where timestamp between '2019-01-01' and '2020-01-01'
   order by queried_at desc
   ),
   c as
@@ -68,6 +76,14 @@ sql_query_get_data_from_to = r"""
   AND timestamp BETWEEN @start AND @end
   -- ORDER BY timestamp ASC
   LIMIT {limit};
+"""
+
+
+load_ticks_query = r"""
+SELECT DISTINCT price, timestamp, volume
+FROM `{table_fullname}`
+WHERE 1=1
+AND timestamp BETWEEN @start AND @end
 """
 
 
@@ -121,3 +137,32 @@ class BigquerySource(AbstractSource):
         for res in bigquery_result:
             result.append(dict(res.items()))
         return result
+
+    def get_all_data_gen(self, start_datetime: datetime, end_datetime: datetime):
+        job_config = bigquery.QueryJobConfig(
+            query_parameters=[
+                bigquery.ScalarQueryParameter('start', 'TIMESTAMP', start_datetime),
+                bigquery.ScalarQueryParameter('end', 'TIMESTAMP', end_datetime),
+            ]
+        )
+        sql_query = load_ticks_query.format(
+            table_fullname=self.config['table_name'],
+        )
+        bigquery_result = exec_query(sql_query, bigquery_client, job_config=job_config)
+
+        chunk = []
+        print('generating')
+        for result in bigquery_result:
+            chunk.append(TickSchema(**dict(result.items())))
+            if len(chunk) >= 5000:
+                yield chunk
+                chunk = []
+        if len(chunk) > 0:
+            yield chunk
+
+    @classmethod
+    async def get_latest(cls, current_datetime=None, interval=None) -> List[TickSchema]:
+        # For backtesting source, get_latest should return empty list since
+        # either a cached session is used for data,
+        # or data is loaded into TimescaleDB before the actual backtest run.
+        return []

@@ -38,7 +38,10 @@ class SessionDataView(web.View, CorsViewMixin):
         await check_permission(self.request, Permissions.READ)
         try:
             session_id = int(self.request.match_info["id"])
-            request_data = self.schema(**self.request.query)
+            request_data = self.schema(
+                **self.request.query,
+                session_id=session_id,
+            )
             validated: List[OHLCSchema] = await get_terminal_data(
                 SessionDatasetNames.live, session_id, request_data, self.request
             )

@@ -1,5 +1,4 @@
 from typing import List
-from utils.timeseries.constants import SOURCES_TO_DATATYPES_MAP
 from utils.sources.abstract_source import AbstractSource
 from dbmodels.source_models import ResourceSchema, SourceSchema
 from parameters.enums import BacktestTypesEnum, SourcesEnum
@@ -50,13 +49,11 @@ def select_backtest_sources(
         return [TestPrimaryBacktestSource(), TestSecondaryBacktestSource()]
     sources: List[SourceSchema] = backtest_session.backtest_sources
     instantiated_sources = []
-    for order, source in enumerate(sources):
-        data_type = SOURCES_TO_DATATYPES_MAP[order]
-        source.config_json["data_type"] = data_type
+    for source in sources:
+        assert source.config_json["data_type"] is not None
         assert source.config_json["table_name"] is not None
         assert source.config_json["label"] is not None
         source_instance = BACKTEST_SOURCES.get(source.typename)()
         source_instance.config = source.config_json
-        source_instance.cache_session_id = source.cache_session_id
         instantiated_sources.append(source_instance)
     return instantiated_sources

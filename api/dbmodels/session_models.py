@@ -19,6 +19,8 @@ class BacktestSessionModel(db.Model):
     end_datetime = db.Column(db.DateTime(), nullable=True)
     config_json = db.Column(db.Unicode(), default="{}")
     backtest_type = db.Column(db.Unicode(), default="")
+    finished_datetime = db.Column(db.DateTime(), nullable=True)
+    cached_session_id = db.Column(db.Integer(), db.ForeignKey("backtest_sessions.id"), nullable=True)
 
     def __init__(self, **kw):
         super().__init__(**kw)
@@ -57,6 +59,7 @@ class BaseBacktestSessionSchema(Privatable):
     strategy_id: int
     config_json: dict = {}
     backtest_type: BacktestTypesEnum = BacktestTypesEnum.test
+    cached_session_id: Optional[int]
 
     @validator("config_json", pre=True)
     def deserialize_config(cls, v, values, **kwargs):
@@ -82,7 +85,8 @@ class BacktestSessionSchema(BaseBacktestSessionSchema):
         orm_mode = True
 
     id: int
-    backtest_sources: List[SourceSchema]
+    backtest_sources: Optional[List[SourceSchema]]
+    finished_datetime: Optional[datetime]
 
 
 class LiveSessionSchema(Privatable):

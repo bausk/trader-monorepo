@@ -1,63 +1,84 @@
 import asyncio
+from strategies.monitor_strategy import (
+    default_strategy_data_fetcher,
+    default_strategy_executor,
+)
+from ticker.processing.default_postprocessor import cached_postprocessor
 from dbmodels.strategy_models import StrategySchema
 from dbmodels.session_models import BacktestSessionSchema
 from parameters.enums import BacktestTypesEnum, SessionDatasetNames
 import aiohttp
-
 from janus import Queue
+from utils.processing.async_queue import AsyncProcessQueue, _ProcQueue
+from utils.profiling.timer import Timer
 
 
 async def backtest(
-    timer, backtest_session: BacktestSessionSchema, strategy: StrategySchema
+    timer,
+    backtest_session: BacktestSessionSchema,
+    strategy: StrategySchema,
+    db_queue: _ProcQueue = None,
 ) -> None:
-    from strategies.monitor_strategy import monitor_strategy_executor
     from utils.timescaledb.tsdb_manage import get_pool
     from utils.sources.select import select_backtest_sources
-    from ticker.processing.default_postprocessor import default_postprocessor
-    from ticker.processing.process_ticks import write_ticks_to_session_store
-    from ticker.sourcing.default_source_loader import default_sources_loader
+    from ticker.sourcing.cached_source_loader import cached_source_loader
 
     timeseries_connection_pool = await get_pool()
     session = aiohttp.ClientSession()
     sources = select_backtest_sources(backtest_session)
 
-    source_q = Queue()
-    ticks_to_write_q = Queue()
-    processing_q = Queue()
+    source_q = Queue(1000)
     dataset_name = (
         SessionDatasetNames.test
         if backtest_session.backtest_type == BacktestTypesEnum.test
         else SessionDatasetNames.backtest
     )
+
+    source_session_id = backtest_session.cached_session_id or backtest_session.id
+    strategy_fetch_q = AsyncProcessQueue(1000)
+    processing_queues = [AsyncProcessQueue(200) for i in range(8)]
+    strategy_data_fetcher = default_strategy_data_fetcher(
+        dataset_name,
+        timeseries_connection_pool,
+        source_session_id,
+        source_q,
+        strategy_fetch_q,
+    )
+    strategy_executor = default_strategy_executor(strategy_fetch_q, processing_queues)
+    postprocessors = [
+        cached_postprocessor(
+            dataset_name,
+            timeseries_connection_pool,
+            backtest_session.id,
+            q,
+        )
+        for q in processing_queues
+    ]
+
     coros = [
-        default_sources_loader(sources, [ticks_to_write_q], session, timer),
-        write_ticks_to_session_store(
+        cached_source_loader(
+            backtest_session,
             dataset_name,
             timeseries_connection_pool,
-            backtest_session.id,
-            ticks_to_write_q,
-            source_q,
+            sources,
+            [source_q],
+            session,
+            db_queue,
+            timer,
         ),
-        # Todo: execute actual strategy instead of monitor strategy
-        monitor_strategy_executor(
-            dataset_name,
-            timeseries_connection_pool,
-            backtest_session.id,
-            source_q,
-            processing_q,
-        ),
-        default_postprocessor(
-            dataset_name,
-            timeseries_connection_pool,
-            backtest_session.id,
-            processing_q,
-        ),
+        # TODO: execute actual strategy instead of monitor strategy
+        strategy_data_fetcher,
+        strategy_executor,
+        *postprocessors,
     ]
     tasks = [asyncio.create_task(x) for x in coros]
+    timer = Timer('Backtest Loop')
     print("============STARTING BACKTEST SESSION=============")
+    timer.start()
     try:
         await asyncio.wait({*tasks})
     except Exception as e:
         print(e)
     await session.close()
     print("============FINISHED BACKTEST SESSION=============")
+    timer.stop()

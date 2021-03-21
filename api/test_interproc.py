@@ -1,4 +1,5 @@
 import asyncio
+from janus import Queue
 from time import sleep
 from multiprocessing import Manager, cpu_count
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
@@ -82,6 +83,30 @@ def do_coro_proc_work(q, stuff, stuff2):
     _loop.run_until_complete(_do_coro_proc_work(q, stuff, stuff2))
 
 
+def do_proc_work(q, i):
+    print(f"Worker #{i} loaded")
+    while True:
+        print(f"Worker #{i} cycling")
+        task = q.get()
+        if task is None:
+            print(f"#{i} got sentinel and exiting")
+            q.put(task)
+            return
+        print(f"<{i}>: {task}")
+
+
+def do_proc_work_janus(q: Queue, i):
+    print(f"Worker #{i} loaded")
+    while True:
+        print(f"Worker #{i} cycling")
+        task = q.sync_q.get()
+        if task is None:
+            print(f"#{i} got sentinel and exiting")
+            q.sync_q.put(task)
+            return
+        print(f"<{i}>: {task}")
+
+
 async def sentinel():
     x = 5
     while x > 0:
@@ -90,17 +115,37 @@ async def sentinel():
         x -= 1
 
 
-async def do_work(q):
-    loop.run_in_executor(ProcessPoolExecutor(max_workers=1), do_coro_proc_work, q, 1, 2)
-    done, pending = await asyncio.wait(
-        {asyncio.create_task(q.coro_get()), asyncio.create_task(sentinel())}
-    )
-    print("Got from worker")
-    print(done, pending)
-    q.put(25)
+async def sentinel_emitter(q: Queue):
+    x = 8
+    while x > 0:
+        await asyncio.sleep(1)
+        print(f"({x}) event loop is not blocked")
+        x -= 1
+        await q.async_q.put("task")
+    await q.async_q.put(None)
+
+
+async def do_work():
+    q = Queue()
+    with ProcessPoolExecutor(max_workers=4) as pool_executor:
+        tasks = []
+        for i in range(4):
+            loop = asyncio.get_event_loop()
+            print(f"Starting worker #{i}")
+            tasks.append(loop.run_in_executor(pool_executor, do_proc_work_janus, q, i))
+        print(f"Awaiting loop")
+        done, pending = await asyncio.wait(
+            {
+                asyncio.create_task(sentinel_emitter(q)),
+            }
+        )
+        print("Got from worker")
+        print(done, pending)
+        await asyncio.wait({*tasks})
 
 
 if __name__ == "__main__":
-    q = AsyncProcessQueue()
+    # q = AsyncProcessQueue()
+
     loop = asyncio.get_event_loop()
-    loop.run_until_complete(do_work(q))
+    loop.run_until_complete(do_work())

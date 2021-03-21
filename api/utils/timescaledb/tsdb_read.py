@@ -174,6 +174,7 @@ async def get_terminal_data(
     request_params: DataRequestSchema,
     request,
 ):
+    # TODO: use only session_id from request_params
     pool: Pool = request.app["TIMESCALE_POOL"]
     if not request_params.to_datetime:
         request_params.to_datetime = datetime.now()

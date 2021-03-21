@@ -1,9 +1,8 @@
-import asyncio
+from utils.async_primitives import get_event_loop_with_exceptions
 from utils.initializators import ptvsd_debugger_init
 
 
-def _worker_sync(async_worker, q, backtest_session, strategy):
-    import asyncio
+def _worker_sync(async_worker, q, backtest_session, strategy, db_q):
     from utils.initializators import process_init
     from ticker.timing import backtest_timer, tick_timer
 
@@ -26,18 +25,19 @@ def _worker_sync(async_worker, q, backtest_session, strategy):
 
     timer = new_timer_gen(timer_async_gen, q)
 
-    loop = asyncio.new_event_loop()
-    loop.run_until_complete(async_worker(timer, backtest_session, strategy))
+    loop = get_event_loop_with_exceptions(new=True)
+    loop.run_until_complete(async_worker(timer, backtest_session, strategy, db_q))
     q.put_nowait(None)
 
 
-async def start_subprocess_and_listen(async_worker, backtest_session, strategy):
+async def start_subprocess_and_listen(async_worker, backtest_session, strategy, db_q=None):
     from concurrent.futures.process import ProcessPoolExecutor
     from utils.processing.async_queue import AsyncProcessQueue
 
     q = AsyncProcessQueue()
 
-    loop = asyncio.get_event_loop()
+    loop = get_event_loop_with_exceptions()
+    print('running in executor')
     loop.run_in_executor(
         ProcessPoolExecutor(max_workers=1),
         _worker_sync,
@@ -45,6 +45,7 @@ async def start_subprocess_and_listen(async_worker, backtest_session, strategy):
         q,
         backtest_session,
         strategy,
+        db_q,
     )
 
     while True:

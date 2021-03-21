@@ -64,6 +64,7 @@ class TestPrimaryBacktestSource(AbstractSource):
     label = "btcusd"
     config = dict(
         currency="BTC-USD",
+        label="btcusd",
     )
 
     async def get_latest(self, current_datetime: datetime) -> List[TickSchema]:
@@ -78,6 +79,7 @@ class TestSecondaryBacktestSource(AbstractSource):
     label = "btcuah"
     config = dict(
         currency="BTC-UAH",
+        label="btcuah",
     )
 
     async def get_latest(self, current_datetime: datetime) -> List[TickSchema]:

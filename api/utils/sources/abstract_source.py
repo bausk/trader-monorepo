@@ -10,9 +10,7 @@ class AbstractSource:
 
     def __init__(self, session=None, config=None):
         self.session = session
-        self.cache_session_id = None
-        if config:
-            self.config = config
+        self.config = config
 
     @classmethod
     async def list_availability_intervals(

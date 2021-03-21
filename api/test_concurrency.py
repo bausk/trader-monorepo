@@ -1,6 +1,7 @@
 import asyncio
 import concurrent.futures
 from time import sleep
+from utils.async_primitives import get_event_loop_with_exceptions
 from janus import Queue
 
 
@@ -55,7 +56,7 @@ async def test_concurrency():
 
 
 def main():
-    asyncio.get_event_loop().run_until_complete(test_concurrency())
+    get_event_loop_with_exceptions().run_until_complete(test_concurrency())
 
 
 if __name__ == "__main__":

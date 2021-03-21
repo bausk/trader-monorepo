@@ -1,10 +1,10 @@
-from aiohttp import web
-
 import aiohttp_cors
-import asyncio
+
+from aiohttp import web
 from dbmodels.db import init_middleware
 from server.security import get_middleware
 from server.routes import routes
+from utils.async_primitives import get_event_loop_with_exceptions
 from utils.timescaledb.tsdb_manage import pool_context
 from utils.initializators import process_init, ptvsd_debugger_init
 
@@ -12,7 +12,7 @@ from utils.initializators import process_init, ptvsd_debugger_init
 ptvsd_debugger_init()
 process_init()
 
-auth_middleware = asyncio.get_event_loop().run_until_complete(get_middleware())
+auth_middleware = get_event_loop_with_exceptions().run_until_complete(get_middleware())
 
 app = web.Application(middlewares=[auth_middleware])
 db_middleware = init_middleware(app)
