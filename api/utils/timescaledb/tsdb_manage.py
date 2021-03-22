@@ -129,7 +129,7 @@ async def get_pool(dbname=DEFAULT_DBNAME) -> asyncpg.pool.Pool:
     await init_db(dbname)
     try:
         return await asyncpg.create_pool(
-            f"{get_url()}{dbname}", max_inactive_connection_lifetime=10
+            f"{get_url()}{dbname}", max_inactive_connection_lifetime=10, max_size=25
         )
     except Exception as e:
         print("Failed to start up connection pool")

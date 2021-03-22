@@ -1,6 +1,6 @@
 import asyncio
-from janus import Queue
 import logging
+from asyncio import Queue
 
 from datetime import datetime
 from utils.async_primitives import async_wrap_iter
@@ -8,6 +8,7 @@ from dbmodels.session_models import BacktestSessionSchema
 from typing import List, AsyncGenerator
 from utils.sources.live_sources import AbstractSource
 from ticker.sourcing.default_source_loader import default_sources_loader
+from utils.processing.async_queue import _ProcQueue
 from utils.timescaledb.tsdb_write import (
     stream_write_ticks,
 )
@@ -21,9 +22,9 @@ async def cached_source_loader(
     dataset_name: str,
     pool,
     sources: List[AbstractSource],
-    queues,
+    queues: List[Queue],
     session,
-    db_q: Queue,
+    db_q: _ProcQueue,
     tick_timer: AsyncGenerator,
 ):
     """Cached sources loader wraps default sources loader.

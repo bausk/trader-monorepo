@@ -1,10 +1,12 @@
-from concurrent.futures.process import ProcessPoolExecutor
-from typing import List
 import logging
 import asyncio
+from typing import List
 from datetime import timedelta
+from concurrent.futures.process import ProcessPoolExecutor
 from utils.processing.async_queue import _ProcQueue
+from utils.profiling.timer import Timer
 from utils.async_primitives import get_event_loop_with_exceptions
+from asyncio import Queue as AsyncQueue
 from janus import Queue
 from parameters.enums import SessionDatasetNames
 from utils.schemas.dataflow_schemas import (
@@ -42,13 +44,16 @@ def sync_strategy_worker(
     market_data_q: _ProcQueue, strategy_results_q: _ProcQueue, i: int
 ):
     print(f"#{i} started")
+    timer = Timer(f'strategy #{i}', report_every=10)
     while True:
         task = market_data_q.get()
         if task is None:
             market_data_q.put(None)
             strategy_results_q.put(None)
             return
+        timer.start()
         results = run_arbitrage_strategy(*task)
+        timer.stop()
         strategy_results_q.put(results)
 
 
@@ -58,22 +63,57 @@ def run_arbitrage_strategy(market_inputs, timestamp):
     return CalculationSchema(indicators=indicators, signal=signal)
 
 
+async def fetcher(ts, tasks, q, params):
+    params['counter'] += 1
+    done, pending = await asyncio.wait({*tasks}, timeout=4)
+    if all(x in done for x in tasks):
+        market_inputs = []
+        for task in tasks:
+            data_from_db: List[PricepointSchema] = task.result()
+            market_data = InputMarketDataSchema(ticks=data_from_db)
+            market_inputs.append(market_data)
+        result = (market_inputs, ts)
+        await q.coro_put(result)
+    else:
+        for coro in done:
+            coro.cancel()
+        for coro in pending:
+            coro.cancel()
+    params['counter'] -= 1
+
+
 async def default_strategy_data_fetcher(
     dataset_name: SessionDatasetNames,
     tsdb_pool,
     session_id: int,
-    in_queue: Queue,
+    in_queue: AsyncQueue,
     out_queue: _ProcQueue,
 ):
     print(f"Session ID: {session_id}")
+    prms = {'counter': 0}
+
+    async def backpressure(q):
+        while True:
+            if prms['counter'] < 20:
+                return True
+            await asyncio.sleep(0)
+
+    timer_f = Timer('Fetch')
+    timer_w = Timer('Wait_In')
+    timer_b = Timer('Backpressure')
     while True:
-        source_result: SourceFetchResultSchema = await in_queue.async_q.get()
+        timer_b.start()
+        await backpressure(out_queue)
+        timer_b.stop()
+        timer_w.start()
+        source_result: SourceFetchResultSchema = await in_queue.get()
+        timer_w.stop()
         if source_result is None:
             await out_queue.coro_put(None)
-            await in_queue.async_q.put(None)
+            await in_queue.put(None)
             print("strategy fetcher exit")
             return
-
+        timer_f.start()
         try:
             from_datetime = source_result.timestamp - timedelta(hours=2)
             tasks = []
@@ -90,26 +130,12 @@ async def default_strategy_data_fetcher(
                     get_prices(dataset_name, session_id, params, tsdb_pool)
                 )
                 tasks.append(task)
-            done, pending = await asyncio.wait({*tasks}, timeout=4)
-            if all(x in done for x in tasks):
-                market_inputs = []
-                for task in tasks:
-                    data_from_db: List[PricepointSchema] = task.result()
-                    market_data = InputMarketDataSchema(ticks=data_from_db)
-                    market_inputs.append(market_data)
-
-                result = (market_inputs, source_result.timestamp)
-
-                await out_queue.coro_put(result)
-            else:
-                for coro in done:
-                    coro.cancel()
-                for coro in pending:
-                    coro.cancel()
+            asyncio.create_task(fetcher(source_result.timestamp, tasks, out_queue, prms))
         except Exception as e:
             logger.error("Strategy execution failed")
             logger.error(e)
-        in_queue.async_q.task_done()
+        in_queue.task_done()
+        timer_f.stop()
 
 
 async def monitor_strategy_executor(

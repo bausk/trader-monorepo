@@ -1,4 +1,5 @@
 import asyncio
+from utils.profiling.queues import MeteredQueue
 from strategies.monitor_strategy import (
     default_strategy_data_fetcher,
     default_strategy_executor,
@@ -8,7 +9,7 @@ from dbmodels.strategy_models import StrategySchema
 from dbmodels.session_models import BacktestSessionSchema
 from parameters.enums import BacktestTypesEnum, SessionDatasetNames
 import aiohttp
-from janus import Queue
+from asyncio import Queue
 from utils.processing.async_queue import AsyncProcessQueue, _ProcQueue
 from utils.profiling.timer import Timer
 
@@ -27,7 +28,9 @@ async def backtest(
     session = aiohttp.ClientSession()
     sources = select_backtest_sources(backtest_session)
 
-    source_q = Queue(1000)
+    queue_manager = MeteredQueue()
+
+    source_q = queue_manager(Queue(1000))
     dataset_name = (
         SessionDatasetNames.test
         if backtest_session.backtest_type == BacktestTypesEnum.test
@@ -35,8 +38,20 @@ async def backtest(
     )
 
     source_session_id = backtest_session.cached_session_id or backtest_session.id
-    strategy_fetch_q = AsyncProcessQueue(1000)
-    processing_queues = [AsyncProcessQueue(200) for i in range(8)]
+    strategy_fetch_q = queue_manager(AsyncProcessQueue(1000))
+    processing_queues = [queue_manager(AsyncProcessQueue(200)) for i in range(8)]
+
+    source_loader = cached_source_loader(
+        backtest_session,
+        dataset_name,
+        timeseries_connection_pool,
+        sources,
+        [source_q],
+        session,
+        db_queue,
+        timer,
+    )
+
     strategy_data_fetcher = default_strategy_data_fetcher(
         dataset_name,
         timeseries_connection_pool,
@@ -56,16 +71,7 @@ async def backtest(
     ]
 
     coros = [
-        cached_source_loader(
-            backtest_session,
-            dataset_name,
-            timeseries_connection_pool,
-            sources,
-            [source_q],
-            session,
-            db_queue,
-            timer,
-        ),
+        source_loader,
         # TODO: execute actual strategy instead of monitor strategy
         strategy_data_fetcher,
         strategy_executor,
@@ -76,9 +82,11 @@ async def backtest(
     print("============STARTING BACKTEST SESSION=============")
     timer.start()
     try:
+        sentinel_coro = queue_manager.start()
         await asyncio.wait({*tasks})
     except Exception as e:
         print(e)
     await session.close()
     print("============FINISHED BACKTEST SESSION=============")
     timer.stop()
+    sentinel_coro.cancel()

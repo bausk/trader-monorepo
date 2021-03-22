@@ -1,3 +1,5 @@
+import logging
+from concurrent.futures import CancelledError
 from utils.async_primitives import get_event_loop_with_exceptions
 from utils.initializators import ptvsd_debugger_init
 
@@ -6,7 +8,7 @@ def _worker_sync(async_worker, q, backtest_session, strategy, db_q):
     from utils.initializators import process_init
     from ticker.timing import backtest_timer, tick_timer
 
-    ptvsd_debugger_init(5681, 10)
+    ptvsd_debugger_init(5681, 3)
     process_init()
 
     backtest_timer_gen = backtest_timer(backtest_session)
@@ -26,7 +28,11 @@ def _worker_sync(async_worker, q, backtest_session, strategy, db_q):
     timer = new_timer_gen(timer_async_gen, q)
 
     loop = get_event_loop_with_exceptions(new=True)
-    loop.run_until_complete(async_worker(timer, backtest_session, strategy, db_q))
+    coro = async_worker(timer, backtest_session, strategy, db_q)
+    try:
+        loop.run_until_complete(coro)
+    except CancelledError:
+        logging.debug("Cancelled %s: %s", coro, coro.cancelled())
     q.put_nowait(None)
 
 

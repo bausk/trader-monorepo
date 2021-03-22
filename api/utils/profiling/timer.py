@@ -32,7 +32,9 @@ class Timer:
         if self._start_time is not None:
             raise TimerError(f"Timer {self.name} is running. Use .stop() to stop it")
 
-        self._start_time = self._last_reported = time.perf_counter()
+        self._start_time = time.perf_counter()
+        if not self._last_reported:
+            self._last_reported = self._start_time
 
     def stop(self) -> float:
         """Stop the timer, and report the elapsed time"""
@@ -58,9 +60,12 @@ class Timer:
             current_time = time.time()
             if self._last_reported == self._start_time or current_time >= self._last_reported + self.report_every:
                 avg = self.timers[self.name] / self._rounds
-                time_since_last_report = current_time - self._last_reported
+                if self._last_reported:
+                    time_since_last_report = current_time - self._last_reported
+                    percentage = self._timer_since_reported / time_since_last_report * 100
+                else:
+                    percentage = 'N/A'
                 self._last_reported = current_time
-                percentage = self._timer_since_reported / time_since_last_report * 100
                 self.logger(self.text.format(
                     self.name,
                     elapsed_time,

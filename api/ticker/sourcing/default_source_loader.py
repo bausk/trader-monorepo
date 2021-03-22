@@ -1,6 +1,7 @@
 import asyncio
 import logging
 from typing import List, AsyncGenerator
+from utils.profiling.timer import Timer
 from utils.timeseries.constants import DATA_TYPES
 from utils.sources.live_sources import AbstractSource
 from utils.schemas.dataflow_schemas import SourceFetchResultSchema, SourceFetchSchema
@@ -11,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 async def default_sources_loader(
     sources: List[AbstractSource],
-    queues,
+    queues: List,
     session,
     tick_timer: AsyncGenerator,
 ):
@@ -26,6 +27,9 @@ async def default_sources_loader(
     for source in sources:
         source.session = session
 
+    timer = Timer('loader')
+    timer2 = Timer('loader2')
+    timer3 = Timer('loader3')
     async for current_datetime in tick_timer:
         result_tasks = [
             asyncio.create_task(x.get_latest(current_datetime)) for x in sources
@@ -38,6 +42,7 @@ async def default_sources_loader(
         # Only generate ticks if all sources succeeded
         # if all(x in done for x in result_tasks):
         try:
+            timer2.start()
             ticks_results: List[SourceFetchSchema] = []
             for result, source, data_type in zip(results, sources, data_types):
                 source_label = source.config.get(
@@ -54,11 +59,21 @@ async def default_sources_loader(
                 ticks=ticks_results,
                 timestamp=current_datetime,
             )
+            timer2.stop()
+            timer3.start()
             for q in queues:
-                await q.async_q.put(fetch_result)
+                if hasattr(q, 'put'):
+                    await q.put(fetch_result)
+                else:
+                    await q.async_q.put(fetch_result)
+            timer3.stop()
         except Exception as e:
             logger.info("Source fetch raised an exception")
             logger.info(e)
+        timer.stop()
     print("sources loader: exit")
     for q in queues:
-        await q.async_q.put(None)
+        if hasattr(q, 'put'):
+            await q.put(None)
+        else:
+            await q.async_q.put(None)

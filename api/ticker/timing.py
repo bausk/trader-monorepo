@@ -25,4 +25,5 @@ async def tick_timer(timer_gen, sleep_seconds):
     """Async generator that issues datetime from timer_gen every sleep_seconds"""
     for tick in timer_gen:
         yield tick
-        await asyncio.sleep(sleep_seconds)
+        # TODO: Figure out whether this influences productivity
+        # await asyncio.sleep(sleep_seconds)
