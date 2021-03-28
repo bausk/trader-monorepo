@@ -1,14 +1,14 @@
 import logging
 from concurrent.futures import CancelledError
 from utils.async_primitives import get_event_loop_with_exceptions
-from utils.initializators import ptvsd_debugger_init
+from utils.initializators import debugpy_init
 
 
 def _worker_sync(async_worker, q, backtest_session, strategy, db_q):
     from utils.initializators import process_init
     from ticker.timing import backtest_timer, tick_timer
 
-    ptvsd_debugger_init(5681, 3)
+    debugpy_init(5681)
     process_init()
 
     backtest_timer_gen = backtest_timer(backtest_session)

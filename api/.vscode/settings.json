@@ -1,5 +1,4 @@
 {
-    "python.pythonPath": "/home/bausk/.pyenv/versions/trader-api/bin/python",
     "python.linting.flake8Enabled": false,
     "python.linting.mypyEnabled": false,
     "python.linting.prospectorEnabled": false,

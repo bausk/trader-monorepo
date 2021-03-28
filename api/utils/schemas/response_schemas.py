@@ -33,8 +33,8 @@ class InputMarketDataSchema(BaseModel):
     Time-series of market data representing input to calculate indicator from.
     """
 
-    ticks: Optional[List[PricepointSchema]]
-    candles: Optional[List[PricepointSchema]]
+    ticks: Optional[Union[List[PricepointSchema], list]]
+    candles: Optional[Union[List[PricepointSchema], list]]
 
 
 class SignalResultSchema(BaseModel):

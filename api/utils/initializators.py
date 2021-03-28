@@ -22,6 +22,18 @@ def ptvsd_debugger_init(port=5678, wait_seconds=3):
             pass
 
 
+def debugpy_init(port=5678):
+    if get_environment() == "development":
+        import debugpy
+
+        print("running in debug mode")
+        try:
+            debugpy.listen(("0.0.0.0", port))
+            debugpy.wait_for_client()
+        except Exception:
+            print(f"debugpy attach on port {port} aborted")
+
+
 def process_init():
     print(f"[init] Starting process for environment `{get_environment()}`")
     load_credentials(decrypt_credentials(which=["*.env"]))

@@ -27,7 +27,6 @@ async def default_sources_loader(
     for source in sources:
         source.session = session
 
-    timer = Timer('loader')
     timer2 = Timer('loader2')
     timer3 = Timer('loader3')
     async for current_datetime in tick_timer:
@@ -70,7 +69,6 @@ async def default_sources_loader(
         except Exception as e:
             logger.info("Source fetch raised an exception")
             logger.info(e)
-        timer.stop()
     print("sources loader: exit")
     for q in queues:
         if hasattr(q, 'put'):

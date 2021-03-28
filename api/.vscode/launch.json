@@ -39,7 +39,7 @@
             "port": 5680,
             "subProcess": true,
             "host": "localhost",
-            "justMyCode": false,            
+            "justMyCode": false,
             "pathMappings": [
                 {
                     "localRoot": "${workspaceFolder}",
@@ -54,13 +54,13 @@
             "port": 5681,
             "subProcess": true,
             "host": "localhost",
-            "justMyCode": false,            
+            "justMyCode": false,
             "pathMappings": [
                 {
                     "localRoot": "${workspaceFolder}",
                     "remoteRoot": "/code"
                 }
             ]
-        }        
+        }
     ]
 }

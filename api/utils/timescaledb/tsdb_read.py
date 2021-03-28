@@ -2,8 +2,9 @@ import logging
 from datetime import datetime, timedelta
 from itertools import count
 from asyncpg.pool import Pool
-from typing import List
+from typing import List, Tuple
 from pydantic import parse_obj_as
+from sortedcontainers import SortedKeyList
 from parameters.enums import SessionDatasetNames, SignalResultsEnum
 from utils.timeseries.pandas_utils import resample_primitives
 from utils.schemas.response_schemas import (
@@ -16,6 +17,66 @@ from utils.schemas.request_schemas import DataRequestSchema, MarkersRequestSchem
 
 
 logger = logging.getLogger(__name__)
+
+
+class SequentialBatchTSDBFetcher:
+    def __init__(self, pool, dataset_name, session_id, block_range=timedelta(hours=10)):
+        self.fetched_blocks = {}
+        self.pool = pool
+        self.block_range: timedelta = block_range
+        self.dataset_name = dataset_name
+        self.session_id = session_id
+
+    async def fetch_block(
+        self,
+        request_params: DataRequestSchema,
+    ) -> Tuple[SortedKeyList, datetime]:
+        from_datetime = request_params.from_datetime
+        to_datetime = from_datetime + self.block_range
+        async with self.pool.acquire() as conn:
+            query = f"""
+            SELECT
+                time_bucket_gapfill($1, timestamp) AS time,
+                locf(avg(price)) as price,
+                sum(volume) as volume
+            FROM {self.dataset_name}_ticks
+            WHERE session_id = $2
+            and label = $3
+            and data_type = $4
+            and timestamp BETWEEN $5 and $6
+            GROUP BY time
+            ORDER BY time ASC;
+            """
+            params = (
+                timedelta(minutes=request_params.period),
+                self.session_id,
+                request_params.label,
+                request_params.data_type,
+                from_datetime,
+                to_datetime,
+            )
+            result = list(await conn.fetch(query, *params))
+            print(f'Fetched list: {len(result)}')
+            return SortedKeyList(result, key=lambda x: x['time'].timestamp()), to_datetime
+
+    async def get_block(self, request_params: DataRequestSchema):
+        access_hash = f'{request_params.label}:{request_params.data_type}'
+        candidate_block = self.fetched_blocks.get(access_hash)
+        is_no_block = candidate_block is None
+        is_stale_block = not is_no_block and candidate_block['to_datetime'] <= request_params.to_datetime
+        if is_no_block or is_stale_block:
+            block, to_datetime = await self.fetch_block(request_params)
+            candidate_block = dict(to_datetime=to_datetime, data=block)
+            self.fetched_blocks[access_hash] = candidate_block
+        return candidate_block['data']
+
+    async def get_prices(
+        self,
+        request_params: DataRequestSchema,
+    ) -> List[PricepointSchema]:
+        block: SortedKeyList = await self.get_block(request_params)
+        result = list(block.irange_key(request_params.from_datetime.timestamp(), request_params.to_datetime.timestamp()))
+        return result
 
 
 async def get_prices(

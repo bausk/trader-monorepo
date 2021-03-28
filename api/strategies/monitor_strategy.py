@@ -17,7 +17,7 @@ from utils.schemas.dataflow_schemas import (
 )
 from utils.schemas.request_schemas import DataRequestSchema
 from utils.schemas.response_schemas import InputMarketDataSchema, PricepointSchema
-from utils.timescaledb.tsdb_read import get_prices
+from utils.timescaledb.tsdb_read import SequentialBatchTSDBFetcher, get_prices
 from .monitor_strategy_signal import calculate_indicators, calculate_signal
 
 
@@ -63,25 +63,6 @@ def run_arbitrage_strategy(market_inputs, timestamp):
     return CalculationSchema(indicators=indicators, signal=signal)
 
 
-async def fetcher(ts, tasks, q, params):
-    params['counter'] += 1
-    done, pending = await asyncio.wait({*tasks}, timeout=4)
-    if all(x in done for x in tasks):
-        market_inputs = []
-        for task in tasks:
-            data_from_db: List[PricepointSchema] = task.result()
-            market_data = InputMarketDataSchema(ticks=data_from_db)
-            market_inputs.append(market_data)
-        result = (market_inputs, ts)
-        await q.coro_put(result)
-    else:
-        for coro in done:
-            coro.cancel()
-        for coro in pending:
-            coro.cancel()
-    params['counter'] -= 1
-
-
 async def default_strategy_data_fetcher(
     dataset_name: SessionDatasetNames,
     tsdb_pool,
@@ -90,21 +71,15 @@ async def default_strategy_data_fetcher(
     out_queue: _ProcQueue,
 ):
     print(f"Session ID: {session_id}")
-    prms = {'counter': 0}
-
-    async def backpressure(q):
-        while True:
-            if prms['counter'] < 20:
-                return True
-            await asyncio.sleep(0)
 
     timer_f = Timer('Fetch')
     timer_w = Timer('Wait_In')
-    timer_b = Timer('Backpressure')
+    fetcher = SequentialBatchTSDBFetcher(
+        pool=tsdb_pool,
+        dataset_name=dataset_name,
+        session_id=session_id,
+    )
     while True:
-        timer_b.start()
-        await backpressure(out_queue)
-        timer_b.stop()
         timer_w.start()
         source_result: SourceFetchResultSchema = await in_queue.get()
         timer_w.stop()
@@ -127,10 +102,24 @@ async def default_strategy_data_fetcher(
                     session_id=session_id,
                 )
                 task = asyncio.create_task(
-                    get_prices(dataset_name, session_id, params, tsdb_pool)
+                    fetcher.get_prices(params)
                 )
                 tasks.append(task)
-            asyncio.create_task(fetcher(source_result.timestamp, tasks, out_queue, prms))
+            done, pending = await asyncio.wait({*tasks}, timeout=20)
+            if all(x in done for x in tasks):
+                market_inputs = []
+                for task in tasks:
+                    data_from_db: List[PricepointSchema] = task.result()
+                    market_data = InputMarketDataSchema(ticks=data_from_db)
+                    market_inputs.append(market_data)
+
+                result = (market_inputs, source_result.timestamp)
+                await out_queue.coro_put(result)
+            else:
+                for coro in done:
+                    coro.cancel()
+                for coro in pending:
+                    coro.cancel()
         except Exception as e:
             logger.error("Strategy execution failed")
             logger.error(e)

@@ -1,6 +1,7 @@
 from typing import List
 from datetime import datetime, timedelta
 import pandas as pd
+from pydantic.tools import parse_obj_as
 
 from utils.schemas.dataflow_schemas import (
     IndicatorSchema,
@@ -49,8 +50,8 @@ def calculate_indicators(
     disregard_bars_count: int = 10
     rolling_indicator_window: str = "180s"
 
-    primary_data = market_data[0].ticks
-    secondary_data = market_data[1].ticks
+    primary_data = parse_obj_as(List[PricepointSchema], market_data[0].ticks)
+    secondary_data = parse_obj_as(List[PricepointSchema], market_data[1].ticks)
     # Convert Pydantic lists to dataframes
     primary_dataframe = pd.DataFrame([x.dict() for x in primary_data])
     primary_dataframe["Time"] = pd.to_datetime(primary_dataframe.time, unit="s")
