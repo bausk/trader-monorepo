@@ -51,7 +51,7 @@ async def backtest(
         db_queue,
         timer,
     )
-
+    foo = 1
     strategy_data_fetcher = default_strategy_data_fetcher(
         dataset_name,
         timeseries_connection_pool,
