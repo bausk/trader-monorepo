@@ -78,6 +78,8 @@ class BaseBacktestSessionSchema(Privatable):
 
 class BacktestSessionInputSchema(BaseBacktestSessionSchema):
     sources_ids: Optional[List[int]]
+    sample_rate: float = 6.0
+    subprocess: bool = True
 
 
 class BacktestSessionSchema(BaseBacktestSessionSchema):

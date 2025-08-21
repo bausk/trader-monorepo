@@ -3,10 +3,10 @@ import logging
 from asyncio import Queue
 
 from datetime import datetime
+from utils.sources.bigquery_source import BigquerySource
 from utils.async_primitives import async_wrap_iter
 from dbmodels.session_models import BacktestSessionSchema
 from typing import List, AsyncGenerator
-from utils.sources.live_sources import AbstractSource
 from ticker.sourcing.default_source_loader import default_sources_loader
 from utils.processing.async_queue import _ProcQueue
 from utils.timescaledb.tsdb_write import (
@@ -21,7 +21,7 @@ async def cached_source_loader(
     backtest_session: BacktestSessionSchema,
     dataset_name: str,
     pool,
-    sources: List[AbstractSource],
+    sources: List[BigquerySource],
     queues: List[Queue],
     session,
     db_q: _ProcQueue,

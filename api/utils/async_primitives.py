@@ -6,10 +6,13 @@ import threading
 
 def async_wrap_iter(it):
     """Wrap blocking iterator into an asynchronous one"""
+    print('urr')
     loop = asyncio.get_event_loop()
     q = asyncio.Queue(1)
     exception = None
     _END = object()
+
+    print('urr2')
 
     async def yield_queue_items():
         while True:
@@ -34,6 +37,7 @@ def async_wrap_iter(it):
             asyncio.run_coroutine_threadsafe(q.put(_END), loop).result()
 
     threading.Thread(target=iter_to_queue).start()
+    print('urr3')
     return yield_queue_items()
 
 

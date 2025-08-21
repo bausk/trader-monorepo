@@ -1,15 +1,18 @@
+import aiohttp
 import asyncio
+from asyncio import Queue
+
 from utils.profiling.queues import MeteredQueue
 from strategies.monitor_strategy import (
     default_strategy_data_fetcher,
     default_strategy_executor,
 )
-from ticker.processing.default_postprocessor import cached_postprocessor
 from dbmodels.strategy_models import StrategySchema
 from dbmodels.session_models import BacktestSessionSchema
 from parameters.enums import BacktestTypesEnum, SessionDatasetNames
-import aiohttp
-from asyncio import Queue
+
+from ticker.processing.default_postprocessor import cached_postprocessor
+from ticker.backtest_trader import BacktestTrader
 from utils.processing.async_queue import AsyncProcessQueue, _ProcQueue
 from utils.profiling.timer import Timer
 
@@ -39,7 +42,8 @@ async def backtest(
 
     source_session_id = backtest_session.cached_session_id or backtest_session.id
     strategy_fetch_q = queue_manager(AsyncProcessQueue(1000))
-    processing_queues = [queue_manager(AsyncProcessQueue(200)) for i in range(8)]
+    processing_queues = [queue_manager(AsyncProcessQueue(200)) for i in range(4)]
+    trading_queue = queue_manager(AsyncProcessQueue(1000))
 
     source_loader = cached_source_loader(
         backtest_session,
@@ -51,7 +55,6 @@ async def backtest(
         db_queue,
         timer,
     )
-    foo = 1
     strategy_data_fetcher = default_strategy_data_fetcher(
         dataset_name,
         timeseries_connection_pool,
@@ -59,7 +62,9 @@ async def backtest(
         source_q,
         strategy_fetch_q,
     )
-    strategy_executor = default_strategy_executor(strategy_fetch_q, processing_queues)
+    strategy_executor = default_strategy_executor(
+        strategy_fetch_q, processing_queues, trading_queue
+    )
     postprocessors = [
         cached_postprocessor(
             dataset_name,
@@ -70,15 +75,20 @@ async def backtest(
         for q in processing_queues
     ]
 
+    trade_simulator = BacktestTrader(
+        timeseries_connection_pool, backtest_session.id
+    )
+
     coros = [
         source_loader,
         # TODO: execute actual strategy instead of monitor strategy
         strategy_data_fetcher,
         strategy_executor,
         *postprocessors,
+        trade_simulator.start_trader(trading_queue),
     ]
     tasks = [asyncio.create_task(x) for x in coros]
-    timer = Timer('Backtest Loop')
+    timer = Timer("Backtest Loop")
     print("============STARTING BACKTEST SESSION=============")
     timer.start()
     try:

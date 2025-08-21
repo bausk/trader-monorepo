@@ -10,7 +10,7 @@ def live_timer():
 def backtest_timer(backtest_session):
     assert isinstance(backtest_session.start_datetime, datetime)
     assert isinstance(backtest_session.end_datetime, datetime)
-    assert isinstance(backtest_session.config_json["tick_duration_seconds"], int)
+    assert isinstance(backtest_session.config_json["tick_duration_seconds"], float)
 
     current_datetime = backtest_session.start_datetime
     increment = timedelta(seconds=backtest_session.config_json["tick_duration_seconds"])

@@ -54,7 +54,7 @@ class BacktestSessionView(web.View, CorsViewMixin):
                 incoming.cached_session_id = None
 
             new_session_model = await BacktestSessionModel.create(
-                **incoming.private_dict(without=["sources_ids"])
+                **incoming.private_dict(without=['sources_ids', 'sample_rate', 'subprocess'])
             )
             if incoming.sources_ids:
                 for order, source_id in enumerate(incoming.sources_ids):
@@ -79,7 +79,10 @@ class BacktestSessionView(web.View, CorsViewMixin):
             )
             session = self.schema.from_orm(session_with_sources[0])
             # session.backtest_sources contain sources bound to this session
-            session.config_json = {"tick_duration_seconds": 8}
+            session.config_json = {
+                "tick_duration_seconds": incoming.sample_rate,
+                "subprocess": incoming.subprocess,
+            }
             strategy = await StrategyModel.get(session.strategy_id)
             for source in session.backtest_sources:
                 if source.config_json["label"] == "btcuah":

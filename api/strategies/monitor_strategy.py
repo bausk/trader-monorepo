@@ -1,3 +1,4 @@
+from itertools import count
 import logging
 import asyncio
 from typing import List
@@ -25,14 +26,16 @@ logger = logging.getLogger(__name__)
 
 
 async def default_strategy_executor(
-    market_data_q: _ProcQueue, strategy_results_qs: List[_ProcQueue]
+    market_data_q: _ProcQueue,
+    strategy_results_qs: List[_ProcQueue],
+    trading_q: _ProcQueue,
 ):
     workers = []
-    with ProcessPoolExecutor(max_workers=8) as pool:
+    with ProcessPoolExecutor(max_workers=4) as pool:
         for i, q in enumerate(strategy_results_qs):
             loop = get_event_loop_with_exceptions()
             worker = loop.run_in_executor(
-                pool, sync_strategy_worker, market_data_q, q, i
+                pool, sync_strategy_worker, market_data_q, q, trading_q, i
             )
             workers.append(worker)
             print("Instantiated worker...")
@@ -41,26 +44,36 @@ async def default_strategy_executor(
 
 
 def sync_strategy_worker(
-    market_data_q: _ProcQueue, strategy_results_q: _ProcQueue, i: int
+    market_data_q: _ProcQueue,
+    strategy_results_q: _ProcQueue,
+    trading_queue: _ProcQueue,
+    i: int,
 ):
     print(f"#{i} started")
-    timer = Timer(f'strategy #{i}', report_every=10)
+    timer = Timer(f"strategy #{i}", report_every=10)
     while True:
         task = market_data_q.get()
         if task is None:
             market_data_q.put(None)
             strategy_results_q.put(None)
+            trading_queue.put(None)
             return
         timer.start()
         results = run_arbitrage_strategy(*task)
         timer.stop()
         strategy_results_q.put(results)
+        trading_queue.put(results)
 
 
-def run_arbitrage_strategy(market_inputs, timestamp):
+def run_arbitrage_strategy(market_inputs, timestamp, increasing_id):
     indicators: List[IndicatorSchema] = calculate_indicators(market_inputs)
     signal: SignalSchema = calculate_signal(indicators, timestamp)
-    return CalculationSchema(indicators=indicators, signal=signal)
+    return CalculationSchema(
+        indicators=indicators,
+        signal=signal,
+        increasing_id=increasing_id,
+        market_inputs=market_inputs,
+    )
 
 
 async def default_strategy_data_fetcher(
@@ -72,13 +85,14 @@ async def default_strategy_data_fetcher(
 ):
     print(f"Session ID: {session_id}")
 
-    timer_f = Timer('Fetch')
-    timer_w = Timer('Wait_In')
+    timer_f = Timer("Fetch")
+    timer_w = Timer("Wait_In")
     fetcher = SequentialBatchTSDBFetcher(
         pool=tsdb_pool,
         dataset_name=dataset_name,
         session_id=session_id,
     )
+    monotonous_counter = count()
     while True:
         timer_w.start()
         source_result: SourceFetchResultSchema = await in_queue.get()
@@ -101,9 +115,7 @@ async def default_strategy_data_fetcher(
                     data_type=tick_source.data_type,
                     session_id=session_id,
                 )
-                task = asyncio.create_task(
-                    fetcher.get_prices(params)
-                )
+                task = asyncio.create_task(fetcher.get_prices(params))
                 tasks.append(task)
             done, pending = await asyncio.wait({*tasks}, timeout=20)
             if all(x in done for x in tasks):
@@ -113,7 +125,11 @@ async def default_strategy_data_fetcher(
                     market_data = InputMarketDataSchema(ticks=data_from_db)
                     market_inputs.append(market_data)
 
-                result = (market_inputs, source_result.timestamp)
+                result = (
+                    market_inputs,
+                    source_result.timestamp,
+                    next(monotonous_counter),
+                )
                 await out_queue.coro_put(result)
             else:
                 for coro in done:
@@ -165,7 +181,7 @@ async def monitor_strategy_executor(
                 tasks.append(task)
             done, pending = await asyncio.wait({*tasks}, timeout=4)
             if all(x in done for x in tasks):
-                market_inputs = []
+                market_inputs: List[InputMarketDataSchema] = []
                 for task in tasks:
                     data_from_db: List[PricepointSchema] = task.result()
                     market_data = InputMarketDataSchema(ticks=data_from_db)
@@ -176,7 +192,11 @@ async def monitor_strategy_executor(
                 )
 
                 await out_queue.async_q.put(
-                    CalculationSchema(indicators=indicators, signal=signal)
+                    CalculationSchema(
+                        indicators=indicators,
+                        signal=signal,
+                        market_inputs=market_inputs,
+                    )
                 )
             else:
                 for coro in done:

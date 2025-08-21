@@ -4,12 +4,9 @@ import json
 from datetime import datetime
 from functools import partial
 from typing import List
-from time import sleep
-from utils.profiling.timer import Timer
 from utils.schemas.dataflow_schemas import TickSchema
 from google.oauth2 import service_account
 from google.cloud import bigquery
-from utils.async_primitives import async_wrap_iter
 from secrets_management.manage import decrypt_credentials
 from .abstract_source import AbstractSource
 
@@ -151,10 +148,11 @@ class BigquerySource(AbstractSource):
         bigquery_result = exec_query(sql_query, bigquery_client, job_config=job_config)
 
         chunk = []
-        print('generating')
+        print('BigQuery: generating')
         for result in bigquery_result:
             chunk.append(TickSchema(**dict(result.items())))
             if len(chunk) >= 5000:
+                print('BigQuery: yielding')
                 yield chunk
                 chunk = []
         if len(chunk) > 0:

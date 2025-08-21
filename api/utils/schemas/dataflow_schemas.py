@@ -3,6 +3,7 @@ from pydantic import BaseModel
 from typing import Optional, List, Dict, Union
 
 from parameters.enums import SignalResultsEnum
+from utils.schemas.response_schemas import InputMarketDataSchema
 
 
 class ValidatedAssignmentSchema(BaseModel):
@@ -37,8 +38,10 @@ class SignalSchema(ValidatedAssignmentSchema):
 
 
 class CalculationSchema(BaseModel):
+    increasing_id: Optional[int]
     indicators: List[IndicatorSchema]
     signal: SignalSchema
+    market_inputs: List[InputMarketDataSchema]
 
 
 class SourceFetchSchema(BaseModel):

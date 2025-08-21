@@ -26,8 +26,9 @@ class MeteredQueue:
                     self.logger(
                         f"Queue #{i}: {size1}({size2}) items, empty: {q.sync_q.empty()}, full: {q.sync_q.full()}"
                     )
-                except Exception:
+                except Exception as e:
                     self.logger(f"Queue #{i}: Unknown queue type")
+                    raise e
 
     async def work(self):
         try:

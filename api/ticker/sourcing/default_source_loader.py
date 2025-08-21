@@ -67,6 +67,7 @@ async def default_sources_loader(
                     await q.async_q.put(fetch_result)
             timer3.stop()
         except Exception as e:
+            print("sources loader: Exception")
             logger.info("Source fetch raised an exception")
             logger.info(e)
     print("sources loader: exit")

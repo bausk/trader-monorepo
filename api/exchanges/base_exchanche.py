@@ -1,0 +1,3 @@
+
+class BaseExchange:
+    pass

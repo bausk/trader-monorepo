@@ -56,26 +56,37 @@ class SequentialBatchTSDBFetcher:
                 to_datetime,
             )
             result = list(await conn.fetch(query, *params))
-            print(f'Fetched list: {len(result)}')
-            return SortedKeyList(result, key=lambda x: x['time'].timestamp()), to_datetime
+            print(f"Fetched list: {len(result)}")
+            return (
+                SortedKeyList(result, key=lambda x: x["time"].timestamp()),
+                to_datetime,
+            )
 
     async def get_block(self, request_params: DataRequestSchema):
-        access_hash = f'{request_params.label}:{request_params.data_type}'
+        access_hash = f"{request_params.label}:{request_params.data_type}"
         candidate_block = self.fetched_blocks.get(access_hash)
         is_no_block = candidate_block is None
-        is_stale_block = not is_no_block and candidate_block['to_datetime'] <= request_params.to_datetime
+        is_stale_block = (
+            not is_no_block
+            and candidate_block["to_datetime"] <= request_params.to_datetime
+        )
         if is_no_block or is_stale_block:
             block, to_datetime = await self.fetch_block(request_params)
             candidate_block = dict(to_datetime=to_datetime, data=block)
             self.fetched_blocks[access_hash] = candidate_block
-        return candidate_block['data']
+        return candidate_block["data"]
 
     async def get_prices(
         self,
         request_params: DataRequestSchema,
     ) -> List[PricepointSchema]:
         block: SortedKeyList = await self.get_block(request_params)
-        result = list(block.irange_key(request_params.from_datetime.timestamp(), request_params.to_datetime.timestamp()))
+        result = list(
+            block.irange_key(
+                request_params.from_datetime.timestamp(),
+                request_params.to_datetime.timestamp(),
+            )
+        )
         return result
 
 

@@ -42,8 +42,6 @@ services:
         POETRY_VERSION: ${POETRY_VERSION}
     volumes:
       - ./api:/code
-      - ./frontend:/code/frontend
-      - ./etl:/code/etl
     command: ls
     environment:
       - ENV=${ENV}
